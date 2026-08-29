@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIUBA Agent - Asistente Académico Inteligente</title>
+  <meta name="google-site-verification" content="wQOW0f8WNLRhsPkvI6L0U7PhzsR_SiR3lpiRfgk0veQ">
+  <meta name="description" content="FIUBA Agent es tu asistente académico con IA para Ingeniería UBA. Chat con apuntes, quizzes interactivos de parciales del Altillo, flashcards y biblioteca organizada por materias. Gratis.">
+  <meta name="keywords" content="FIUBA, UBA, Ingeniería, Altillo, parciales, CBC, asistente académico, IA, quizzes, flashcards">
+  <link rel="canonical" href="https://agente-fiuba.web.app/">
+  <meta property="og:title" content="FIUBA Agent - Asistente Académico Inteligente">
+  <meta property="og:description" content="Chat con IA, quizzes de parciales del Altillo y repaso con flashcards para materias de FIUBA/UBA.">
+  <meta property="og:url" content="https://agente-fiuba.web.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://agente-fiuba.web.app/icon-512.png">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <!-- Favicon y PWA -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FIUBA Agent">
+  
+  <!-- Fuentes Google: Outfit e Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css?v=24">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- KaTeX LOCAL -->
+  <link rel="stylesheet" href="katex/katex.min.css">
+  <script src="katex/katex.min.js"></script>
+  <script src="katex/auto-render.min.js"></script>
+</head>
+<body>
+
+  <div class="app-layout">
+    
+    <!-- Overlay para cerrar drawer en móvil -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- Barra Lateral (Sidebar) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo">
+          <img src="icon-192.png" alt="FIUBA Agent" style="width:32px;height:32px;border-radius:8px">
+        </div>
+        <div class="brand-text">
+          <h2>FIUBA Agent</h2>
+          <span class="badge-version">v1.0 MVP</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- Botón "+ Nuevo Chat" -->
+        <button class="btn-new-chat" onclick="createNewChat()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Nuevo Chat
+        </button>
+
+        <!-- Historial de Chats -->
+        <div class="nav-group">
+          <div class="group-title-row">
+            <label class="group-title">Mis Conversaciones</label>
+          </div>
+          <div class="chats-list" id="chats-list">
+            <!-- Renderizado dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Selector de Modos de Estudio -->
+        <div class="nav-group">
+          <label class="group-title">Modo de Estudio del Chat</label>
+
+          <div class="mode-selector">
+            <button class="mode-btn active" data-mode="profesor" onclick="setMode('profesor')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:0.5rem"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/><path d="M2 13h20"/></svg>
+              <div class="mode-info">
+                <span class="mode-name">Profesor</span>
+                <span class="mode-desc">Explica conceptos</span>
+              </div>
+            </button>
+            
+            <button class="mode-btn" data-mode="tutor" onclick="setMode('tutor')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:0.5rem"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              <div class="mode-info">
+                <span class="mode-name">Tutor</span>
+                <span class="mode-desc">Te guía con pistas</span>
+              </div>
+            </button>
+            
+            <button class="mode-btn" data-mode="examinador" onclick="setMode('examinador')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:0.5rem"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="10" y2="9"/></svg>
+              <div class="mode-info">
+                <span class="mode-name">Examinador</span>
+                <span class="mode-desc">Te evalúa</span>
+              </div>
+            </button>
+
+            <button class="mode-btn" data-mode="resolucion" onclick="setMode('resolucion')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:0.5rem"><line x1="9" y1="18" x2="9" y2="9"/><line x1="15" y1="18" x2="15" y2="9"/><line x1="4" y1="18" x2="20" y2="18"/><line x1="6" y1="14" x2="18" y2="14"/><line x1="6" y1="10" x2="18" y2="10"/></svg>
+              <div class="mode-info">
+                <span class="mode-name">Resolución</span>
+                <span class="mode-desc">Paso a paso</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mi Progreso - Memoria Académica v1 -->
+        <div class="nav-group progress-section">
+          <div class="group-title-row">
+            <label class="group-title">Mi Progreso</label>
+            <span class="badge-active-materials" id="attempts-count">0 intentos</span>
+          </div>
+          <div class="progress-card" id="progress-card">
+            <div id="auth-status" class="auth-status">Conectando...</div>
+            <button class="btn-upload" onclick="openAttemptModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Registrar intento
+            </button>
+            <div id="recent-attempts" class="recent-attempts"></div>
+          </div>
+        </div>
+
+        <!-- Evaluaciones - Parciales del Altillo -->
+        <div class="nav-group evaluations-section">
+          <div class="group-title-row">
+            <label class="group-title">Evaluaciones</label>
+            <span class="badge-version" style="font-size:0.6rem;padding:0.15rem 0.35rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--accent-cyan)">beta</span>
+            <span class="badge-active-materials" id="evals-count">0</span>
+          </div>
+          <div class="progress-card" style="gap:0.5rem">
+            <button class="btn-upload" onclick="openCreateEvalModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Nueva evaluación
+            </button>
+            <div id="evaluations-list" class="recent-attempts"></div>
+          </div>
+        </div>
+
+        <!-- Biblioteca Organizada -->
+        <div class="nav-group library-section">
+          <div class="group-title-row">
+            <label class="group-title">Biblioteca</label>
+            <span class="badge-active-materials" id="library-count">0</span>
+          </div>
+          <div class="progress-card" style="gap:0.5rem">
+            <button class="btn-upload" onclick="openLibraryModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Organizar material
+            </button>
+            <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
+              <input id="altillo-url" class="form-control" style="flex:1;font-size:0.75rem" placeholder="https://www.altillo.com/examenes/uba/..." value="https://www.altillo.com/examenes/uba/ubaxxi/pensamientocomputacional/index.asp">
+              <button class="btn-secondary" onclick="importAltillo()" style="padding:0.4rem 0.6rem;font-size:0.75rem">Importar</button>
+            </div>
+            <div id="altillo-preview" style="font-size:0.72rem;color:var(--text-muted);max-height:120px;overflow-y:auto"></div>
+            <div id="library-list" class="recent-attempts"></div>
+          </div>
+        </div>
+
+        <!-- Área de Materiales Académicos -->
+        <div class="nav-group materials-section">
+          <div class="group-title-row">
+            <label class="group-title">Materiales Académicos</label>
+            <span class="badge-active-materials" id="materials-count-badge">0 PDFs</span>
+          </div>
+          
+          <div class="materials-card" id="materials-card">
+            <div class="materials-icon">📄</div>
+            <p id="materials-text">Subí parciales de <strong>Altillo.com</strong>, guías de ejercicios o apuntes en PDF.</p>
+            <input type="file" id="pdf-file-input" accept=".pdf,.txt" style="display: none;" onchange="handleFileUpload(event)">
+            <button class="btn-upload" onclick="document.getElementById('pdf-file-input').click()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+              </svg>
+              Subir Documento PDF
+            </button>
+          </div>
+
+          <!-- Lista de documentos cargados -->
+          <div class="loaded-files-list" id="loaded-files-list">
+            <!-- Renderizado dinámicamente -->
+          </div>
+        </div>
+      </nav>
+
+
+      <!-- Footer de la barra lateral -->
+      <div class="sidebar-footer">
+        <div id="user-email" style="font-size:0.75rem;color:var(--accent-cyan);word-break:break-all;text-align:center;margin-bottom:0.4rem"></div>
+        <button class="btn-server-config" onclick="handleLogout()" title="Cerrar sesión">🚪 Cerrar sesión</button>
+        <div class="status-indicator" style="margin-top:0.6rem">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Backend listo</span>
+        </div>
+        <button class="btn-server-config" onclick="openServerConfigModal()" title="Configurar conexión del servidor backend">
+          <span>⚙️ Servidor IA</span>
+          <span style="font-size: 0.75rem; opacity: 0.7;">Cambiar</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Área Principal de Contenido -->
+    <main class="main-content">
+      
+      <!-- Encabezado Superior -->
+      <header class="main-header">
+        <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menú" title="Menú">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <div class="header-title">
+          <h1 id="current-mode-title">Modo Profesor</h1>
+          <p id="current-mode-desc">Explicaciones conceptuales claras de temas de ingeniería UBA/FIUBA.</p>
+        </div>
+        <button class="btn-secondary" onclick="clearChat()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          Nueva Consulta
+        </button>
+      </header>
+
+      <!-- Top Menu -->
+      <nav class="top-menu" id="top-menu">
+        <button class="top-menu-btn active" data-view="inicio" onclick="switchView('inicio')">Inicio</button>
+        <button class="top-menu-btn" data-view="materias" onclick="switchView('materias')">Materias</button>
+        <button class="top-menu-btn" data-view="enlaces" onclick="switchView('enlaces')">Enlaces</button>
+        <button class="top-menu-btn" data-view="biblioteca" onclick="switchView('biblioteca')">Biblioteca</button>
+        <button class="top-menu-btn" data-view="comunidad" onclick="switchView('comunidad')">Comunidad</button>
+        <button class="top-menu-btn" data-view="evaluaciones" onclick="switchView('evaluaciones')">Evaluaciones</button>
+        <button class="top-menu-btn" data-view="flashcards" onclick="switchView('flashcards')">Flashcards</button>
+        <button class="top-menu-btn" data-view="progreso" onclick="switchView('progreso')">Progreso</button>
+        <button class="top-menu-btn" data-view="contacto" onclick="switchView('contacto')">Contacto</button>
+      </nav>
+
+      <!-- Content Area -->
+      <div id="content-area" style="flex:1;display:flex;flex-direction:column;min-height:0;position:relative">
+
+      <!-- Vista Materias -->
+      <div id="materias-view" class="view-panel hidden">
+        <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <h2 style="font-family:var(--font-heading);margin-bottom:0.4rem;font-size:1.15rem;color:var(--text-primary)">Materias</h2>
+          <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1rem">Elegí una carrera para ver sus materias con links a parciales del Altillo.</p>
+          <div id="materias-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.7rem"></div>
+          <div id="materia-detail" class="hidden" style="margin-top:1.5rem;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+              <h3 id="materia-detail-title" style="font-family:var(--font-heading);font-size:1rem"></h3>
+              <button class="btn-secondary" onclick="closeMateriaDetail()" style="font-size:0.78rem;padding:0.3rem 0.7rem">Cerrar</button>
+            </div>
+            <div id="materia-detail-content" style="font-size:0.85rem"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Enlaces -->
+      <div id="enlaces-view" class="view-panel hidden">
+        <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <h2 style="font-family:var(--font-heading);margin-bottom:0.4rem;font-size:1.15rem;color:var(--text-primary)">Enlaces Útiles</h2>
+          <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1rem">Accesos directos para tu día a día en FIUBA.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.7rem">
+            <a href="https://www.uba.ar" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">UBA</span><p>Página oficial UBA</p></a>
+            <a href="https://www.fi.uba.ar" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">FIUBA</span><p>Facultad de Ingeniería</p></a>
+            <a href="https://www.cbc.uba.ar" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">CBC</span><p>Ciclo Básico Común</p></a>
+            <a href="https://campus.fi.uba.ar" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Campus</span><p>Campus Virtual FIUBA</p></a>
+            <a href="https://guaraniautogestion.fi.uba.ar/g3w/acceso" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">SIU Guaraní</span><p>Inscripciones y notas</p></a>
+            <a href="https://calendar.google.com" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Calendar</span><p>Google Calendar</p></a>
+            <a href="https://www.instagram.com/uba_ar" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Instagram</span><p>@uba_ar</p></a>
+            <a href="https://www.instagram.com/ingenieriauba" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Instagram</span><p>@ingenieriauba</p></a>
+            <a href="https://drive.google.com" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Drive</span><p>Google Drive</p></a>
+            <a href="https://mail.google.com" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Gmail</span><p>Correo electrónico</p></a>
+            <a href="https://www.altillo.com" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Altillo</span><p>Parciales y finales</p></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Biblioteca (privada por usuario, carpetas por materia) -->
+      <div id="biblioteca-view" class="view-panel hidden">
+        <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
+            <div>
+              <h2 style="font-family:var(--font-heading);font-size:1.25rem;color:var(--text-primary);margin-bottom:0.2rem">Tu Biblioteca</h2>
+              <p style="color:var(--text-muted);font-size:0.82rem">Tus carpetas por materia — solo vos las ves. Organizá apuntes, guías y parciales.</p>
+            </div>
+            <button class="btn-new-chat" onclick="openLibraryModal()" style="padding:0.5rem 1rem;font-size:0.82rem">+ Nueva carpeta</button>
+          </div>
+          <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap">
+            <input id="biblioteca-search" class="form-control" placeholder="Buscar por materia o título..." style="flex:1;min-width:180px" oninput="filterBiblioteca(this.value)">
+            <select id="biblioteca-filter-cat" class="form-control" style="width:160px" onchange="filterBiblioteca()"><option value="">Todas las categorías</option><option>Apuntes</option><option>Guías</option><option>Parciales</option><option>Finales</option><option>Resúmenes</option><option>Otros</option></select>
+          </div>
+          <div id="biblioteca-view-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.8rem"></div>
+          <div id="biblioteca-view-empty" class="hidden" style="text-align:center;padding:2rem;background:var(--bg-card);border:1px dashed var(--border-color);border-radius:12px;margin-top:1rem">
+            <div style="display:flex;justify-content:center;margin-bottom:0.4rem;color:var(--accent-cyan)"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1rem">Aún no cargaste material. Creá tu primera carpeta por materia.</p>
+            <button class="btn-secondary" onclick="openLibraryModal()" style="margin:0 auto">Crear carpeta</button>
+          </div>
+          <div id="biblioteca-view-list" style="margin-top:1rem"></div>
+          
+        </div>
+      </div>
+
+      <!-- Panel Examinador -->
+      <div id="examiner-panel" class="view-panel hidden" style="max-width:950px;width:100%;margin:0 auto;padding:1rem 2rem 0 2rem"></div>
+
+      <!-- Vista Flashcards -->
+      <div id="flashcards-view" class="view-panel hidden">
+        <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap">
+            <div>
+              <h2 style="font-family:var(--font-heading);font-size:1.35rem;color:var(--text-primary);margin-bottom:0.25rem">Flashcards</h2>
+              <p style="color:var(--text-muted);font-size:0.82rem">Repaso espaciado con IA — recordá justo antes de olvidar <span id="flashcards-due-count" style="color:var(--accent-cyan);font-weight:600"></span></p>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button class="btn-secondary" onclick="openFlashcardsGenerateModal()" style="padding:0.5rem 0.9rem;font-size:0.8rem">+ Generar desde PDF</button>
+              <button class="btn-new-chat" onclick="startFlashcardsQuiz()" style="padding:0.55rem 1.1rem;font-size:0.85rem">▶ Repasar ahora</button>
+            </div>
+          </div>
+          <div id="flashcards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.8rem"></div>
+          <div id="flashcards-empty" class="hidden" style="text-align:center;padding:2.5rem 1.5rem;background:var(--bg-card);border:1px dashed var(--border-color);border-radius:16px;margin-top:1rem">
+            <div style="display:flex;justify-content:center;margin-bottom:0.6rem;color:var(--accent-purple)"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10"/><path d="M7 12h10"/><path d="M7 16h6"/></svg></div>
+            <h3 style="font-family:var(--font-heading);font-size:1.05rem;margin-bottom:0.4rem;color:var(--text-primary)">Sin flashcards aún</h3>
+            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem;max-width:420px;margin-left:auto;margin-right:auto">Subí un apunte o parcial en Materiales y generá fichas con la IA para repasar con el método espaciado.</p>
+            <button class="btn-new-chat" onclick="openFlashcardsGenerateModal()" style="margin:0 auto;padding:0.6rem 1.2rem">Generar flashcards</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Progreso / Analytics -->
+      <div id="progreso-view" class="view-panel hidden">
+        <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <h2 style="font-family:var(--font-heading);font-size:1.35rem;color:var(--text-primary);margin-bottom:0.25rem">Tu Progreso</h2>
+          <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem">Evolución por materia, rachas y puntos</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem">
+            <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem">
+              <h4 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem">Intentos por semana</h4>
+              <canvas id="chart-attempts" height="180"></canvas>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem">
+              <h4 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem">Aciertos por materia</h4>
+              <canvas id="chart-topics" height="180"></canvas>
+            </div>
+          </div>
+          <div id="analytics-ranking" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem"></div>
+        </div>
+      </div>
+
+      <!-- Vista Contacto -->
+      <div id="contacto-view" class="view-panel hidden">
+        <div style="max-width:650px;width:100%;margin:0 auto;padding:1.5rem 2rem;text-align:center">
+          <h2 style="font-family:var(--font-heading);margin-bottom:0.4rem;font-size:1.15rem;color:var(--text-primary)">Contacto</h2>
+          <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem">¿Dudas, feedback o propuestas para FIUBA Agent? Escribime.</p>
+          <div style="display:grid;gap:0.7rem;text-align:left">
+            <a href="https://www.instagram.com/delfii_fairhurst/" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Instagram</span><p>@delfii_fairhurst</p></a>
+            <a href="mailto:delfi.fairhurst@gmail.com" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Email</span><p>delfi.fairhurst@gmail.com</p></a>
+            <a href="https://www.linkedin.com/search/results/all/?keywords=Delfina%20Fairhurst%20Guzian" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">LinkedIn</span><p>Delfina Fairhurst Guzian</p></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista Comunidad -->
+      <div id="comunidad-view" class="view-panel hidden">
+        <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <h2 style="font-family:var(--font-heading);font-size:1.35rem;color:var(--text-primary);margin-bottom:0.25rem">Comunidad</h2>
+          <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem">Drive compartido — subí un link de Drive/Notion/GitHub y que todos lo vean. Como Classroom, pero sin gastar tu storage.</p>
+          <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:12px;padding:1rem;margin-bottom:1.5rem">
+            <h4 style="font-size:0.85rem;color:var(--accent-cyan);margin-bottom:0.6rem">Compartir material</h4>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <input id="community-link-comunidad" class="form-control" placeholder="https://drive.google.com/..." style="flex:1;min-width:180px">
+              <input id="community-title-comunidad" class="form-control" placeholder="Título (ej: Resumen Álgebra II)" style="width:180px">
+              <button class="btn-secondary" onclick="shareToCommunityComunidad()" style="white-space:nowrap">Compartir</button>
+            </div>
+          </div>
+          <div id="community-list-comunidad" style="display:flex;flex-direction:column;gap:0.6rem"></div>
+          <div style="margin-top:1rem;font-size:0.72rem;color:var(--text-muted);text-align:center">Todo lo compartido queda público para la comunidad FIUBA.</div>
+        </div>
+      </div>
+
+      <!-- Vista Evaluaciones Dashboard (bonita) -->
+      <div id="evaluaciones-view" class="view-panel hidden">
+        <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
+            <div>
+              <h2 style="font-family:var(--font-heading);font-size:1.35rem;color:var(--text-primary);margin-bottom:0.25rem">Tus Evaluaciones</h2>
+              <p style="color:var(--text-muted);font-size:0.82rem">Parciales interactivos con corrección al instante y nota final</p>
+            </div>
+            <button class="btn-new-chat" onclick="openCreateEvalModal()" style="padding:0.55rem 1.1rem;font-size:0.85rem;white-space:nowrap">+ Nueva evaluación</button>
+          </div>
+          <div id="evaluaciones-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.7rem;margin-bottom:1.5rem"></div>
+          <div id="evaluaciones-dashboard-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.9rem"></div>
+          <div id="evaluaciones-empty" class="hidden" style="text-align:center;padding:2.5rem 1.5rem;background:var(--bg-card);border:1px dashed var(--border-color);border-radius:16px;margin-top:1rem">
+            <div style="display:flex;justify-content:center;margin-bottom:0.6rem;color:var(--primary)"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+            <h3 style="font-family:var(--font-heading);font-size:1.05rem;margin-bottom:0.4rem;color:var(--text-primary)">Aún no tenés evaluaciones</h3>
+            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem;max-width:400px;margin-left:auto;margin-right:auto">Subí un PDF de un parcial del Altillo, elegí si querés multiple choice o a desarrollar, y la IA te arma el quiz interactivo.</p>
+            <button class="btn-new-chat" onclick="openCreateEvalModal()" style="margin:0 auto;padding:0.6rem 1.2rem">Crear mi primera evaluación</button>
+          </div>
+          <div id="evaluaciones-attempts" style="margin-top:1.8rem"></div>
+        </div>
+      </div>
+
+      <!-- Chat Container (vista Inicio) -->
+      <div class="chat-container">
+        <div id="chat-history" class="chat-history">
+          
+          <div class="welcome-banner" id="welcome-banner">
+            <div class="welcome-icon" style="display:flex;justify-content:center;color:var(--accent-cyan)"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L1 9l11 6 11-6-11-6z"/><path d="M1 17l11 6 11-6"/><path d="M1 12l11 6 11-6"/></svg></div>
+            <h2>¡Bienvenido a FIUBA Agent!</h2>
+            <p>Tu asistente académico para materias de Ingeniería. ¿En qué tema necesitás ayuda hoy?</p>
+            
+            <div class="suggestions-grid">
+              <button class="suggestion-card" onclick="useSuggestion('¿Podés explicarme qué es el producto escalar y vectorial y para qué se usa?')">
+                <span class="sugg-tag">Álgebra II</span>
+                <p>¿Qué es el producto escalar y vectorial?</p>
+              </button>
+              <button class="suggestion-card" onclick="useSuggestion('¿Cómo se calcula el momento de inercia de una barra respecto a su centro de masa?')">
+                <span class="sugg-tag">Física I</span>
+                <p>Cálculo de momento de inercia paso a paso.</p>
+              </button>
+              <button class="suggestion-card" onclick="useSuggestion('Haceme una pregunta de parcial sobre punteros y memoria dinámica en C.')">
+                <span class="sugg-tag">Algoritmos</span>
+                <p>Pregunta de examen sobre memoria en C.</p>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Indicador de Carga/Escritura -->
+        <div id="typing-indicator" class="typing-indicator hidden">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <span>FIUBA Agent está procesando la respuesta...</span>
+        </div>
+
+        <!-- Preview imagen chat -->
+        <div id="chat-image-preview" class="hidden" style="display:flex;align-items:center;gap:0.5rem;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:0.4rem 0.6rem;margin-bottom:0.5rem">
+          <img id="chat-image-preview-img" style="height:48px;border-radius:6px;border:1px solid var(--border-color)">
+          <span style="font-size:0.75rem;color:var(--text-muted);flex:1">Foto adjunta para resolver</span>
+          <button type="button" onclick="removeChatImage()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1rem">✕</button>
+        </div>
+        <!-- Formulario de Entrada de Mensaje -->
+        <div class="chat-input-wrapper">
+          <form id="chat-form" onsubmit="handleSend(event)">
+            <input type="file" id="chat-image-input" accept="image/*" style="display:none" onchange="handleChatImage(event)">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('chat-image-input').click()" title="Adjuntar foto del ejercicio" style="padding:0.5rem 0.6rem;border-radius:8px;display:flex;align-items:center;justify-content:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+            </button>
+            <button type="button" id="voice-btn" class="btn-secondary" onclick="toggleVoice()" title="Hablar" style="padding:0.5rem 0.6rem;border-radius:8px;display:flex;align-items:center;justify-content:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10a7 7 0 0 1-14 0"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <textarea 
+              id="user-input" 
+              placeholder="Escribí tu duda o adjuntá foto del ejercicio... (Enter para enviar)" 
+              rows="1"
+              onkeydown="handleKeyDown(event)"></textarea>
+            <button type="submit" id="send-btn" class="send-btn" title="Enviar consulta">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+      </div>
+      </div><!-- /content-area -->
+
+    </main>
+
+  </div>
+
+  <!-- Modal de Configuración de Servidor Backend -->
+  <div class="modal-backdrop" id="server-modal" onclick="if(event.target === this) closeServerConfigModal()">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>⚙️ Conexión del Servidor IA</h3>
+        <button class="btn-close-modal" onclick="closeServerConfigModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 1rem;">
+          Indicá la URL de tu backend de Node.js donde está alojada tu clave de Google Gemini.
+        </p>
+        
+        <div class="form-group">
+          <label for="server-url-input">URL del Servidor Backend:</label>
+          <input type="url" id="server-url-input" class="form-control" placeholder="http://localhost:3000 o https://tu-backend.onrender.com">
+        </div>
+
+        <div class="form-group">
+          <label for="gemini-key-input">Tu API Key de Gemini (para gastar tus tokens):</label>
+          <input type="password" id="gemini-key-input" class="form-control" placeholder="AIza... (aistudio.google.com/app/apikey)">
+          <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;">Se guarda solo en tu navegador y en tu cuenta privada. Si no ponés nada, usa la del servidor (compartida).</div>
+        </div>
+
+        <div style="background: var(--bg-surface); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.82rem;">
+          💡 <strong>Tip:</strong> Si estás usando la web desde tu computadora en local, dejá <code>http://localhost:3000</code>. Si querés usar la web desde tu celular u otros dispositivos, colocá la URL de tu backend en Render o la nube.
+        </div>
+
+        <div style="background: var(--bg-surface); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.82rem; margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.4rem;">
+          <div>🔗 <strong>Backend por defecto (copiar y pegar):</strong></div>
+          <div style="display:flex; gap:0.4rem; align-items:center;">
+            <code id="notes-backend-url" style="flex:1; background: var(--bg-dark); padding:0.35rem 0.5rem; border-radius:6px; font-size:0.75rem; word-break:break-all;">https://fiuba-agent-backend-1.onrender.com</code>
+            <button class="btn-secondary" style="padding:0.35rem 0.6rem; font-size:0.75rem; white-space:nowrap;" onclick="navigator.clipboard.writeText('https://fiuba-agent-backend-1.onrender.com'); this.textContent='¡Copiado!'; setTimeout(()=>this.textContent='Copiar',1500)">Copiar</button>
+          </div>
+          <div style="font-size:0.75rem; color: var(--text-muted);">Pegalo arriba en "URL del Servidor Backend" si entrás desde otro celu/PC.</div>
+          <div style="margin-top:0.3rem;">🔑 <strong>API Gemini:</strong> generá tu key gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--accent-cyan);">aistudio.google.com/app/apikey</a></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-reset" onclick="resetServerUrl()">Restablecer por defecto</button>
+        <button class="btn-modal-save" onclick="saveServerUrl()">Guardar y Conectar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Registrar Intento - Memoria Académica v1 -->
+  <div class="modal-backdrop" id="attempt-modal" onclick="if(event.target === this) closeAttemptModal()">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📊 Registrar intento</h3>
+        <button class="btn-close-modal" onclick="closeAttemptModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:1rem;font-size:0.85rem;color:var(--text-secondary)">Guardamos tu intento para construir tu perfil académico. Campos con * son obligatorios.</p>
+        <div class="form-group"><label>Materia *</label><input id="attempt-subject" class="form-control" placeholder="Ej: Álgebra II"></div>
+        <div class="form-group"><label>Tema *</label><input id="attempt-topic" class="form-control" placeholder="Ej: Diagonalización"></div>
+        <div class="form-group"><label>Resultado *</label><select id="attempt-result" class="form-control"><option value="correct">✅ Correcto</option><option value="incorrect">❌ Incorrecto</option><option value="partial">🟡 Parcial</option></select></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          <div class="form-group"><label>Intentos</label><input id="attempt-tries" type="number" min="1" value="1" class="form-control"></div>
+          <div class="form-group"><label>Pistas usadas</label><input id="attempt-hints" type="number" min="0" value="0" class="form-control"></div>
+        </div>
+        <div class="form-group"><label>Tiempo (seg)</label><input id="attempt-time" type="number" min="0" placeholder="Ej: 180" class="form-control"></div>
+        <div class="form-group"><label>¿Qué tan seguro? 1-5</label><select id="attempt-confidence" class="form-control"><option value="">No especificar</option><option value="1">1 - Nada seguro</option><option value="2">2 - Poco seguro</option><option value="3">3 - Más o menos</option><option value="4">4 - Bastante seguro</option><option value="5">5 - Muy seguro</option></select></div>
+        <div class="form-group"><label>Tipo de error</label><select id="attempt-errortype" class="form-control"><option value="">No especifica</option><option value="conceptual">Conceptual</option><option value="calculo">Cálculo</option><option value="interpretacion">Interpretación</option></select></div>
+      </div>
+      <div class="modal-actions"><button class="btn-modal-reset" onclick="closeAttemptModal()">Cancelar</button><button class="btn-modal-save" onclick="handleSaveAttempt()">Guardar intento</button></div>
+    </div>
+  </div>
+
+  <!-- Modal Generar Flashcards -->
+  <div class="modal-backdrop" id="flashcards-generate-modal" onclick="if(event.target===this) closeFlashcardsGenerateModal()">
+    <div class="modal-dialog" style="max-width:480px">
+      <div class="modal-header"><h3>Generar flashcards</h3><button class="btn-close-modal" onclick="closeFlashcardsGenerateModal()">✕</button></div>
+      <div class="modal-body">
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.75rem">Usa el último PDF subido en Materiales. La IA crea fichas pregunta/respuesta.</p>
+        <div class="form-group"><label>Cantidad</label><select id="flashcards-count-select" class="form-control"><option value="6">6</option><option value="8" selected>8</option><option value="12">12</option></select></div>
+      </div>
+      <div class="modal-actions"><button class="btn-modal-reset" onclick="closeFlashcardsGenerateModal()">Cancelar</button><button id="btn-generate-flashcards" class="btn-modal-save" onclick="handleGenerateFlashcards()">Generar</button></div>
+    </div>
+  </div>
+
+  <!-- Modal Quiz Flashcards -->
+  <div class="modal-backdrop" id="flashcards-quiz-modal" onclick="if(event.target===this) closeFlashcardsQuiz()">
+    <div class="modal-dialog" style="max-width:520px">
+      <div class="modal-header"><h3>Repaso</h3><button class="btn-close-modal" onclick="closeFlashcardsQuiz()">✕</button></div>
+      <div class="modal-body" id="flashcards-quiz-card" style="min-height:120px"></div>
+      <div class="modal-actions" id="flashcards-quiz-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap"></div>
+    </div>
+  </div>
+
+  <!-- Modal Biblioteca -->
+  <div class="modal-backdrop" id="library-modal" onclick="if(event.target===this) closeLibraryModal()">
+    <div class="modal-dialog">
+      <div class="modal-header"><h3>📚 Organizar en Biblioteca</h3><button class="btn-close-modal" onclick="closeLibraryModal()">✕</button></div>
+      <div class="modal-body">
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.75rem">Guardá tu material en carpetas como querés. Ej: <code>Análisis II → Guías → Guía 3</code>. Podés poner link a Arrimo como referencia externa.</p>
+        <div class="form-group"><label>Materia *</label><input id="lib-subject" class="form-control" placeholder="Ej: Álgebra II"></div>
+        <div class="form-group"><label>Categoría *</label><select id="lib-category" class="form-control"><option>Apuntes</option><option>Guías</option><option>Parciales</option><option>Finales</option><option>Resúmenes</option><option>Otros</option></select></div>
+        <div class="form-group"><label>Título *</label><input id="lib-title" class="form-control" placeholder="Ej: Parcial 2023 - Tema 1"></div>
+        <div class="form-group"><label>Archivo (opcional, nombre)</label><input id="lib-filename" class="form-control" placeholder="Ej: parcial_2023.pdf"></div>
+      </div>
+      <div class="modal-actions"><button class="btn-modal-reset" onclick="closeLibraryModal()">Cancelar</button><button class="btn-modal-save" onclick="handleSaveLibrary()">Guardar</button></div>
+    </div>
+  </div>
+
+  <!-- Auth Overlay - Login con Email/Contraseña -->
+  <div class="auth-backdrop" id="auth-overlay">
+    <div class="auth-card">
+      <div class="brand" style="justify-content:center;margin-bottom:1rem">
+        <div class="brand-logo">
+          <img src="icon-192.png" alt="FIUBA Agent" style="width:32px;height:32px;border-radius:8px">
+        </div>
+        <div class="brand-text"><h2>FIUBA Agent</h2></div>
+      </div>
+      <h3 style="text-align:center;font-family:var(--font-heading);margin-bottom:0.25rem">Ingresá a tu cuenta</h3>
+      <p style="text-align:center;color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem">Solo vos ves tu progreso. Gratis y privado.</p>
+      <div class="form-group"><label>Email</label><input id="auth-email" type="email" class="form-control" placeholder="tu@fi.uba.ar"></div>
+      <div class="form-group"><label>Contraseña</label><input id="auth-password" type="password" class="form-control" placeholder="•••••••• (mín 6)"></div>
+      <div id="auth-error" style="color:var(--danger);font-size:0.82rem;min-height:1.2rem;text-align:center;margin-bottom:0.5rem"></div>
+      <button class="btn-new-chat" onclick="handleLogin()" style="margin-bottom:0.5rem">Ingresar</button>
+      <button class="btn-secondary" onclick="handleRegister()" style="width:100%;justify-content:center">Crear cuenta</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin:0.75rem 0;color:var(--text-muted);font-size:0.75rem"><span style="flex:1;height:1px;background:var(--border-color)"></span>o<span style="flex:1;height:1px;background:var(--border-color)"></span></div>
+      <button class="btn-secondary" onclick="handleGoogleLogin()" style="width:100%;justify-content:center;background:white;color:#333;border:1px solid #dadce0;gap:0.5rem"><svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Continuar con Google</button>
+      <button onclick="handleResetPassword()" style="background:none;border:none;color:var(--text-muted);font-size:0.8rem;cursor:pointer;width:100%;margin-top:0.75rem;text-decoration:underline">¿Olvidaste tu contraseña?</button>
+      <p style="font-size:0.7rem;color:var(--text-muted);text-align:center;margin-top:1rem">Al crear cuenta aceptás que guardemos tus intentos de forma privada para personalizar tu aprendizaje.</p>
+    </div>
+  </div>
+
+  <!-- Modal Crear Evaluación -->
+  <div class="modal-backdrop" id="create-eval-modal" onclick="if(event.target===this) closeCreateEvalModal()">
+    <div class="modal-dialog" style="max-width:640px">
+      <div class="modal-header"><h3>📝 Nueva evaluación</h3><button class="btn-close-modal" onclick="closeCreateEvalModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label>Título *</label><input id="eval-title" class="form-control" placeholder="Ej: Parcial Álgebra II - Altillo 2023"></div>
+        <div class="form-group"><label>Preguntas * (editá cada enunciado)</label><div id="eval-questions-editor" style="display:flex;flex-direction:column;gap:0.6rem;max-height:50vh;overflow-y:auto"></div></div>
+        <button class="btn-secondary" onclick="addEvalQuestion()" style="width:100%;justify-content:center">+ Agregar pregunta</button>
+        <div style="background:var(--bg-surface);padding:0.6rem;border-radius:8px;border:1px solid var(--border-color);font-size:0.78rem;margin-top:0.75rem">💡 Tip: Subí un PDF en Materiales, elegí tipo y cantidad, y digitalizá con IA.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.6rem">
+          <select id="quiz-type" class="form-control"><option value="mixto">Mixto</option><option value="multiple_choice">Solo multiple choice</option><option value="open">Solo a desarrollar</option></select>
+          <select id="quiz-count" class="form-control"><option value="5">5 preguntas</option><option value="10" selected>10 preguntas</option><option value="15">15 preguntas</option></select>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.6rem"><button class="btn-secondary" onclick="digitalizeLastPdf()" style="flex:1;justify-content:center">📄 Digitalizar con IA</button><button class="btn-secondary" onclick="autoGenerateMock()" style="flex:1;justify-content:center">✨ Ejemplo</button></div>
+      </div>
+      <div class="modal-actions"><button class="btn-modal-reset" onclick="closeCreateEvalModal()">Cancelar</button><button class="btn-modal-save" onclick="handleCreateEvaluation()">Guardar evaluación</button></div>
+    </div>
+  </div>
+
+  <!-- Modal Rendir Evaluación -->
+  <div class="modal-backdrop" id="take-eval-modal" onclick="if(event.target===this) closeTakeEvalModal()">
+    <div class="modal-dialog" style="max-width:680px">
+      <div class="modal-header"><h3 id="take-eval-title">Evaluación</h3><button class="btn-close-modal" onclick="closeTakeEvalModal()">✕</button></div>
+      <div class="modal-body" id="take-eval-body" style="max-height:60vh;overflow-y:auto"></div>
+      <div class="modal-actions"><button class="btn-modal-reset" onclick="closeTakeEvalModal()">Cerrar</button><button class="btn-modal-save" onclick="handleSubmitEvaluation()">Enviar y ver nota</button></div>
+      <div id="take-eval-result" style="padding:0 1.5rem 1rem 1.5rem"></div>
+    </div>
+  </div>
+
+  <!-- Librería PDF.js para lectura de documentos PDF en el navegador -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="pdf-parser.js"></script>
+  <script src="app.js?v=38"></script>
+  
+
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="progress.js"></script>
+  <script type="module" src="auth-ui.js"></script>
+  <script type="module" src="evaluations.js"></script>
+  <script type="module" src="evaluations-ui.js"></script>
+  <script type="module" src="flashcards.js"></script>
+  <script type="module" src="flashcards-ui.js"></script>
+  <script type="module" src="analytics.js"></script>
+  <script type="module" src="examiner.js"></script>
+  <script type="module" src="library-ui.js"></script>
+  <!-- Scripts nuevos -->
+  <script src="calculator.js"></script>
+  <script src="admin-bot.js"></script>
+</body>
+</html>
+

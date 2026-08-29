@@ -1,0 +1,12 @@
+{
+  "name": "fiuba-agent-functions",
+  "description": "Backend FIUBA Agent como Firebase Cloud Functions - proxy seguro a Gemini",
+  "engines": { "node": "18" },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Cada usuario solo puede leer/escribir su propio árbol
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    // Drive comunitario - lectura pública, escritura solo autenticados
+    match /communityLibrary/{docId} {
+      allow read: if true;
+      allow create, delete: if request.auth != null;
+    }
+  }
+}

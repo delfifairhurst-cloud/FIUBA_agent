@@ -1,0 +1,3 @@
+# Backend en Python para FIUBA Agent (Servidor HTTP nativo sin dependencias pesadas)
+# Opcional para desarrollo:
+python-dotenv>=1.0.0
