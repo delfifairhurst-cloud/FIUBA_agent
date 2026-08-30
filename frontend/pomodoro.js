@@ -19,44 +19,15 @@
     return audioCtx;
   }
 
-  function playTone(freq, duration, type = 'sine', volume = 0.15) {
-    try {
-      const ctx = getAudioCtx();
-      if (ctx.state === 'suspended') ctx.resume();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = type;
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(volume, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + duration);
-    } catch {}
-  }
+  // Sin melodías — solo notificaciones del navegador
+  function playStartSound() {}
+  function playBreakSound() {}
+  function playCompleteSound() {}
 
-  function playStartSound() {
-    playTone(523, 0.15, 'sine', 0.12);
-    setTimeout(() => playTone(659, 0.15, 'sine', 0.12), 150);
-    setTimeout(() => playTone(784, 0.3, 'sine', 0.12), 300);
-  }
-
-  function playBreakSound() {
-    playTone(784, 0.2, 'sine', 0.1);
-    setTimeout(() => playTone(659, 0.2, 'sine', 0.1), 200);
-    setTimeout(() => playTone(523, 0.4, 'sine', 0.1), 400);
-  }
-
-  function playCompleteSound() {
-    [523, 659, 784, 1047].forEach((f, i) => {
-      setTimeout(() => playTone(f, 0.3, 'sine', 0.1), i * 200);
-    });
-  }
-
-  // Ambient sounds con Web Audio
-  let ambientNode = null;
+  // Ambient sounds con Web Audio — sonidos distintos y reconocibles
+  let ambientNodes = [];
   let ambientGain = null;
+  let ambientInterval = null;
 
   function startAmbient(type) {
     stopAmbient();
@@ -64,65 +35,127 @@
       const ctx = getAudioCtx();
       if (ctx.state === 'suspended') ctx.resume();
       ambientGain = ctx.createGain();
-      ambientGain.gain.value = 0.04;
+      ambientGain.gain.value = 0.12;
       ambientGain.connect(ctx.destination);
 
       if (type === 'rain') {
-        // Ruido blanco filtrado = lluvia
-        const bufferSize = 2 * ctx.sampleRate;
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        const source = ctx.createBufferSource();
-        source.buffer = buffer;
-        source.loop = true;
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 800;
-        source.connect(filter);
-        filter.connect(ambientGain);
-        source.start();
-        ambientNode = source;
+        // Lluvia: ruido blanco filtrado + gotas de ruido (sin tonos)
+        const bufLen = 2 * ctx.sampleRate;
+        const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource();
+        src.buffer = buf; src.loop = true;
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass'; lp.frequency.value = 3000;
+        const hp = ctx.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 400;
+        src.connect(lp); lp.connect(hp); hp.connect(ambientGain);
+        src.start();
+        ambientNodes.push(src);
+        // Capa extra: ruido suave para densidad
+        const buf2 = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+        const d2 = buf2.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) d2[i] = Math.random() * 2 - 1;
+        const src2 = ctx.createBufferSource();
+        src2.buffer = buf2; src2.loop = true;
+        const lp2 = ctx.createBiquadFilter();
+        lp2.type = 'lowpass'; lp2.frequency.value = 1500;
+        const g2 = ctx.createGain();
+        g2.gain.value = 0.4;
+        src2.connect(lp2); lp2.connect(g2); g2.connect(ambientGain);
+        src2.start();
+        ambientNodes.push(src2);
+        // Gotas: mini-ráfagas de ruido (no tonales)
+        function drip() {
+          if (!ambientGain) return;
+          const dripBuf = ctx.createBuffer(1, ctx.sampleRate * 0.06, ctx.sampleRate);
+          const dd = dripBuf.getChannelData(0);
+          for (let i = 0; i < dd.length; i++) dd[i] = (Math.random() * 2 - 1) * (1 - i / dd.length);
+          const ds = ctx.createBufferSource();
+          ds.buffer = dripBuf;
+          const dg = ctx.createGain();
+          dg.gain.setValueAtTime(0.04, ctx.currentTime);
+          dg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+          const df = ctx.createBiquadFilter();
+          df.type = 'bandpass'; df.frequency.value = 3000 + Math.random() * 2000; df.Q.value = 1;
+          ds.connect(df); df.connect(dg); dg.connect(ctx.destination);
+          ds.start();
+          setTimeout(drip, 80 + Math.random() * 350);
+        }
+        drip();
+
       } else if (type === 'fire') {
-        // Ruido muy bajo = fuego crepitante
-        const bufferSize = 2 * ctx.sampleRate;
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        const source = ctx.createBufferSource();
-        source.buffer = buffer;
-        source.loop = true;
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 200;
-        filter.Q.value = 0.5;
-        source.connect(filter);
-        filter.connect(ambientGain);
-        source.start();
-        ambientNode = source;
+        // Fuego: ruido marrón + crepitidos de ruido (no tonales)
+        const bufLen = 2 * ctx.sampleRate;
+        const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        let last = 0;
+        for (let i = 0; i < bufLen; i++) {
+          const white = Math.random() * 2 - 1;
+          d[i] = (last + 0.02 * white) / 1.02;
+          last = d[i];
+          d[i] *= 3.5;
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf; src.loop = true;
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass'; lp.frequency.value = 600;
+        src.connect(lp); lp.connect(ambientGain);
+        src.start();
+        ambientNodes.push(src);
+        // Crepitidos: mini-ráfagas de ruido
+        function crackle() {
+          if (!ambientGain) return;
+          const cBuf = ctx.createBuffer(1, ctx.sampleRate * 0.02, ctx.sampleRate);
+          const cd = cBuf.getChannelData(0);
+          for (let i = 0; i < cd.length; i++) cd[i] = (Math.random() * 2 - 1) * (1 - i / cd.length);
+          const cs = ctx.createBufferSource();
+          cs.buffer = cBuf;
+          const cg = ctx.createGain();
+          cg.gain.setValueAtTime(0.05, ctx.currentTime);
+          cg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.02);
+          cs.connect(cg); cg.connect(ctx.destination);
+          cs.start();
+          setTimeout(crackle, 40 + Math.random() * 200);
+        }
+        crackle();
+
       } else if (type === 'waves') {
-        // Oscilador con Lento = olas
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = 100;
-        const lfo = ctx.createOscillator();
-        lfo.type = 'sine';
-        lfo.frequency.value = 0.1;
-        const lfoGain = ctx.createGain();
-        lfoGain.gain.value = 50;
-        lfo.connect(lfoGain);
-        lfoGain.connect(osc.frequency);
-        osc.connect(ambientGain);
-        osc.start();
-        lfo.start();
-        ambientNode = { stop: () => { osc.stop(); lfo.stop(); } };
+        // Olas: ruido filtrado con volumen que sube y baja
+        const bufLen = 4 * ctx.sampleRate;
+        const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource();
+        src.buffer = buf; src.loop = true;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass'; bp.frequency.value = 500; bp.Q.value = 0.3;
+        src.connect(bp);
+        // LFO para volumen = oleaje
+        const volLfo = ctx.createOscillator();
+        volLfo.type = 'sine'; volLfo.frequency.value = 0.08;
+        const volG = ctx.createGain();
+        volG.gain.value = 0.08;
+        volLfo.connect(volG); volG.connect(ambientGain.gain);
+        // LFO para frecuencia = cambio tonal
+        const freqLfo = ctx.createOscillator();
+        freqLfo.type = 'sine'; freqLfo.frequency.value = 0.12;
+        const freqG = ctx.createGain();
+        freqG.gain.value = 200;
+        freqLfo.connect(freqG); freqG.connect(bp.frequency);
+        bp.connect(ambientGain);
+        src.start(); volLfo.start(); freqLfo.start();
+        ambientNodes.push(src, volLfo, freqLfo);
       }
-    } catch {}
+    } catch (e) { console.warn('Ambient sound error:', e); }
   }
 
   function stopAmbient() {
-    if (ambientNode) { try { ambientNode.stop(); } catch {} ambientNode = null; }
+    ambientNodes.forEach(n => { try { n.stop(); } catch {} });
+    ambientNodes = [];
     if (ambientGain) { ambientGain.disconnect(); ambientGain = null; }
+    if (ambientInterval) { clearInterval(ambientInterval); ambientInterval = null; }
   }
 
   // Estado

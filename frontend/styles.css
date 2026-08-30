@@ -1072,7 +1072,11 @@ body {
 .auth-backdrop.open ~ .calc-overlay,
 .auth-backdrop.open ~ #admin-bot-fab,
 .auth-backdrop.open ~ .admin-bot-panel,
-.auth-backdrop.open ~ .admin-bot-overlay {
+.auth-backdrop.open ~ .admin-bot-overlay,
+.auth-backdrop.open ~ #pomodoro-fab,
+.auth-backdrop.open ~ .pom-panel,
+.auth-backdrop.open ~ .pom-overlay,
+.auth-backdrop.open ~ #formulas-fab {
   display: none !important;
 }
 .auth-card {
@@ -2937,6 +2941,39 @@ body {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* === SUGGESTION CHIPS === */
+.suggestion-chips {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  flex-wrap: wrap;
+  animation: fadeIn 0.3s ease;
+}
+
+.suggestion-chip {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: var(--primary);
+  padding: 0.35rem 0.7rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.suggestion-chip:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .suggestion-chip {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.15);
+}
+
 
 
 

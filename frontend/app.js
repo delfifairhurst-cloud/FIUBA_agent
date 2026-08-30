@@ -5,35 +5,50 @@ let pendingChatImage = null; // { dataUrl, mimeType }
 
 // --- Theme ---
 function setTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('fiuba_theme', theme);
+  const actual = theme === 'auto' ? getAutoTheme() : theme;
+  document.documentElement.setAttribute('data-theme', actual);
   const darkBtn = document.getElementById('theme-dark-btn');
   const lightBtn = document.getElementById('theme-light-btn');
+  const autoBtn = document.getElementById('theme-auto-btn');
   if (darkBtn && lightBtn) {
-    if (theme === 'light') {
-      darkBtn.style.background = 'transparent'; darkBtn.style.color = 'var(--text-muted)';
-      lightBtn.style.background = 'var(--primary)'; lightBtn.style.color = 'white';
-    } else {
-      lightBtn.style.background = 'transparent'; lightBtn.style.color = 'var(--text-muted)';
-      darkBtn.style.background = 'var(--primary)'; darkBtn.style.color = 'white';
+    darkBtn.style.background = theme === 'dark' ? 'var(--primary)' : 'transparent';
+    darkBtn.style.color = theme === 'dark' ? 'white' : 'var(--text-muted)';
+    lightBtn.style.background = theme === 'light' ? 'var(--primary)' : 'transparent';
+    lightBtn.style.color = theme === 'light' ? 'white' : 'var(--text-muted)';
+    if (autoBtn) {
+      autoBtn.style.background = theme === 'auto' ? 'var(--primary)' : 'transparent';
+      autoBtn.style.color = theme === 'auto' ? 'white' : 'var(--text-muted)';
     }
   }
 }
 window.setTheme = setTheme;
 
+function getAutoTheme() {
+  const h = new Date().getHours();
+  return (h >= 20 || h < 7) ? 'dark' : 'light';
+}
+
 (function initTheme() {
   const saved = localStorage.getItem('fiuba_theme') || 'light';
-  document.documentElement.setAttribute('data-theme', saved);
+  if (saved === 'auto') {
+    document.documentElement.setAttribute('data-theme', getAutoTheme());
+  } else {
+    document.documentElement.setAttribute('data-theme', saved);
+  }
   setTimeout(() => {
     const darkBtn = document.getElementById('theme-dark-btn');
     const lightBtn = document.getElementById('theme-light-btn');
+    const autoBtn = document.getElementById('theme-auto-btn');
     if (darkBtn && lightBtn) {
-      if (saved === 'light') {
-        darkBtn.style.background = 'transparent'; darkBtn.style.color = 'var(--text-muted)';
-        lightBtn.style.background = 'var(--primary)'; lightBtn.style.color = 'white';
-      } else {
-        lightBtn.style.background = 'transparent'; lightBtn.style.color = 'var(--text-muted)';
-        darkBtn.style.background = 'var(--primary)'; darkBtn.style.color = 'white';
+      const active = saved;
+      darkBtn.style.background = active === 'dark' ? 'var(--primary)' : 'transparent';
+      darkBtn.style.color = active === 'dark' ? 'white' : 'var(--text-muted)';
+      lightBtn.style.background = active === 'light' ? 'var(--primary)' : 'transparent';
+      lightBtn.style.color = active === 'light' ? 'white' : 'var(--text-muted)';
+      if (autoBtn) {
+        autoBtn.style.background = active === 'auto' ? 'var(--primary)' : 'transparent';
+        autoBtn.style.color = active === 'auto' ? 'white' : 'var(--text-muted)';
       }
     }
   }, 100);
@@ -753,7 +768,17 @@ async function handleSend(event) {
         } else {
           chat.messages.push({ sender: 'agent', text: data.reply });
           saveChatsToStorage();
-          appendMessageDOM('agent', data.reply);
+          // Sugerencias de seguimiento
+          const sugList = [];
+          const lower = (data.reply || '').toLowerCase();
+          if (lower.includes('ejemplo') || lower.includes('paso')) sugList.push('¿Podés poner un ejemplo numérico?');
+          if (lower.includes('fórmula') || lower.includes('ecuación')) sugList.push('¿Cómo se deriva eso?');
+          if (lower.includes('concepto') || lower.includes('definición')) sugList.push('¿Para qué sirve en la práctica?');
+          if (sugList.length === 0) {
+            sugList.push('¿Podés explicar más simple?');
+            sugList.push('Dame un ejercicio parecido');
+          }
+          appendMessageDOM('agent', data.reply, null, { typing: true, suggestions: sugList.slice(0, 2) });
           // Gamificación: XP por mensaje
           if (window.Gamification) {
             window.Gamification.trackMessage();
@@ -782,8 +807,9 @@ async function handleSend(event) {
 }
 
 // Agregar burbuja solo a la UI
-function appendMessageDOM(sender, text, imageUrl = null) {
+function appendMessageDOM(sender, text, imageUrl = null, options = {}) {
   const history = document.getElementById('chat-history');
+  const { typing = false, suggestions = [] } = options;
 
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${sender}`;
@@ -801,30 +827,83 @@ function appendMessageDOM(sender, text, imageUrl = null) {
 
   let html = "";
   if (imageUrl) html += `<div class="chat-image-wrapper"><img src="${imageUrl}" class="chat-image" alt="Imagen del usuario"></div>`;
-  html += parseSimpleMarkdown(text || "");
-  if (sender === 'agent' && text && text.length < 800) {
-    const safe = text.replace(/`/g,'').replace(/'/g,"\\'").replace(/"/g,'&quot;').slice(0,300);
-    html += `<div style="margin-top:0.5rem"><button onclick="speakText('${safe}')" style="background:rgba(255,255,255,0.06);border:1px solid var(--border-color);border-radius:6px;padding:0.25rem 0.5rem;font-size:0.7rem;cursor:pointer;color:var(--text-muted)">🔊 Escuchar</button></div>`;
+
+  if (typing && sender === 'agent' && text) {
+    // Typing effect: escribir letra por letra
+    const fullHtml = parseSimpleMarkdown(text || "");
+    html += `<div class="typing-text"></div>`;
+    if (sender === 'agent' && text.length < 800) {
+      const safe = text.replace(/`/g,'').replace(/'/g,"\\'").replace(/"/g,'&quot;').slice(0,300);
+      html += `<div class="typing-speaker" style="display:none"><button onclick="speakText('${safe}')" style="background:rgba(255,255,255,0.06);border:1px solid var(--border-color);border-radius:6px;padding:0.25rem 0.5rem;font-size:0.7rem;cursor:pointer;color:var(--text-muted)">🔊 Escuchar</button></div>`;
+    }
+    content.innerHTML = html;
+
+    bubble.appendChild(avatar);
+    bubble.appendChild(content);
+    history.appendChild(bubble);
+    history.scrollTop = history.scrollHeight;
+
+    // Animación de escritura
+    const typingEl = content.querySelector('.typing-text');
+    const speakerEl = content.querySelector('.typing-speaker');
+    const plainText = text || '';
+    const charsPerTick = 3;
+    const tickMs = 15;
+    let idx = 0;
+
+    function typeTick() {
+      if (idx < plainText.length) {
+        idx = Math.min(idx + charsPerTick, plainText.length);
+        typingEl.innerHTML = parseSimpleMarkdown(plainText.slice(0, idx));
+        history.scrollTop = history.scrollHeight;
+        // Renderizar KaTeX parcial
+        if (window.renderMathInElement) {
+          try { window.renderMathInElement(typingEl, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false }); } catch {}
+        }
+        setTimeout(typeTick, tickMs);
+      } else {
+        // Terminó de escribir — mostrar speaker y sugerencias
+        if (speakerEl) speakerEl.style.display = '';
+        if (suggestions.length > 0) {
+          const sugDiv = document.createElement('div');
+          sugDiv.className = 'suggestion-chips';
+          sugDiv.innerHTML = suggestions.map(s =>
+            `<button class="suggestion-chip" onclick="document.getElementById('chat-input').value='${s.replace(/'/g,"\\'")}';document.getElementById('chat-input').focus()">${s}</button>`
+          ).join('');
+          content.appendChild(sugDiv);
+        }
+      }
+    }
+    typeTick();
+
+  } else {
+    // Sin efecto de escritura (mensajes del usuario o respuestas instantáneas)
+    html += parseSimpleMarkdown(text || "");
+    if (sender === 'agent' && text && text.length < 800) {
+      const safe = text.replace(/`/g,'').replace(/'/g,"\\'").replace(/"/g,'&quot;').slice(0,300);
+      html += `<div style="margin-top:0.5rem"><button onclick="speakText('${safe}')" style="background:rgba(255,255,255,0.06);border:1px solid var(--border-color);border-radius:6px;padding:0.25rem 0.5rem;font-size:0.7rem;cursor:pointer;color:var(--text-muted)">🔊 Escuchar</button></div>`;
+    }
+    content.innerHTML = html;
+
+    bubble.appendChild(avatar);
+    bubble.appendChild(content);
+    history.appendChild(bubble);
+    history.scrollTop = history.scrollHeight;
   }
-  content.innerHTML = html;
-
-  bubble.appendChild(avatar);
-  bubble.appendChild(content);
-
-  history.appendChild(bubble);
-  history.scrollTop = history.scrollHeight;
 
   // Renderizar matemáticas KaTeX
   if (window.renderMathInElement) {
-    window.renderMathInElement(content, {
-      delimiters: [
-        {left: '$$', right: '$$', display: true},
-        {left: '$', right: '$', display: false},
-        {left: '\\(', right: '\\)', display: false},
-        {left: '\\[', right: '\\]', display: true}
-      ],
-      throwOnError: false
-    });
+    try {
+      window.renderMathInElement(content, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false},
+          {left: '\\(', right: '\\)', display: false},
+          {left: '\\[', right: '\\]', display: true}
+        ],
+        throwOnError: false
+      });
+    } catch {}
   }
 }
 
