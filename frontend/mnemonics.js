@@ -45,7 +45,8 @@ Sé creativo y gracioso, que se quede en la cabeza.`;
 
     try {
       const userApiKey = (typeof window.getUserGeminiKey === 'function' ? window.getUserGeminiKey() : '');
-      const response = await fetch(window.getApiBase ? window.getApiBase() : 'http://localhost:3000', {
+      const backendUrl = (typeof window.getBackendUrl === 'function' ? window.getBackendUrl() : 'http://localhost:3000/api/chat');
+      const response = await fetch(backendUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

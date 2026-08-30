@@ -3113,6 +3113,215 @@ body {
   30% { transform: translateY(-6px); opacity: 1; }
 }
 
+/* === EXAM GENERATOR === */
+.examgen-modal {
+  position: fixed; inset: 0; z-index: 10002;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.examgen-modal.open { opacity: 1; pointer-events: auto; }
+
+.examgen-panel {
+  width: 90%; max-width: 550px; max-height: 85vh;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.examgen-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 1.2rem; border-bottom: 1px solid var(--border-color);
+}
+
+.examgen-header h3 { font-size: 1.05rem; color: var(--text-primary); }
+
+.examgen-close {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; padding: 0.3rem; border-radius: 6px;
+}
+.examgen-close:hover { background: var(--bg-surface); }
+
+.examgen-body { padding: 1.2rem; text-align: center; overflow-y: auto; flex: 1; }
+
+.examgen-emoji { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+.examgen-input {
+  width: 100%; padding: 0.7rem 1rem; border-radius: 10px;
+  border: 1px solid var(--border-color); background: var(--bg-surface);
+  color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.6rem;
+  outline: none; box-sizing: border-box;
+}
+.examgen-input:focus { border-color: var(--primary); }
+
+.examgen-row { display: flex; gap: 0.5rem; margin-bottom: 0.8rem; }
+
+.examgen-select {
+  flex: 1; padding: 0.5rem; border-radius: 8px;
+  border: 1px solid var(--border-color); background: var(--bg-surface);
+  color: var(--text-primary); font-size: 0.85rem; cursor: pointer;
+}
+
+.examgen-btn {
+  width: 100%; padding: 0.7rem; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: white; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.examgen-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(6,182,212,0.3); }
+
+.examgen-result { margin-top: 1rem; text-align: left; }
+
+.examgen-loading {
+  display: flex; align-items: center; gap: 0.5rem;
+  justify-content: center; color: var(--text-muted); padding: 1.5rem;
+}
+
+.examgen-error { color: var(--danger); text-align: center; padding: 1rem; }
+
+.examgen-exam h4 { font-size: 1rem; }
+
+.examgen-q {
+  background: var(--bg-surface); border: 1px solid var(--border-color);
+  border-radius: 10px; padding: 0.8rem; margin-bottom: 0.6rem;
+}
+
+.examgen-q-num {
+  display: inline-block; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--primary); color: white; font-size: 0.75rem;
+  font-weight: 700; text-align: center; line-height: 24px;
+  margin-bottom: 0.3rem;
+}
+
+.examgen-q-text { font-size: 0.88rem; color: var(--text-primary); margin-bottom: 0.5rem; }
+
+.examgen-options { display: flex; flex-direction: column; gap: 0.3rem; }
+
+.examgen-opt {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.82rem;
+  cursor: pointer; border: 1px solid var(--border-color);
+  transition: all 0.15s; color: var(--text-secondary);
+}
+
+.examgen-opt:hover { border-color: var(--primary); background: rgba(59,130,246,0.05); }
+.examgen-opt.selected { border-color: var(--primary); background: rgba(59,130,246,0.1); }
+
+.examgen-opt-letter {
+  font-weight: 700; color: var(--primary); min-width: 18px;
+}
+
+.examgen-open textarea {
+  width: 100%; padding: 0.5rem; border-radius: 6px;
+  border: 1px solid var(--border-color); background: var(--bg-card);
+  color: var(--text-primary); font-size: 0.82rem; resize: vertical;
+  font-family: inherit;
+}
+
+.examgen-show-btn {
+  margin-top: 0.4rem; padding: 0.3rem 0.6rem; border-radius: 6px;
+  border: 1px solid var(--border-color); background: var(--bg-card);
+  color: var(--text-muted); font-size: 0.75rem; cursor: pointer;
+}
+.examgen-show-btn:hover { color: var(--primary); border-color: var(--primary); }
+
+.examgen-answer {
+  margin-top: 0.4rem; padding: 0.5rem; border-radius: 6px;
+  background: rgba(34,197,94,0.05); font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+/* === STEP CALCULATOR === */
+.stepcalc-modal {
+  position: fixed; inset: 0; z-index: 10002;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.stepcalc-modal.open { opacity: 1; pointer-events: auto; }
+
+.stepcalc-panel {
+  width: 90%; max-width: 500px; max-height: 80vh;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.stepcalc-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 1.2rem; border-bottom: 1px solid var(--border-color);
+}
+
+.stepcalc-header h3 { font-size: 1.05rem; color: var(--text-primary); }
+
+.stepcalc-close {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; padding: 0.3rem; border-radius: 6px;
+}
+.stepcalc-close:hover { background: var(--bg-surface); }
+
+.stepcalc-body { padding: 1.2rem; text-align: center; overflow-y: auto; flex: 1; }
+
+.stepcalc-examples {
+  display: flex; gap: 0.3rem; justify-content: center;
+  flex-wrap: wrap; margin-bottom: 0.8rem;
+}
+
+.stepcalc-ex {
+  padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.72rem;
+  background: var(--bg-surface); border: 1px solid var(--border-color);
+  cursor: pointer; color: var(--text-muted); transition: all 0.15s;
+}
+.stepcalc-ex:hover { border-color: var(--primary); color: var(--primary); }
+
+.stepcalc-input {
+  width: 100%; padding: 0.7rem 1rem; border-radius: 10px;
+  border: 1px solid var(--border-color); background: var(--bg-surface);
+  color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.8rem;
+  outline: none; box-sizing: border-box;
+}
+.stepcalc-input:focus { border-color: var(--primary); }
+
+.stepcalc-btn {
+  width: 100%; padding: 0.7rem; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.stepcalc-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(16,185,129,0.3); }
+
+.stepcalc-result { margin-top: 1rem; text-align: left; }
+
+.stepcalc-loading {
+  display: flex; align-items: center; gap: 0.5rem;
+  justify-content: center; color: var(--text-muted); padding: 1rem;
+}
+
+.stepcalc-error { color: var(--danger); text-align: center; padding: 1rem; }
+
+.stepcalc-steps { display: flex; flex-direction: column; gap: 0.4rem; }
+
+.stepcalc-start {
+  font-size: 0.88rem; color: var(--text-primary); font-weight: 600;
+  padding: 0.4rem 0.6rem; background: var(--bg-surface);
+  border-radius: 6px;
+}
+
+.stepcalc-step {
+  font-size: 0.85rem; color: var(--text-secondary);
+  padding: 0.4rem 0.6rem; padding-left: 1.2rem;
+  border-left: 2px solid var(--border-color);
+}
+
+.stepcalc-result-step {
+  font-size: 0.95rem; font-weight: 700; color: #10b981;
+  padding: 0.5rem 0.6rem; background: rgba(16,185,129,0.08);
+  border-radius: 6px; margin-top: 0.3rem;
+}
+
+.stepcalc-ai-result {
+  font-size: 0.88rem; color: var(--text-secondary);
+  line-height: 1.6;
+}
+
 
 
 
