@@ -1045,6 +1045,16 @@ body {
   opacity: 1;
   pointer-events: auto;
 }
+
+/* Hide FABs when not logged in */
+.auth-backdrop.open ~ #calc-fab,
+.auth-backdrop.open ~ .calc-panel,
+.auth-backdrop.open ~ .calc-overlay,
+.auth-backdrop.open ~ #admin-bot-fab,
+.auth-backdrop.open ~ .admin-bot-panel,
+.auth-backdrop.open ~ .admin-bot-overlay {
+  display: none !important;
+}
 .auth-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
