@@ -22,6 +22,7 @@
   function playTone(freq, duration, type = 'sine', volume = 0.15) {
     try {
       const ctx = getAudioCtx();
+      if (ctx.state === 'suspended') ctx.resume();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = type;
@@ -61,6 +62,7 @@
     stopAmbient();
     try {
       const ctx = getAudioCtx();
+      if (ctx.state === 'suspended') ctx.resume();
       ambientGain = ctx.createGain();
       ambientGain.gain.value = 0.04;
       ambientGain.connect(ctx.destination);
@@ -167,8 +169,8 @@
 
   // Render
   function render() {
-    const container = document.getElementById('pomodoro-container');
-    if (!container) return;
+    const container = document.getElementById('pomodoro-panel');
+    if (!container || !container.classList.contains('open')) return;
 
     const pct = state.totalTime > 0 ? ((state.totalTime - state.timeLeft) / state.totalTime) * 100 : 0;
     const progress = document.getElementById('pomodoro-progress-circle');

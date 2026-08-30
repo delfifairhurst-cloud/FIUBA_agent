@@ -18,7 +18,7 @@
       { name: 'L\'Hopital', formula: 'lim f/g = lim f\'/g\'', desc: 'Si el límite da 0/0 o ∞/∞' },
     ],
     'Física': [
-      { name: 'Movimiento uniformly', formula: 'x = x₀ + v₀t + ½at²', desc: 'Posición en MRUA' },
+      { name: 'Movimiento uniforme', formula: 'x = x₀ + v₀t + ½at²', desc: 'Posición en MRUA' },
       { name: 'Energía cinética', formula: 'Ec = ½mv²', desc: 'Energía de movimiento' },
       { name: 'Trabajo', formula: 'W = F·d·cos(θ)', desc: 'Trabajo de una fuerza' },
       { name: 'Ohm', formula: 'V = IR', desc: 'Ley de Ohm: voltaje, corriente, resistencia' },
