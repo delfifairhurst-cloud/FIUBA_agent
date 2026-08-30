@@ -5,7 +5,24 @@ function showError(msg) {
   const el = document.getElementById("auth-error");
   if (el) el.textContent = msg;
 }
+function showRegError(msg) {
+  const el = document.getElementById("reg-error");
+  if (el) el.textContent = msg;
+}
 function clearError() { showError(""); }
+function clearRegError() { showRegError(""); }
+
+window.showRegisterPage = () => {
+  document.getElementById("login-page").style.display = "none";
+  document.getElementById("register-page").style.display = "block";
+  clearRegError();
+};
+
+window.showLoginPage = () => {
+  document.getElementById("register-page").style.display = "none";
+  document.getElementById("login-page").style.display = "block";
+  clearError();
+};
 
 window.handleLogin = async () => {
   const email = document.getElementById("auth-email")?.value.trim();
@@ -24,18 +41,20 @@ window.handleLogin = async () => {
 };
 
 window.handleRegister = async () => {
-  const email = document.getElementById("auth-email")?.value.trim();
-  const pass = document.getElementById("auth-password")?.value;
-  if (!email || !pass) { showError("Completá email y contraseña"); return; }
-  if (pass.length < 6) { showError("La contraseña debe tener al menos 6 caracteres"); return; }
-  clearError();
+  const emailEl = document.getElementById("reg-email") || document.getElementById("auth-email");
+  const passEl = document.getElementById("reg-password") || document.getElementById("auth-password");
+  const email = emailEl?.value.trim();
+  const pass = passEl?.value;
+  if (!email || !pass) { showRegError("Completá email y contraseña"); return; }
+  if (pass.length < 6) { showRegError("La contraseña debe tener al menos 6 caracteres"); return; }
+  clearRegError();
   try {
     await registerEmail(email, pass);
   } catch (e) {
     console.error(e);
-    if (e.code?.includes("email-already-in-use")) showError("Ese email ya está registrado. Probá ingresar.");
-    else if (e.code?.includes("invalid-email")) showError("Email inválido");
-    else showError(e.message);
+    if (e.code?.includes("email-already-in-use")) showRegError("Ese email ya está registrado. Probá ingresar.");
+    else if (e.code?.includes("invalid-email")) showRegError("Email inválido");
+    else showRegError(e.message);
   }
 };
 

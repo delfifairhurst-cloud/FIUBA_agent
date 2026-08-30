@@ -66,6 +66,18 @@
 </head>
 <body>
 
+  <!-- Splash Screen -->
+  <div class="splash-screen" id="splash-screen">
+    <div class="splash-content">
+      <img src="icon-192.png" alt="" class="splash-logo">
+      <h1 class="splash-title">FIUBA Agent</h1>
+      <p class="splash-subtitle">Tu asistente académico</p>
+      <div class="splash-loader">
+        <div class="splash-bar"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="app-layout">
     
     <!-- Overlay para cerrar drawer en móvil -->
@@ -75,7 +87,7 @@
     <aside class="sidebar" id="sidebar">
       <div class="brand">
         <div class="brand-logo">
-          <img src="icon-192.png" alt="FIUBA Agent" style="width:32px;height:32px;border-radius:8px">
+          <img src="icon-192.png" alt="FIUBA Agent" style="width:48px;height:48px;border-radius:12px">
         </div>
         <div class="brand-text">
           <h2>FIUBA Agent</h2>
@@ -142,22 +154,6 @@
           </div>
         </div>
 
-        <!-- Mi Progreso - Memoria Académica v1 -->
-        <div class="nav-group progress-section">
-          <div class="group-title-row">
-            <label class="group-title">Mi Progreso</label>
-            <span class="badge-active-materials" id="attempts-count">0 intentos</span>
-          </div>
-          <div class="progress-card" id="progress-card">
-            <div id="auth-status" class="auth-status">Conectando...</div>
-            <button class="btn-upload" onclick="openAttemptModal()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-              Registrar intento
-            </button>
-            <div id="recent-attempts" class="recent-attempts"></div>
-          </div>
-        </div>
-
         <!-- Evaluaciones - Parciales del Altillo -->
         <div class="nav-group evaluations-section">
           <div class="group-title-row">
@@ -174,46 +170,25 @@
           </div>
         </div>
 
-        <!-- Biblioteca Organizada -->
-        <div class="nav-group library-section">
-          <div class="group-title-row">
-            <label class="group-title">Biblioteca</label>
-            <span class="badge-active-materials" id="library-count">0</span>
-          </div>
-          <div class="progress-card" style="gap:0.5rem">
-            <button class="btn-upload" onclick="openLibraryModal()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              Organizar material
-            </button>
-            <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
-              <input id="altillo-url" class="form-control" style="flex:1;font-size:0.75rem" placeholder="https://www.altillo.com/examenes/uba/..." value="https://www.altillo.com/examenes/uba/ubaxxi/pensamientocomputacional/index.asp">
-              <button class="btn-secondary" onclick="importAltillo()" style="padding:0.4rem 0.6rem;font-size:0.75rem">Importar</button>
-            </div>
-            <div id="altillo-preview" style="font-size:0.72rem;color:var(--text-muted);max-height:120px;overflow-y:auto"></div>
-            <div id="library-list" class="recent-attempts"></div>
-          </div>
-        </div>
-
         <!-- Área de Materiales Académicos -->
         <div class="nav-group materials-section">
           <div class="group-title-row">
-            <label class="group-title">Materiales Académicos</label>
+            <label class="group-title">Materiales</label>
             <span class="badge-active-materials" id="materials-count-badge">0 PDFs</span>
           </div>
           
           <div class="materials-card" id="materials-card">
             <div class="materials-icon">📄</div>
-            <p id="materials-text">Subí parciales de <strong>Altillo.com</strong>, guías de ejercicios o apuntes en PDF.</p>
+            <p id="materials-text" style="font-size:0.78rem">Subí parciales, guías o apuntes en PDF para que la IA los tenga en cuenta al responder.</p>
             <input type="file" id="pdf-file-input" accept=".pdf,.txt" style="display: none;" onchange="handleFileUpload(event)">
             <button class="btn-upload" onclick="document.getElementById('pdf-file-input').click()">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
               </svg>
-              Subir Documento PDF
+              Subir PDF
             </button>
           </div>
 
-          <!-- Lista de documentos cargados -->
           <div class="loaded-files-list" id="loaded-files-list">
             <!-- Renderizado dinámicamente -->
           </div>
@@ -252,7 +227,14 @@
             <span>🔢 Pasos</span>
           </button>
         </div>
-        <div style="font-size:0.65rem;color:var(--text-muted);text-align:center;margin-top:0.4rem;opacity:0.6">
+        <div class="sidebar-delf-footer">
+          <span>by Delf</span>
+          <button class="donate-btn-sidebar" onclick="switchView('contacto')" title="Donar">☕ Donar</button>
+        </div>
+        <div class="sidebar-credits">
+          <button class="sidebar-credits-btn" onclick="switchView('enlaces')" title="Ver créditos">Créditos y attribution</button>
+        </div>
+        <div style="font-size:0.6rem;color:var(--text-muted);text-align:center;margin-top:0.2rem;opacity:0.5">
           Ctrl+N nuevo chat · Ctrl+P pomodoro · Ctrl+F fórmulas
         </div>
       </div>
@@ -336,7 +318,7 @@
         <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
           <h2 style="font-family:var(--font-heading);margin-bottom:0.4rem;font-size:1.15rem;color:var(--text-primary)">Materias</h2>
           <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1rem">Elegí una carrera para ver sus materias con links a parciales del Altillo.</p>
-          <div id="materias-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.7rem"></div>
+          <div id="materias-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.7rem"></div>
           <div id="materia-detail" class="hidden" style="margin-top:1.5rem;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
               <h3 id="materia-detail-title" style="font-family:var(--font-heading);font-size:1rem"></h3>
@@ -357,18 +339,205 @@
             <a href="https://www.fi.uba.ar" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">FIUBA</span><p>Facultad de Ingeniería</p></a>
             <a href="https://www.cbc.uba.ar" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">CBC</span><p>Ciclo Básico Común</p></a>
             <a href="https://campus.fi.uba.ar" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Campus</span><p>Campus Virtual FIUBA</p></a>
-            <a href="https://guaraniautogestion.fi.uba.ar/g3w/acceso" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">SIU Guaraní</span><p>Inscripciones y notas</p></a>
+            <a href="https://guaraniautogestion.fi.uba.ar/g3w/acceso" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Guaraní</span><p>Inscripciones y notas</p></a>
             <a href="https://calendar.google.com" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Calendar</span><p>Google Calendar</p></a>
-            <a href="https://www.instagram.com/uba_ar" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Instagram</span><p>@uba_ar</p></a>
-            <a href="https://www.instagram.com/ingenieriauba" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Instagram</span><p>@ingenieriauba</p></a>
-            <a href="https://drive.google.com" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Drive</span><p>Google Drive</p></a>
-            <a href="https://mail.google.com" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Gmail</span><p>Correo electrónico</p></a>
             <a href="https://www.altillo.com" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Altillo</span><p>Parciales y finales</p></a>
+            <a href="https://drive.google.com" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Drive</span><p>Google Drive</p></a>
+          </div>
+
+          <!-- Recursos -->
+          <h3 style="font-family:var(--font-heading);margin:1.5rem 0 0.4rem;font-size:1rem;color:var(--text-primary)">Recursos para estudiar</h3>
+          <p style="color:var(--text-muted);font-size:0.78rem;margin-bottom:0.8rem">Material de estudio, comunidades y herramientas recopiladas por la comunidad FIUBA.</p>
+
+          <div class="recursos-accordion">
+
+            <!-- Parciales y guías -->
+            <div class="recurso-group">
+              <button class="recurso-header" onclick="this.parentElement.classList.toggle('open')">
+                <div class="recurso-header-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span>Parciales y guías resueltas</span>
+                </div>
+                <svg class="recurso-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="recurso-body">
+                <a href="https://comunidad-fiuba.github.io/" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Comunidad FIUBA</span>
+                  <span class="recurso-link-desc">Parciales resueltos, resúmenes y material de Analisis 2, Algebra 2, Fisica 1/2 y más</span>
+                </a>
+                <a href="https://sites.google.com/prod/view/skfiuba" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">SK FIUBA</span>
+                  <span class="recurso-link-desc">Plataforma digital creada por alumnos con material de estudio compartido</span>
+                </a>
+                <a href="https://filadd.com" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Filadd</span>
+                  <span class="recurso-link-desc">Parciales, finales y evaluaciones con respuestas en video</span>
+                </a>
+                <a href="http://fiuba-apuntes.github.io/" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">FIUBA Apuntes</span>
+                  <span class="recurso-link-desc">Apuntes colaborativos + Wiki FIUBA con resúmenes y transcripciones</span>
+                </a>
+                <a href="https://www.youtube.com/@lapizarraonline/playlists" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">La Pizarra Online</span>
+                  <span class="recurso-link-desc">Videos de teoría, guías resueltas y parciales de matemática y física</span>
+                </a>
+                <a href="https://www.altillo.com/examenes/uba/ingenieria/index.asp" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Altillo Ingeniería</span>
+                  <span class="recurso-link-desc">Parciales y finales de carreras de ingeniería UBA</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Repositorios -->
+            <div class="recurso-group">
+              <button class="recurso-header" onclick="this.parentElement.classList.toggle('open')">
+                <div class="recurso-header-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  <span>Repositorios de material</span>
+                </div>
+                <svg class="recurso-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="recurso-body">
+                <a href="https://fede.dm/FIUBA-Repos/" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">FIUBA Repos</span>
+                  <span class="recurso-link-desc">Repositorios de TPs organizados por materia, contribuí con el tuyo</span>
+                </a>
+                <a href="https://drive.google.com/drive/folders/1e3ys7a1daQDVmQm3QTB6R5w8SyYxGtVj" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">UBA Unidos</span>
+                  <span class="recurso-link-desc">Material de UBAXXI compartido en Google Drive</span>
+                </a>
+                <a href="https://linktr.ee/espacioestudiantilfiuba" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Espacio Estudiantil Drive</span>
+                  <span class="recurso-link-desc">Material del CBC y Ingeniería organizado por comisiones en Drive</span>
+                </a>
+                <a href="https://www.apuntescbcoficial.com.ar/" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Apuntes CBC Oficial</span>
+                  <span class="recurso-link-desc">Apuntes oficiales del Ciclo Básico Común</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Comunidades y grupos -->
+            <div class="recurso-group">
+              <button class="recurso-header" onclick="this.parentElement.classList.toggle('open')">
+                <div class="recurso-header-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>Comunidades y grupos</span>
+                </div>
+                <svg class="recurso-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="recurso-body">
+                <a href="https://somoslibresuba.com/FIUBA/grupos" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Grupos WhatsApp FIUBA</span>
+                  <span class="recurso-link-desc">Grupos por comisión y materia, acceso en un click</span>
+                </a>
+                <a href="https://linktr.ee/mli.fiuba" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">MLI FIUBA</span>
+                  <span class="recurso-link-desc">Grupos por carrera, Guía del Estudiante 2026, Planes de Estudio, Discord Álgebra II</span>
+                </a>
+                <a href="https://linktr.ee/espacioestudiantilfiuba" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Espacio Estudiantil</span>
+                  <span class="recurso-link-desc">Drive por comisiones, grupos, clases de repaso, material de estudio</span>
+                </a>
+                <a href="https://linktr.ee/interconectados" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">InterConectados</span>
+                  <span class="recurso-link-desc">Grupos de WhatsApp para CBC y UBAXXI</span>
+                </a>
+                <a href="https://fiubaverse.github.io" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">FIUBAVerse</span>
+                  <span class="recurso-link-desc">Grupos de estudio en Telegram por materia</span>
+                </a>
+                <a href="https://discord.gg/bSQ4uxj8sz" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Discord MLI</span>
+                  <span class="recurso-link-desc">Servidor de Discord para Maskos Lab e Informática</span>
+                </a>
+                <a href="https://t.me/UBAXXI" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Telegram UBA</span>
+                  <span class="recurso-link-desc">Grupo general de Telegram relacionado con la UBA</span>
+                </a>
+                <a href="https://www.reddit.com/r/UBA/" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">r/UBA</span>
+                  <span class="recurso-link-desc">Subreddit de la Universidad de Buenos Aires</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Herramientas y calculadoras -->
+            <div class="recurso-group">
+              <button class="recurso-header" onclick="this.parentElement.classList.toggle('open')">
+                <div class="recurso-header-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/></svg>
+                  <span>Herramientas y calculadoras</span>
+                </div>
+                <svg class="recurso-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="recurso-body">
+                <a href="https://ubaos.notion.site/FIUBA-Tools-631c0ff26d93469aa940869fc80fd571" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">FIUBA Tools (Notion)</span>
+                  <span class="recurso-link-desc">WolframAlpha, MatrixCalc, GeoGebra, SymboLab y más</span>
+                </a>
+                <a href="https://es.wolframalpha.com" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Wolfram Alpha</span>
+                  <span class="recurso-link-desc">Motor de cálculo matemático paso a paso</span>
+                </a>
+                <a href="https://www.geogebra.org/calculator" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">GeoGebra</span>
+                  <span class="recurso-link-desc">Calculadora gráfica y herramienta de geometría</span>
+                </a>
+                <a href="https://fede.dm/FIUBA-Map/" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">FIUBA Map</span>
+                  <span class="recurso-link-desc">Mapa visual de la carrera para planificar tu recorrido</span>
+                </a>
+                <a href="https://fede.dm/FIUBA-Plan/" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">FIUBA Plan</span>
+                  <span class="recurso-link-desc">Plan de estudios interactivo</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Organización y planificación -->
+            <div class="recurso-group">
+              <button class="recurso-header" onclick="this.parentElement.classList.toggle('open')">
+                <div class="recurso-header-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Organización y planificación</span>
+                </div>
+                <svg class="recurso-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="recurso-body">
+                <a href="https://fede.dm/FIUBA-Map" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">FIUBA Map</span>
+                  <span class="recurso-link-desc">Mapa visual de la carrera para planificar tu recorrido</span>
+                </a>
+                <a href="https://fede.dm/FIUBA-Plan/" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">FIUBA Plan</span>
+                  <span class="recurso-link-desc">Plan de estudios interactivo</span>
+                </a>
+                <a href="https://fiuba-reviews.com" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">FIUBA Reviews</span>
+                  <span class="recurso-link-desc">Reseñas de profesores y cátedras por alumnos</span>
+                </a>
+                <a href="https://linktr.ee/mli.fiuba" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Guía del Estudiante 2026</span>
+                  <span class="recurso-link-desc">Guía completa de MLI con trámites, fechas y info útil</span>
+                </a>
+                <a href="https://bolsadetrabajo.fi.uba.ar/" target="_blank" class="recurso-link">
+                  <span class="recurso-link-title">Bolsa de Trabajo FIUBA</span>
+                  <span class="recurso-link-desc">Ofertas laborales para estudiantes y egresados de Ingeniería</span>
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="recursos-disclaimer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Los recursos enlazados pertenecen a sus respectivos autores y comunidades (Comunidad FIUBA, SK FIUBA, Filadd, La Pizarra Online, FIUBA Repos, MLI FIUBA, Espacio Estudiantil, FIUBAVerse, FIUBA Tools, entre otros). FIUBA Agent no se responsabiliza por su contenido ni disponibilidad. Si sos autor de algún material y querés que sea removido, contactanos.</span>
           </div>
         </div>
       </div>
 
-      <!-- Vista Biblioteca (privada por usuario, carpetas por materia) -->
+      <!-- Vista Biblioteca -->
       <div id="biblioteca-view" class="view-panel hidden">
         <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
@@ -510,10 +679,18 @@
             <a href="mailto:delfi.fairhurst@gmail.com" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Email</span><p>delfi.fairhurst@gmail.com</p></a>
             <a href="https://www.linkedin.com/search/results/all/?keywords=Delfina%20Fairhurst%20Guzian" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">LinkedIn</span><p>Delfina Fairhurst Guzian</p></a>
           </div>
+          <div style="margin-top:1.5rem;padding:1rem;background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(59,130,246,0.08));border:1px solid rgba(139,92,246,0.2);border-radius:12px;text-align:center">
+            <div style="font-size:1.5rem;margin-bottom:0.3rem">☕</div>
+            <h4 style="font-size:0.9rem;color:var(--text-primary);margin-bottom:0.3rem">¿Te sirvió FIUBA Agent?</h4>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.6rem">Si te ayudó a estudiar, considerá hacerme una donación para mantener el proyecto vivo.</p>
+            <div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:0.5rem 1rem;display:inline-flex">
+              <span style="font-size:0.75rem;color:var(--text-muted)">Alias Mercado Pago:</span>
+              <span style="font-weight:700;color:#009ee3;font-size:0.95rem">delfi.2007</span>
+              <button onclick="navigator.clipboard.writeText('delfi.2007');this.textContent='Copiado';setTimeout(()=>this.textContent='Copiar',1500)" style="background:var(--primary);color:white;border:none;border-radius:6px;padding:0.25rem 0.6rem;font-size:0.72rem;cursor:pointer;font-weight:600">Copiar</button>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- Vista Comunidad -->
       <div id="comunidad-view" class="view-panel hidden">
         <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
           <h2 style="font-family:var(--font-heading);font-size:1.35rem;color:var(--text-primary);margin-bottom:0.25rem">Comunidad</h2>
@@ -742,30 +919,115 @@
     </div>
   </div>
 
-  <!-- Auth Overlay - Login con Email/Contraseña -->
+  <!-- Landing + Auth -->
   <div class="auth-backdrop" id="auth-overlay">
-    <div class="auth-card">
+    <!-- Landing Page -->
+    <div class="landing-page" id="landing-page">
+      <div class="landing-hero">
+        <div class="landing-logo-wrap">
+          <img src="icon-192.png" alt="FIUBA Agent" class="landing-logo">
+        </div>
+        <h1 class="landing-title">FIUBA Agent</h1>
+        <p class="landing-subtitle">Tu espacio inteligente para estudiar ingeniería.</p>
+
+        <div class="landing-features">
+          <div class="landing-feature">
+            <div class="landing-feature-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="16" y2="7"/><line x1="9" y1="11" x2="14" y2="11"/></svg>
+            </div>
+            <span>Organizá tus materias</span>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16.01"/><line x1="16" y1="16" x2="16" y2="16.01"/></svg>
+            </div>
+            <span>Estudiá con asistencia de IA</span>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </div>
+            <span>Creá evaluaciones desde tu material</span>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 3-2 5.5-4 7.5L12 19l-3-2.5C7 14.5 5 12 5 9a7 7 0 0 1 7-7z"/><path d="M9 13h6"/><path d="M12 10v6"/></svg>
+            </div>
+            <span>Seguimiento personalizado</span>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M8 4v4"/><path d="M12 4v4"/><path d="M16 4v4"/></svg>
+            </div>
+            <span>Flashcards para repasar</span>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <span>Timer Pomodoro</span>
+          </div>
+        </div>
+
+        <button class="landing-cta" onclick="showLogin()">
+          Comenzar gratis
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <p class="landing-note">Gratis para estudiantes de FIUBA</p>
+      </div>
+    </div>
+
+    <!-- Login Page -->
+    <div class="auth-card" id="login-page">
+      <button class="landing-back" onclick="showLanding()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Volver
+      </button>
       <div class="brand" style="justify-content:center;margin-bottom:1rem">
         <div class="brand-logo">
-          <img src="icon-192.png" alt="FIUBA Agent" style="width:32px;height:32px;border-radius:8px">
+          <img src="icon-192.png" alt="FIUBA Agent" style="width:48px;height:48px;border-radius:12px">
         </div>
         <div class="brand-text"><h2>FIUBA Agent</h2></div>
       </div>
-      <h3 style="text-align:center;font-family:var(--font-heading);margin-bottom:0.25rem">Ingresá a tu cuenta</h3>
-      <p style="text-align:center;color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem">Solo vos ves tu progreso. Gratis y privado.</p>
+      <h3 style="text-align:center;font-family:var(--font-heading);margin-bottom:0.25rem">Bienvenido</h3>
+      <p style="text-align:center;color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem">Ingresá o creá tu cuenta para guardar tu progreso.</p>
       <div class="form-group"><label>Email</label><input id="auth-email" type="email" class="form-control" placeholder="tu@fi.uba.ar"></div>
       <div class="form-group"><label>Contraseña</label><input id="auth-password" type="password" class="form-control" placeholder="•••••••• (mín 6)"></div>
       <div id="auth-error" style="color:var(--danger);font-size:0.82rem;min-height:1.2rem;text-align:center;margin-bottom:0.5rem"></div>
       <button class="btn-new-chat" onclick="handleLogin()" style="margin-bottom:0.5rem">Ingresar</button>
-      <button class="btn-secondary" onclick="handleRegister()" style="width:100%;justify-content:center">Crear cuenta</button>
+      <div style="text-align:center;margin-bottom:0.75rem;font-size:0.78rem;color:var(--text-muted)">¿No tenés cuenta? <button onclick="showRegisterPage()" style="background:none;border:none;color:var(--accent-purple);font-size:0.78rem;cursor:pointer;font-weight:600;text-decoration:underline;font-family:inherit">Creá una acá</button></div>
       <div style="display:flex;align-items:center;gap:0.5rem;margin:0.75rem 0;color:var(--text-muted);font-size:0.75rem"><span style="flex:1;height:1px;background:var(--border-color)"></span>o<span style="flex:1;height:1px;background:var(--border-color)"></span></div>
       <button class="btn-secondary" onclick="handleGoogleLogin()" style="width:100%;justify-content:center;background:white;color:#333;border:1px solid #dadce0;gap:0.5rem"><svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Continuar con Google</button>
       <button onclick="handleResetPassword()" style="background:none;border:none;color:var(--text-muted);font-size:0.8rem;cursor:pointer;width:100%;margin-top:0.75rem;text-decoration:underline">¿Olvidaste tu contraseña?</button>
       <p style="font-size:0.7rem;color:var(--text-muted);text-align:center;margin-top:1rem">Al crear cuenta aceptás que guardemos tus intentos de forma privada para personalizar tu aprendizaje.</p>
     </div>
-  </div>
+    </div>
 
-  <!-- Modal Crear Evaluación -->
+    <!-- Register Page -->
+    <div class="auth-card" id="register-page" style="display:none">
+      <button class="landing-back" onclick="showLoginPage()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Volver
+      </button>
+      <div class="brand" style="justify-content:center;margin-bottom:1rem">
+        <div class="brand-logo">
+          <img src="icon-192.png" alt="FIUBA Agent" style="width:48px;height:48px;border-radius:12px">
+        </div>
+        <div class="brand-text"><h2>FIUBA Agent</h2></div>
+      </div>
+      <h3 style="text-align:center;font-family:var(--font-heading);margin-bottom:0.25rem">Crear cuenta</h3>
+      <p style="text-align:center;color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem">Registrate para guardar tu progreso y chats.</p>
+      <div class="form-group"><label>Email</label><input id="reg-email" type="email" class="form-control" placeholder="tu@fi.uba.ar"></div>
+      <div class="form-group"><label>Contraseña</label><input id="reg-password" type="password" class="form-control" placeholder="•••••••• (mín 6)"></div>
+      <div id="reg-error" style="color:var(--danger);font-size:0.82rem;min-height:1.2rem;text-align:center;margin-bottom:0.5rem"></div>
+      <button class="btn-new-chat" onclick="handleRegister()" style="margin-bottom:0.5rem">Crear cuenta</button>
+      <div style="text-align:center;margin-bottom:0.75rem;font-size:0.78rem;color:var(--text-muted)">¿Ya tenés cuenta? <button onclick="showLoginPage()" style="background:none;border:none;color:var(--accent-purple);font-size:0.78rem;cursor:pointer;font-weight:600;text-decoration:underline;font-family:inherit">Ingresá acá</button></div>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin:0.75rem 0;color:var(--text-muted);font-size:0.75rem"><span style="flex:1;height:1px;background:var(--border-color)"></span>o<span style="flex:1;height:1px;background:var(--border-color)"></span></div>
+      <button class="btn-secondary" onclick="handleGoogleLogin()" style="width:100%;justify-content:center;background:white;color:#333;border:1px solid #dadce0;gap:0.5rem"><svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Continuar con Google</button>
+      <p style="font-size:0.7rem;color:var(--text-muted);text-align:center;margin-top:1rem">Al crear cuenta aceptás que guardemos tus intentos de forma privada para personalizar tu aprendizaje.</p>
+    </div>
+
+    <!-- Modal Crear Evaluación -->
   <div class="modal-backdrop" id="create-eval-modal" onclick="if(event.target===this) closeCreateEvalModal()">
     <div class="modal-dialog" style="max-width:640px">
       <div class="modal-header"><h3>📝 Nueva evaluación</h3><button class="btn-close-modal" onclick="closeCreateEvalModal()">✕</button></div>
@@ -822,6 +1084,31 @@
   <!-- Step Calculator modal -->
   <div class="stepcalc-modal" id="stepcalc-modal"></div>
 
+  <!-- Copyright footer -->
+  <div class="app-copyright" id="app-copyright">
+    <span>FIUBA Agent © 2026 Delfi Fairhurst — Propiedad protegida</span>
+  </div>
+
+  <!-- Mobile Install Banner -->
+  <div class="install-banner" id="install-banner">
+    <div class="install-banner-inner">
+      <div class="install-banner-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><polyline points="8 12 12 8 16 12"/></svg>
+      </div>
+      <div class="install-banner-text">
+        <span class="install-banner-title">Agregar a pantalla de inicio</span>
+        <span class="install-banner-desc">Accedé más rápido desde tu celular</span>
+      </div>
+      <button class="install-banner-close" id="install-banner-close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="install-banner-arrow" id="install-banner-arrow">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      <span id="install-banner-hint">Tocá el botón de compartir y elegí "Agregar a pantalla de inicio"</span>
+    </div>
+  </div>
+
   <!-- Librería PDF.js para lectura de documentos PDF en el navegador -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="pdf-parser.js"></script>
@@ -855,15 +1142,36 @@
   <!-- Init de features -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.initPomodoro) window.initPomodoro();
-      if (window.initFormulas) window.initFormulas();
-      if (window.initChangelog) window.initChangelog();
-      if (window.initCramMode) window.initCramMode();
-      if (window.initMnemonics) window.initMnemonics();
-      if (window.initExamGen) window.initExamGen();
-      if (window.initStepCalc) window.initStepCalc();
-      if (window.initShortcuts) window.initShortcuts();
-      setTimeout(() => { if (window.showOnboarding) window.showOnboarding(); }, 1000);
+      const inits = ['initPomodoro','initFormulas','initChangelog','initCramMode','initMnemonics','initExamGen','initStepCalc','initShortcuts'];
+      inits.forEach(fn => { try { if (window[fn]) window[fn](); } catch(e) { console.error(fn+' error:', e); } });
+      setTimeout(() => { try { if (window.showOnboarding) window.showOnboarding(); } catch(e) {} }, 1000);
+
+      // Hide splash screen
+      setTimeout(() => {
+        const splash = document.getElementById('splash-screen');
+        if (splash) splash.classList.add('hidden');
+      }, 1200);
+
+      // Mobile install banner
+      try {
+        const ua = navigator.userAgent || '';
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        const dismissed = localStorage.getItem('fiuba_install_dismissed');
+        if (isMobile && !isStandalone && !dismissed) {
+          setTimeout(() => {
+            const banner = document.getElementById('install-banner');
+            if (banner) {
+              banner.classList.add('visible');
+              document.getElementById('install-banner-close').addEventListener('click', () => {
+                banner.classList.remove('visible');
+                banner.classList.add('hidden');
+                localStorage.setItem('fiuba_install_dismissed', '1');
+              });
+            }
+          }, 3000);
+        }
+      } catch(e) {}
     });
   </script>
 </body>

@@ -41,6 +41,10 @@ onAuthStateChanged(auth, async (user) => {
     updateAuthUI(user);
     authReadyResolve(user);
     window.dispatchEvent(new CustomEvent("fiuba-auth-ready"));
+  // Recargar chats al hacer login
+  if (window.loadChatsFromStorage) {
+    setTimeout(() => window.loadChatsFromStorage(), 500);
+  }
   } else {
     currentUid = null;
     showAuthOverlay();
@@ -51,7 +55,25 @@ onAuthStateChanged(auth, async (user) => {
 
 function showAuthOverlay() {
   document.getElementById("auth-overlay")?.classList.add("open");
+  const landing = document.getElementById("landing-page");
+  const login = document.getElementById("login-page");
+  if (landing) landing.style.display = "block";
+  if (login) login.style.display = "none";
 }
+
+window.showLogin = function() {
+  const landing = document.getElementById("landing-page");
+  const login = document.getElementById("login-page");
+  if (landing) landing.style.display = "none";
+  if (login) login.style.display = "block";
+};
+
+window.showLanding = function() {
+  const landing = document.getElementById("landing-page");
+  const login = document.getElementById("login-page");
+  if (landing) landing.style.display = "block";
+  if (login) login.style.display = "none";
+};
 function hideAuthOverlay() {
   document.getElementById("auth-overlay")?.classList.remove("open");
 }

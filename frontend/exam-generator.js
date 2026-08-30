@@ -2,9 +2,12 @@
 (function () {
   'use strict';
 
+  let initialized = false;
+
   function openExamGen() {
+    if (!initialized) { initExamGen(); initialized = true; }
     const modal = document.getElementById('examgen-modal');
-    if (modal) modal.classList.add('open');
+    if (modal) { modal.classList.add('open'); modal.style.display = 'flex'; }
   }
 
   function closeExamGen() {
@@ -160,7 +163,7 @@ Devolvé SOLO el JSON, sin texto extra antes ni después.`;
               <option value="10">10 preguntas</option>
             </select>
             <select id="examgen-diff" class="examgen-select">
-              <option value="basa">Básico</option>
+              <option value="baja">Básico</option>
               <option value="media" selected>Intermedio</option>
               <option value="alta">Difícil</option>
             </select>
@@ -172,6 +175,17 @@ Devolvé SOLO el JSON, sin texto extra antes ni después.`;
     `;
 
     document.querySelector('.examgen-close')?.addEventListener('click', closeExamGen);
+
+    // Agregar FAB flotante fuera del sidebar
+    if (!document.getElementById('examgen-fab')) {
+      const fab = document.createElement('button');
+      fab.id = 'examgen-fab';
+      fab.className = 'examgen-fab';
+      fab.title = 'Generador de Parciales';
+      fab.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+      fab.onclick = openExamGen;
+      document.body.appendChild(fab);
+    }
   }
 
   window.openExamGen = openExamGen;

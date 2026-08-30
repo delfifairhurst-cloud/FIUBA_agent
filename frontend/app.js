@@ -166,6 +166,7 @@ const MODE_DESCRIPTIONS = {
 };
 
 // Al cargar la página
+window.loadChatsFromStorage = loadChatsFromStorage;
 document.addEventListener('DOMContentLoaded', () => {
   loadChatsFromStorage();
   checkBackendStatus();
@@ -589,6 +590,7 @@ function useSuggestion(text) {
   input.value = text;
   handleSend(new Event('submit'));
 }
+window._useSuggestion = useSuggestion;
 
 function clearChat() {
   createNewChat(getActiveChat().mode);
@@ -719,10 +721,10 @@ async function handleSend(event) {
   try {
     const body = { message: message || (imageToSend ? "Resolvé este ejercicio de la foto. Explicá paso a paso." : ""), mode: chat.mode, context: contextText, userApiKey: (typeof getUserGeminiKey === 'function' ? getUserGeminiKey() : '') };
 
-    // Enviar historial reciente como memoria del chat (últimos 10 mensajes, truncados)
-    const recentMsgs = chat.messages.slice(-10).map(m => ({
+    // Enviar historial reciente como memoria del chat (últimos 20 mensajes, truncados)
+    const recentMsgs = chat.messages.slice(-20).map(m => ({
       role: m.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: (m.text || '').slice(0, 1200) }]
+      parts: [{ text: (m.text || '').slice(0, 2000) }]
     })).filter(m => m.parts[0].text);
     if (recentMsgs.length > 0) body.history = recentMsgs;
 
@@ -856,9 +858,9 @@ function appendMessageDOM(sender, text, imageUrl = null, options = {}) {
         idx = Math.min(idx + charsPerTick, plainText.length);
         typingEl.innerHTML = parseSimpleMarkdown(plainText.slice(0, idx));
         history.scrollTop = history.scrollHeight;
-        // Renderizar KaTeX parcial
-        if (window.renderMathInElement) {
-          try { window.renderMathInElement(typingEl, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false }); } catch {}
+        // Renderizar KaTeX parcial durante typing (solo si hay contenido matemático)
+        if (window.renderMathInElement && (plainText.slice(0, idx).includes('$') || plainText.slice(0, idx).includes('\\') || plainText.slice(0, idx).includes('^'))) {
+          try { window.renderMathInElement(typingEl, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}], throwOnError: false, strict: false }); } catch {}
         }
         setTimeout(typeTick, tickMs);
       } else {
@@ -868,7 +870,7 @@ function appendMessageDOM(sender, text, imageUrl = null, options = {}) {
           const sugDiv = document.createElement('div');
           sugDiv.className = 'suggestion-chips';
           sugDiv.innerHTML = suggestions.map(s =>
-            `<button class="suggestion-chip" onclick="document.getElementById('chat-input').value='${s.replace(/'/g,"\\'")}';document.getElementById('chat-input').focus()">${s}</button>`
+            `<button class="suggestion-chip" onclick="window._useSuggestion('${s.replace(/'/g,"\\'")}')">${s}</button>`
           ).join('');
           content.appendChild(sugDiv);
         }
@@ -891,8 +893,8 @@ function appendMessageDOM(sender, text, imageUrl = null, options = {}) {
     history.scrollTop = history.scrollHeight;
   }
 
-  // Renderizar matemáticas KaTeX
-  if (window.renderMathInElement) {
+  // Renderizar matemáticas KaTeX (solo si hay contenido matemático real)
+  if (window.renderMathInElement && (text.includes('$') || text.includes('\\') || text.includes('^') || text.includes('_'))) {
     try {
       window.renderMathInElement(content, {
         delimiters: [
@@ -901,7 +903,9 @@ function appendMessageDOM(sender, text, imageUrl = null, options = {}) {
           {left: '\\(', right: '\\)', display: false},
           {left: '\\[', right: '\\]', display: true}
         ],
-        throwOnError: false
+        throwOnError: false,
+        errorColor: '#cc0000',
+        strict: false
       });
     } catch {}
   }
@@ -912,11 +916,16 @@ function parseSimpleMarkdown(text) {
   if (!text) return '';
 
   // Proteger delimitadores LaTeX antes de escapar HTML
+  // Solo proteger si el contenido entre $ tiene caracteres matemáticos (\, ^, _, operadores, letras griegas)
   const mathBlocks = [];
+  const MATH_CHARS = /[\\a-zA-Zα-ωΑ-Ω\^\_\{\}]/;
   let html = text.replace(/(\$\$[\s\S]*?\$\$)/g, (m) => {
+    if (!MATH_CHARS.test(m.slice(2, -2))) return m;
     mathBlocks.push(m);
     return `\x00MATH_BLOCK_${mathBlocks.length - 1}\x00`;
   }).replace(/(\$[\s\S]*?\$)/g, (m) => {
+    const inner = m.slice(1, -1);
+    if (!MATH_CHARS.test(inner) || inner.length <= 3) return m;
     mathBlocks.push(m);
     return `\x00MATH_INLINE_${mathBlocks.length - 1}\x00`;
 }).replace(/(\\\([\s\S]*?\\\))/g, (m) => {
@@ -973,79 +982,458 @@ const FIUBA_PLAN = {
     ]
   },
   industrial: {
-    name: 'Ingeniería Industrial (Plan 2023)',
+    name: 'Ingeniería Industrial',
     anios: [
-      {
-        year: '3er Cuatrimestre',
-        materias: [
-          { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
-          { name: 'Física de los Sistemas de Partículas', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
-          { name: 'Principios de Ing. Industrial', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
-        ]
-      },
-      {
-        year: '4to Cuatrimestre',
-        materias: [
-          { name: 'Álgebra Lineal', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
-          { name: 'Química Básica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
-          { name: 'Estática y Resistencia de Materiales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
-        ]
-      },
-      {
-        year: '5to Cuatrimestre',
-        materias: [
-          { name: 'Probabilidad', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
-          { name: 'Economía', url: 'https://www.altillo.com/examenes/uba/ingenieria/#econempresa' },
-          { name: 'Materiales y Aplicaciones I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#Comportamiento_de_Materiales' },
-          { name: 'Transformación de la Energía', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
-        ]
-      },
-      {
-        year: '6to Cuatrimestre',
-        materias: [
-          { name: 'Electricidad y Magnetismo', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
-          { name: 'Desarrollo Económico', url: 'https://www.altillo.com/examenes/uba/ingenieria/#estructuraeconarg' },
-          { name: 'Estadística Aplicada', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
-          { name: 'Gestión Integral de la Cadena de Valor', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
-        ]
-      },
-      {
-        year: '7mo Cuatrimestre',
-        materias: [
-          { name: 'Electrotecnia, Máquinas e Inst. Eléctricas', url: 'https://www.altillo.com/examenes/uba/ingenieria/#electrotecniagralb' },
-          { name: 'Investigación Operativa', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
-          { name: 'Sistemas Contables y Gestión de Costos', url: 'https://www.altillo.com/examenes/uba/ingenieria/#contaydinamicaecon' },
-          { name: 'Industrias Digitales', url: 'https://www.altillo.com/examenes/uba/ingenieria/#tecndigital' },
-          { name: 'Ing. Ambiental, Sustentabilidad', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
-        ]
-      },
-      {
-        year: '8vo Cuatrimestre',
-        materias: [
-          { name: 'Ingeniería Económica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#econempresa' },
-          { name: 'Equipos y Sist. para Automatización', url: 'https://www.altillo.com/examenes/uba/ingenieria/#tecndigital' },
-          { name: 'Industrias Químicas', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
-          { name: 'Transformación de Materiales', url: 'https://www.altillo.com/examenes/uba/ingenieria/#Comportamiento_de_Materiales' },
-          { name: 'Higiene y Seguridad', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
-        ]
-      },
-      {
-        year: '9no Cuatrimestre',
-        materias: [
-          { name: 'Industrias Extractivas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
-          { name: 'Proyecto Industrial', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
-          { name: 'Electivas / Optativas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
-        ]
-      },
-      {
-        year: '10mo Cuatrimestre',
-        materias: [
-          { name: 'Legislación y Ejercicio Profesional', url: 'https://www.altillo.com/examenes/uba/ingenieria/#inglegal' },
-          { name: 'Trabajo Profesional / Tesis', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
-        ]
-      }
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Física de los Sistemas de Partículas', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Principios de Ing. Industrial', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Álgebra Lineal', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Química Básica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+        { name: 'Estática y Resistencia de Materiales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Organización y Dirección Empresaria', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Probabilidad', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Economía', url: 'https://www.altillo.com/examenes/uba/ingenieria/#econempresa' },
+        { name: 'Materiales y Aplicaciones I', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Transformación de la Energía', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electricidad y Magnetismo', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Desarrollo Económico', url: 'https://www.altillo.com/examenes/uba/ingenieria/#estructuraeconarg' },
+        { name: 'Estadística Aplicada', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Gestión Integral de la Cadena de Valor', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Electrotecnia', url: 'https://www.altillo.com/examenes/uba/ingenieria/#electrotecniagralb' },
+        { name: 'Máquinas e Instalaciones Eléctricas', url: 'https://www.altillo.com/examenes/uba/ingenieria/#electrotecniagralb' },
+        { name: 'Investigación Operativa', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Sistemas Contables y Gestión de Costos', url: 'https://www.altillo.com/examenes/uba/ingenieria/#contaydinamicaecon' },
+        { name: 'Industrias Digitales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Ing. Ambiental', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Sustentabilidad y Cuidado del Planeta', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Ingeniería Económica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Equipos y Sistemas para Automatización Industrial', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Industrias Químicas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Transformación de Materiales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Higiene y Seguridad', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Industrias Extractivas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Proyecto Industrial', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Trabajo Profesional / Tesis de Ing. Industrial', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Legislación y Ejercicio Profesional', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas / Optativas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
     ]
-  }
+  },
+  informatica: {
+    name: 'Ingeniería Informática',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Álgebra y Geometría Analítica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Física I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Química General', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Análisis Matemático III', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis3' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Física II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Algoritmos y Estructuras de Datos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Sistemas de Representación', url: 'https://www.altillo.com/examenes/uba/ingenieria/#sistemasder' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Sistemas Operativos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Base de Datos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Redes de Computadoras', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Ingeniería de Software', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Organización de Computadoras', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Gestión de Proyectos de Software', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Inteligencia Artificial', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Compiladores', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Laboratorio de Sistemas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '6to Año', materias: [
+        { name: 'Seguridad Informática', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Auditoría Informática', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Trabajo Integrador Final', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas / Optativas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
+  civil: {
+    name: 'Ingeniería Civil',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Álgebra y Geometría Analítica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Física I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Química General', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Análisis Matemático III', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis3' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Física II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Sistemas de Representación', url: 'https://www.altillo.com/examenes/uba/ingenieria/#sistemasder' },
+        { name: 'Mecánica de los Fluidos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Resistencia de Materiales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Geología', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Hidráulica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Mecánica de Suelos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Construcciones I', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Construcciones II', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Vías de Comunicación', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Estructuras Metálicas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Técnica Constructiva', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '6to Año', materias: [
+        { name: 'Cimentaciones', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Ingeniería Sanitaria', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Topografía', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas y Profesionalizantes', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
+  electronica: {
+    name: 'Ingeniería Electrónica',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Álgebra y Geometría Analítica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Física I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Química General', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Análisis Matemático III', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis3' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Física II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Teoría de los Circuitos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Señales y Sistemas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Electrónica General', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electromagnetismo', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Máquinas Eléctricas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Instrumentación', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Organización de Computadoras', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Control Automático', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electrónica Digital', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Procesamiento de Señales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Comunicaciones', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas y Seminarios', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
+  electrica: {
+    name: 'Ingeniería en Energía Eléctrica',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Álgebra y Geometría Analítica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Física I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Química General', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Análisis Matemático III', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis3' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Física II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Teoría de los Circuitos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Sistemas de Representación', url: 'https://www.altillo.com/examenes/uba/ingenieria/#sistemasder' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Electromagnetismo', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Máquinas Eléctricas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electrónica General', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Instalaciones Eléctricas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Organización de Computadoras', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Control Automático', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Sistemas de Potencia', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Generación y Distribución de Energía', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas y Seminarios', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
+  mecanica: {
+    name: 'Ingeniería Mecánica',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Álgebra y Geometría Analítica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Física I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Química General', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Análisis Matemático III', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis3' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Física II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Sistemas de Representación', url: 'https://www.altillo.com/examenes/uba/ingenieria/#sistemasder' },
+        { name: 'Resistencia de Materiales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Termodinámica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Mecánica de los Fluidos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Mecanismos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Ciencia de los Materiales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Máquinas Térmicas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Mecánica Aplicada', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Transferencia de Calor', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Tecnología Mecánica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Control Automático', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas y Seminarios', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
+  quimica: {
+    name: 'Ingeniería Química',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Álgebra y Geometría Analítica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Física I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Química General', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Análisis Matemático III', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis3' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Física II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Química Inorgánica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Termodinámica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Química Orgánica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Fisicoquímica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Mecánica de los Fluidos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Operaciones Unitarias', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Ingeniería de Reactores', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Control de Procesos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Procesos de Separación', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Diseño de Plantas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas y Seminarios', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
+  naval: {
+    name: 'Ingeniería Naval',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Álgebra y Geometría Analítica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Física I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Química General', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Análisis Matemático III', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis3' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Física II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Sistemas de Representación', url: 'https://www.altillo.com/examenes/uba/ingenieria/#sistemasder' },
+        { name: 'Resistencia de Materiales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Mecánica de los Fluidos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Termodinámica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Estructuras Navales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Propulsión Naval', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Máquinas Marinas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Dibujo Naval', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Dinámica Naval', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Tecnología Naval', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas y Seminarios', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
+  agrimensura: {
+    name: 'Ingeniería en Agrimensura',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Álgebra y Geometría Analítica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Física I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Química General', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Análisis Matemático III', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis3' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Física II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Sistemas de Representación', url: 'https://www.altillo.com/examenes/uba/ingenieria/#sistemasder' },
+        { name: 'Geodesia', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Topografía', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Geometría Descriptiva', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Cartografía', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Fotogrametría', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Sistemas de Información Geográfica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Valuación de Bienes', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Derecho y Legislación', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Laboratorio de Agrimensura', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas y Seminarios', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
+  petroleo: {
+    name: 'Ingeniería en Petróleo',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Álgebra y Geometría Analítica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Física I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Química General', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Análisis Matemático III', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis3' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Física II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Geología', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Termodinámica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Mecánica de los Fluidos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Resistencia de Materiales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Petrología', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Mecánica de Suelos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Perforación de Pozos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Exploración Petrolera', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Extracción de Petróleo', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Ingeniería de Yacimientos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas y Seminarios', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
+  alimentos: {
+    name: 'Ingeniería en Alimentos',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Álgebra y Geometría Analítica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Física I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Química General', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Análisis Matemático III', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis3' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Física II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Química Orgánica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Biología Celular', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Bioquímica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Microbiología', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Fisicoquímica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Mecánica de los Fluidos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Termodinámica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Tecnología de los Alimentos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Operaciones Unitarias', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Seguridad e Higiene Alimentaria', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Control de Procesos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas y Seminarios', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
+  ambiental: {
+    name: 'Ingeniería Ambiental',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Álgebra y Geometría Analítica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+        { name: 'Física I', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Química General', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Análisis Matemático III', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis3' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Física II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Química Ambiental', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Ecología General', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Mecánica de los Fluidos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Microbiología Ambiental', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Contaminación Atmosférica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Gestión de Residuos Sólidos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Tratamiento de Aguas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Evaluación de Impacto Ambiental', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Legislación Ambiental', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Energías Renovables', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas y Seminarios', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
+  bioingenieria: {
+    name: 'Bioingeniería',
+    anios: [
+      { year: '2do Año', materias: [
+        { name: 'Análisis Matemático II', url: 'https://www.altillo.com/examenes/uba/ingenieria/#analisis2' },
+        { name: 'Química Básica', url: 'https://www.altillo.com/examenes/uba/ingenieria/#quimica' },
+        { name: 'Introducción a la Bioingeniería', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Anatomía e Histología Funcional', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Física de los Sistemas de Partículas', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica' },
+        { name: 'Algoritmos y Programación', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Planificación de Proyectos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Álgebra Lineal', url: 'https://www.altillo.com/examenes/uba/ingenieria/#algebra2' },
+      ]},
+      { year: '3er Año', materias: [
+        { name: 'Química de los Compuestos Orgánicos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Probabilidad y Estadística', url: 'https://www.altillo.com/examenes/uba/ingenieria/#probyesta' },
+        { name: 'Señales y Sistemas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electricidad, Magnetismo y Calor', url: 'https://www.altillo.com/examenes/uba/ingenieria/#fisica2' },
+        { name: 'Sistemas Moleculares, Celulares y Tisulares', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Física de Sólidos y Nuclear', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Control Automático', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Análisis de Circuitos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '4to Año', materias: [
+        { name: 'Procesos Estocásticos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Introducción a los Dispositivos Electrónicos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Sistemas Fisiológicos y sus Modelos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Introducción a la Mecánica del Continuo', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Taller de Procesamiento de Señales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Circuitos Microelectrónicos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Introducción a los Sistemas Embebidos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Gestión de Proyectos', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Legislación y Ejercicio Profesional', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '5to Año', materias: [
+        { name: 'Introducción a la Biomecánica', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Instrumentación y Equipamiento para Diagnóstico y Tratamiento', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Introducción a los Biomateriales', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Análisis y Procesamiento de Señales en Bioingeniería', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Higiene y Seguridad', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Imágenes en Bioingeniería', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Tecnología de Asistencia y Prótesis', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Tesis de Bioingeniería', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Electivas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+      { year: '6to Año', materias: [
+        { name: 'Ingeniería Clínica y Hospitalaria', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Tesis', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+        { name: 'Optativas', url: 'https://www.altillo.com/examenes/uba/ingenieria/' },
+      ]},
+    ]
+  },
 };
 
 function switchView(view) {
@@ -1057,6 +1445,7 @@ function switchView(view) {
   // IDs of all view panels
   const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view'];
   const chatEl = document.querySelector('.chat-container');
+  const appLayout = document.querySelector('.app-layout');
 
   // Hide all panels via hidden class (has !important)
   views.forEach(id => {
@@ -1064,6 +1453,11 @@ function switchView(view) {
     if (el) el.classList.add('hidden');
   });
   if (chatEl) chatEl.style.display = 'none';
+
+  // Toggle view-open class for FAB visibility
+  if (appLayout) {
+    appLayout.classList.toggle('view-open', view !== 'inicio');
+  }
 
   // Show the selected view
   if (view === 'inicio') {
@@ -1098,21 +1492,37 @@ window.switchView = switchView;
 
 function populateMaterias() {
   const grid = document.getElementById('materias-grid');
-  if (!grid || grid.children.length > 0) return;
+  if (!grid) return;
+  grid.innerHTML = '';
 
-  // CBC
-  const cbcCard = document.createElement('div');
-  cbcCard.className = 'materia-card';
-  cbcCard.innerHTML = '<h4>CBC</h4><p>7 materias del ciclo básico</p>';
-  cbcCard.onclick = () => showCarreraMaterias('cbc');
-  grid.appendChild(cbcCard);
+  const carreras = [
+    { key: 'cbc', letter: 'CBC', color: '#64748b', desc: 'Ciclo Básico Común' },
+    { key: 'industrial', letter: 'II', color: '#8b5cf6', desc: 'Ingeniería Industrial' },
+    { key: 'informatica', letter: 'IInf', color: '#06b6d4', desc: 'Ingeniería Informática' },
+    { key: 'civil', letter: 'IC', color: '#f59e0b', desc: 'Ingeniería Civil' },
+    { key: 'electronica', letter: 'IE', color: '#ef4444', desc: 'Ingeniería Electrónica' },
+    { key: 'electrica', letter: 'IEE', color: '#eab308', desc: 'Ing. en Energía Eléctrica' },
+    { key: 'mecanica', letter: 'IM', color: '#10b981', desc: 'Ingeniería Mecánica' },
+    { key: 'quimica', letter: 'IQ', color: '#f97316', desc: 'Ingeniería Química' },
+    { key: 'naval', letter: 'IN', color: '#0ea5e9', desc: 'Ingeniería Naval' },
+    { key: 'petroleo', letter: 'IPet', color: '#78716c', desc: 'Ing. en Petróleo' },
+    { key: 'alimentos', letter: 'IAl', color: '#84cc16', desc: 'Ing. en Alimentos' },
+    { key: 'agrimensura', letter: 'IA', color: '#14b8a6', desc: 'Ing. en Agrimensura' },
+    { key: 'ambiental', letter: 'IAmb', color: '#22c55e', desc: 'Ing. Ambiental' },
+    { key: 'bioingenieria', letter: 'IB', color: '#ec4899', desc: 'Bioingeniería' },
+  ];
 
-  // Industrial
-  const indCard = document.createElement('div');
-  indCard.className = 'materia-card';
-  indCard.innerHTML = '<h4>Ingeniería Industrial</h4><p>Plan de estudios por año</p>';
-  indCard.onclick = () => showCarreraMaterias('industrial');
-  grid.appendChild(indCard);
+  carreras.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'materia-card';
+    card.innerHTML = `
+      <div style="width:100%;height:36px;background:${c.color};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;color:white;letter-spacing:0.5px;margin-bottom:0.4rem">${c.letter}</div>
+      <h4>${FIUBA_PLAN[c.key].name}</h4>
+      <p>${c.desc}</p>
+    `;
+    card.onclick = () => showCarreraMaterias(c.key);
+    grid.appendChild(card);
+  });
 }
 
 function showCarreraMaterias(carreraKey) {
