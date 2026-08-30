@@ -4,6 +4,7 @@ window.ScientificCalculator = (() => {
   const panelId = 'calc-panel';
   
   const html = `
+    <div class="calc-overlay hidden" id="calc-overlay"></div>
     <div id="${panelId}" class="calc-panel hidden">
       <div class="calc-header">
         <span>Calculadora</span>
@@ -86,6 +87,7 @@ window.ScientificCalculator = (() => {
     document.body.insertAdjacentHTML('beforeend', html);
     document.getElementById(btnId).addEventListener('click', toggle);
     document.getElementById('calc-close-btn').addEventListener('click', toggle);
+    document.getElementById('calc-overlay').addEventListener('click', toggle);
     attachEvents();
   }
   
@@ -231,6 +233,7 @@ window.ScientificCalculator = (() => {
     if (!document.getElementById('calc-fab')) init();
     isOpen = !isOpen;
     document.getElementById('calc-panel').classList.toggle('hidden', !isOpen);
+    document.getElementById('calc-overlay').classList.toggle('hidden', !isOpen);
     document.getElementById('calc-fab').classList.toggle('active', isOpen);
   }
   

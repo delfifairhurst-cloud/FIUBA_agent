@@ -205,7 +205,7 @@ app.post('/api/admin-qa', async (req, res) => {
       generationConfig: { temperature: 0.3 }
     };
 
-    const models = [process.env.GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-2.0-flash'].filter(Boolean);
+    const models = [process.env.GEMINI_MODEL || 'gemini-3.6-flash'];
     let reply = null;
 
     for (const model of models) {
@@ -275,7 +275,7 @@ app.post('/api/chat', async (req, res) => {
       payload.generationConfig = { responseMimeType: "application/json" };
     }
 
-    const models = [process.env.GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-2.0-flash'].filter(Boolean);
+    const models = [process.env.GEMINI_MODEL || 'gemini-3.6-flash'].filter(Boolean);
     let data = null;
     let lastError = 'Error desconocido';
 

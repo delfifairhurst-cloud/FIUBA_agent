@@ -6,6 +6,7 @@ window.AdminBot = (() => {
   const inputId = 'admin-bot-input';
   
   const html = `
+    <div class="admin-bot-overlay hidden" id="admin-bot-overlay"></div>
     <div id="${panelId}" class="admin-bot-panel hidden">
       <div class="admin-bot-header">
         <div class="admin-bot-avatar">
@@ -53,6 +54,7 @@ Si no sabes, dice: "No tengo esa info, consultá en [link oficial]".`;
     document.body.insertAdjacentHTML('beforeend', html);
     document.getElementById(btnId).addEventListener('click', toggle);
     document.getElementById('admin-bot-close-btn').addEventListener('click', toggle);
+    document.getElementById('admin-bot-overlay').addEventListener('click', toggle);
     document.getElementById('admin-bot-send-btn').addEventListener('click', send);
     document.getElementById(inputId).addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
   }
@@ -117,6 +119,7 @@ Si no sabes, dice: "No tengo esa info, consultá en [link oficial]".`;
     init();
     isOpen = !isOpen;
     document.getElementById('admin-bot-panel').classList.toggle('hidden', !isOpen);
+    document.getElementById('admin-bot-overlay').classList.toggle('hidden', !isOpen);
     document.getElementById('admin-bot-fab').classList.toggle('active', isOpen);
     if (isOpen) document.getElementById(inputId).focus();
   }
