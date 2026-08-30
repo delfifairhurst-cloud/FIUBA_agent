@@ -127,7 +127,7 @@ app.post('/api/chat', async (req, res) => {
 
     let promptContent = message;
     if (context && context.trim().length > 0) {
-      const truncatedContext = context.slice(0, 6000);
+      const truncatedContext = context.slice(0, 8000);
       promptContent = `[DOCUMENTOS Y MATERIALES ACADÉMICOS PROPORCIONADOS POR EL ESTUDIANTE]\n${truncatedContext}\n\n[CONSULTA DEL ESTUDIANTE]\n${message}`;
     }
     if (mode === 'examinador' && examState) {
@@ -159,10 +159,8 @@ app.post('/api/chat', async (req, res) => {
       system_instruction: { parts: [{ text: systemInstruction }] },
       contents
     };
-    // Limitar tokens de salida para ahorrar cuota
-    payload.generationConfig = { ...(payload.generationConfig || {}), maxOutputTokens: mode === 'examinador' ? 1024 : 2048 };
     if (mode === 'examinador') {
-      payload.generationConfig.responseMimeType = "application/json";
+      payload.generationConfig = { responseMimeType: "application/json" };
     }
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;

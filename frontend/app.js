@@ -263,14 +263,22 @@ function renderChatsList() {
     item.className = `chat-item ${chat.id === activeChatId ? 'active' : ''}`;
     item.onclick = () => selectChat(chat.id);
 
-    const modeIcon = chat.mode === 'profesor' ? '👨‍🏫' : chat.mode === 'tutor' ? '🎯' : chat.mode === 'examinador' ? '📝' : '🛠️';
+    const modeIcons = {
+      profesor: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+      tutor: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+      examinador: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+      resolucion: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="18" x2="9" y2="9"/><line x1="15" y1="18" x2="15" y2="9"/><line x1="4" y1="18" x2="20" y2="18"/></svg>'
+    };
+    const modeIcon = modeIcons[chat.mode] || modeIcons.profesor;
 
     item.innerHTML = `
       <div style="display:flex; align-items:center; gap:0.4rem; overflow:hidden;">
-        <span>${modeIcon}</span>
+        <span style="flex-shrink:0;color:var(--text-muted)">${modeIcon}</span>
         <span class="chat-item-title">${chat.title}</span>
       </div>
-      <button class="btn-delete-chat" onclick="deleteChat(event, '${chat.id}')" title="Eliminar chat">✕</button>
+      <button class="btn-delete-chat" onclick="deleteChat(event, '${chat.id}')" title="Eliminar chat">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     `;
     container.appendChild(item);
   });
@@ -699,7 +707,7 @@ async function handleSend(event) {
     // Enviar historial reciente como memoria del chat (últimos 10 mensajes, truncados)
     const recentMsgs = chat.messages.slice(-10).map(m => ({
       role: m.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: (m.text || '').slice(0, 800) }]
+      parts: [{ text: (m.text || '').slice(0, 1200) }]
     })).filter(m => m.parts[0].text);
     if (recentMsgs.length > 0) body.history = recentMsgs;
 
@@ -753,7 +761,7 @@ async function handleSend(event) {
       const extra = data.details ? `\n\n${data.details}` : '';
       const isQuota = (data.error || '').toLowerCase().includes('quota') || (data.details || '').toLowerCase().includes('quota');
       const errorMsg = isQuota
-        ? `⚠️ Se agotó la cuota gratuita de Gemini (20 requests/día). Esperá ~1 minuto o usá tu propia API Key gratis en ⚙️ Servidor IA.`
+        ? `⚠️ **Sin cuota disponible** — Tu API Key de Gemini tiene un límite de 20 requests/día en el tier gratuito.\n\n**Opciones:**\n1. Esperá a mañana (se resetea)\n2. Activá billing en [Google AI Studio](https://aistudio.google.com/app/apikey) para más requests\n3. Usá el botón "⚙️ Servidor IA" para configurar tu key`
         : `⚠️ **Error en la solicitud**: ${data.error || 'Ocurrió un problema en el servidor.'}${extra}`;
       appendMessageDOM('agent', errorMsg);
     }

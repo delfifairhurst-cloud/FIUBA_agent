@@ -250,9 +250,13 @@ body {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.85rem;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
   opacity: 0;
-  transition: opacity 0.2s ease, color 0.2s ease;
+  transition: opacity 0.2s ease, color 0.15s ease, background 0.15s ease;
 }
 
 .chat-item:hover .btn-delete-chat {
