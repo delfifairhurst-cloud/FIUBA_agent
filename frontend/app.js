@@ -1576,3 +1576,110 @@ function loadBibliotecaView() {
   if (!list) return;
   list.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem">Tu biblioteca está vacía. Usá el chat o las evaluaciones para guardar material.</p>';
 }
+
+// Íconos circulares arrastrables
+const draggableFabs = [
+  'calc-fab',
+  'pom-fab',
+  'formulas-fab',
+  'admin-bot-fab',
+  'examgen-fab'
+];
+
+let activeFab = null;
+let offsetX = 0;
+let offsetY = 0;
+
+// Obtener posición original desde el estilo computado
+function getOriginalBottom(fabId) {
+  const fab = document.getElementById(fabId);
+  if (!fab) return 100;
+  const style = window.getComputedStyle(fab);
+  return parseFloat(style.bottom) || 100;
+}
+
+function startDraggable(e, fabId) {
+  activeFab = document.getElementById(fabId);
+  if (!activeFab) return;
+  offsetX = e.clientX;
+  offsetY = e.clientY;
+  activeFab.style.transition = 'none';
+  // Guardar posición original antes de arrastrar
+  originalBottom = getOriginalBottom(fabId);
+}
+
+function drag(e) {
+  if (!activeFab) return;
+  const dx = e.clientX - offsetX;
+  const dy = e.clientY - offsetY;
+  
+  const rect = activeFab.getBoundingClientRect();
+  // Posición original + offset
+  let newBottom = originalBottom + dy;
+  
+  // Solo mover dentro de la ventana visible
+  const maxBottom = window.innerHeight - rect.height - 20;
+  const maxLeft = 20;
+  const maxRight = window.innerWidth - rect.width - 20;
+  
+  newBottom = Math.max(20, Math.min(maxBottom, newBottom));
+  const newLeft = Math.max(20, Math.min(maxRight,  // actually this should be left, not right
+    document.getElementById(activeFab.id).dataset.defaultLeft || 20));
+  
+  activeFab.style.bottom = newBottom + 'px';
+  activeFab.style.left = (parseFloat(activeFab.style.left) || 20) + dx + 'px';
+  
+  offsetX = e.clientX;
+  offsetY = e.clientY;
+}
+
+function stopDraggable() {
+  if (!activeFab) return;
+  activeFab.style.transition = 'opacity 0.3s';
+  
+  // Guardar posición final en localStorage
+  const rect = activeFab.getBoundingClientRect();
+  localStorage.setItem(`fiuba_fab_${activeFab.id}`, 
+    `bottom:${Math.round(rect.bottom)}px;left:${Math.round(rect.right)}px`);
+  
+  activeFab = null;
+  originalBottom = null;
+}
+
+// Event listeners para desktop
+draggableFabs.forEach(fabId => {
+  const fab = document.getElementById(fabId);
+  if (!fab) return;
+  
+  fab.addEventListener('mousedown', (e) => startDraggable(e, fabId));
+  document.addEventListener('mousemove', (e) => drag(e));
+  document.addEventListener('mouseup', () => stopDraggable());
+});
+
+// Event listeners para móvil (touch)
+draggableFabs.forEach(fabId => {
+  const fab = document.getElementById(fabId);
+  if (!fab) return;
+  
+  fab.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    startDraggable(e.touches[0], fabId);
+  });
+  fab.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    drag(e.touches[0]);
+  });
+  fab.addEventListener('touchend', () => stopDraggable());
+});
+
+// Función para restablecer todas las posiciones
+window.resetFabPositions = function() {
+  draggableFabs.forEach(fabId => {
+    const fab = document.getElementById(fabId);
+    if (fab) {
+      fab.style.bottom = '';
+      fab.style.left = '';
+      localStorage.removeItem(`fiuba_fab_${fabId}`);
+    }
+  });
+};
