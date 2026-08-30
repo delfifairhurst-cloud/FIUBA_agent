@@ -195,8 +195,7 @@ app.post('/api/admin-qa', async (req, res) => {
 
     const apiKey = (req.body.userApiKey || '').trim();
     if (!apiKey) {
-      return res.json({ answer: 'Necesito una API Key configurada en ⚙️ Servidor IA para responder. Por ahora no tengo esa info, consultá en https://uba.ar' });
-      return;
+      return res.json({ answer: 'Necesito una API Key configurada en ⚙️ Servidor IA para responder.' });
     }
 
     const systemInstruction = context || 'Sos un asistente administrativo de FIUBA. Respondé preguntas sobre tramites, inscripciones, fechas de parciales y links oficiales de UBA.';
@@ -206,7 +205,7 @@ app.post('/api/admin-qa', async (req, res) => {
       generationConfig: { temperature: 0.3 }
     };
 
-    const models = [process.env.GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-1.5-flash'].filter(Boolean);
+    const models = [process.env.GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-2.0-flash'].filter(Boolean);
     let reply = null;
 
     for (const model of models) {
@@ -276,7 +275,7 @@ app.post('/api/chat', async (req, res) => {
       payload.generationConfig = { responseMimeType: "application/json" };
     }
 
-    const models = [process.env.GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'].filter(Boolean);
+    const models = [process.env.GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-2.0-flash'].filter(Boolean);
     let data = null;
     let lastError = 'Error desconocido';
 

@@ -67,12 +67,13 @@ Si no sabes, dice: "No tengo esa info, consultá en [link oficial]".`;
     showTyping(true);
     
     const apiBase = window.getApiBase ? window.getApiBase() : 'http://localhost:3000';
+    const userApiKey = (window.getUserGeminiKey ? window.getUserGeminiKey() : (localStorage.getItem('fiuba_gemini_key')||'')).trim();
     
     try {
       const response = await fetch(apiBase + '/api/admin-qa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, context: CONTEXT })
+        body: JSON.stringify({ question: text, context: CONTEXT, userApiKey })
       });
       const data = await response.json();
       showTyping(false);
