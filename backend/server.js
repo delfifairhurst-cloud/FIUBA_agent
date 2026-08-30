@@ -112,7 +112,7 @@ app.post('/api/admin-qa', async (req, res) => {
 // --- Chat ---
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, mode = 'profesor', context = '', examState = null, userApiKey, image } = req.body;
+    const { message, mode = 'profesor', context = '', examState = null, userApiKey, image, history = [] } = req.body;
 
     if ((!message || message.trim() === '') && !image) {
       return res.status(400).json({ error: 'El mensaje no puede estar vacío.' });
@@ -127,21 +127,42 @@ app.post('/api/chat', async (req, res) => {
 
     let promptContent = message;
     if (context && context.trim().length > 0) {
-      promptContent = `[DOCUMENTOS Y MATERIALES ACADÉMICOS PROPORCIONADOS POR EL ESTUDIANTE]\n${context}\n\n[CONSULTA DEL ESTUDIANTE]\n${message}`;
+      const truncatedContext = context.slice(0, 6000);
+      promptContent = `[DOCUMENTOS Y MATERIALES ACADÉMICOS PROPORCIONADOS POR EL ESTUDIANTE]\n${truncatedContext}\n\n[CONSULTA DEL ESTUDIANTE]\n${message}`;
     }
     if (mode === 'examinador' && examState) {
       promptContent += `\n\n[ESTADO DEL EXAMEN - NO INVENTAR, RESPETAR]\n${JSON.stringify(examState, null, 2)}`;
     }
 
+    // Construir contents con historial + mensaje actual
+    const contents = [];
+    if (Array.isArray(history) && history.length > 0) {
+      for (const msg of history) {
+        if (msg.role && msg.parts && msg.parts.length > 0) {
+          contents.push({ role: msg.role, parts: msg.parts });
+        }
+      }
+    }
+    // Si el último mensaje del historial ya es del usuario, lo reemplazamos; si no, lo agregamos
+    const lastRole = contents.length > 0 ? contents[contents.length - 1].role : null;
+    if (lastRole === 'user') {
+      contents[contents.length - 1] = { role: 'user', parts: [{ text: promptContent || "Analizá esta imagen del ejercicio y resolvé paso a paso." }] };
+    } else {
+      contents.push({ role: 'user', parts: [{ text: promptContent || "Analizá esta imagen del ejercicio y resolvé paso a paso." }] });
+    }
+
+    if (image && image.data) {
+      contents[contents.length - 1].parts.push({ inlineData: { mimeType: image.mimeType || 'image/jpeg', data: image.data } });
+    }
+
     const payload = {
       system_instruction: { parts: [{ text: systemInstruction }] },
-      contents: [{ role: 'user', parts: [{ text: promptContent || "Analizá esta imagen del ejercicio y resolvé paso a paso." }] }]
+      contents
     };
-    if (image && image.data) {
-      payload.contents[0].parts.push({ inlineData: { mimeType: image.mimeType || 'image/jpeg', data: image.data } });
-    }
+    // Limitar tokens de salida para ahorrar cuota
+    payload.generationConfig = { ...(payload.generationConfig || {}), maxOutputTokens: mode === 'examinador' ? 1024 : 2048 };
     if (mode === 'examinador') {
-      payload.generationConfig = { responseMimeType: "application/json" };
+      payload.generationConfig.responseMimeType = "application/json";
     }
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;

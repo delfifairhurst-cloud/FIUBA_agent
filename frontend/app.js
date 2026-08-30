@@ -695,6 +695,14 @@ async function handleSend(event) {
   showTypingIndicator(true);
   try {
     const body = { message: message || (imageToSend ? "Resolvé este ejercicio de la foto. Explicá paso a paso." : ""), mode: chat.mode, context: contextText, userApiKey: (typeof getUserGeminiKey === 'function' ? getUserGeminiKey() : '') };
+
+    // Enviar historial reciente como memoria del chat (últimos 10 mensajes, truncados)
+    const recentMsgs = chat.messages.slice(-10).map(m => ({
+      role: m.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: (m.text || '').slice(0, 800) }]
+    })).filter(m => m.parts[0].text);
+    if (recentMsgs.length > 0) body.history = recentMsgs;
+
     if (imageToSend) {
       const base64 = imageToSend.dataUrl.split(',')[1];
       body.image = { data: base64, mimeType: imageToSend.mimeType };
@@ -743,7 +751,11 @@ async function handleSend(event) {
       }
     } else {
       const extra = data.details ? `\n\n${data.details}` : '';
-      appendMessageDOM('agent', `⚠️ **Error en la solicitud**: ${data.error || 'Ocurrió un problema en el servidor.'}${extra}`);
+      const isQuota = (data.error || '').toLowerCase().includes('quota') || (data.details || '').toLowerCase().includes('quota');
+      const errorMsg = isQuota
+        ? `⚠️ Se agotó la cuota gratuita de Gemini (20 requests/día). Esperá ~1 minuto o usá tu propia API Key gratis en ⚙️ Servidor IA.`
+        : `⚠️ **Error en la solicitud**: ${data.error || 'Ocurrió un problema en el servidor.'}${extra}`;
+      appendMessageDOM('agent', errorMsg);
     }
 
   } catch (error) {
