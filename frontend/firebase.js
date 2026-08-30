@@ -57,8 +57,10 @@ function showAuthOverlay() {
   document.getElementById("auth-overlay")?.classList.add("open");
   const landing = document.getElementById("landing-page");
   const login = document.getElementById("login-page");
+  const reg = document.getElementById("register-page");
   if (landing) landing.style.display = "block";
   if (login) login.style.display = "none";
+  if (reg) reg.style.display = "none";
 }
 
 window.showLogin = function() {
