@@ -3,17 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FIUBA Agent - Asistente Académico Inteligente</title>
+  <title>FIUBA Agent - Asistente IA para Ingeniería UBA | Quizzes, Flashcards, Chat</title>
   <meta name="google-site-verification" content="wQOW0f8WNLRhsPkvI6L0U7PhzsR_SiR3lpiRfgk0veQ">
-  <meta name="description" content="FIUBA Agent es tu asistente académico con IA para Ingeniería UBA. Chat con apuntes, quizzes interactivos de parciales del Altillo, flashcards y biblioteca organizada por materias. Gratis.">
-  <meta name="keywords" content="FIUBA, UBA, Ingeniería, Altillo, parciales, CBC, asistente académico, IA, quizzes, flashcards">
+  <meta name="description" content="FIUBA Agent es tu asistente académico con IA para Ingeniería UBA. Chat inteligente con apuntes, quizzes interactivos de parciales del Altillo, flashcards para repasar y biblioteca organizada por materias. Gratis para estudiantes de FIUBA.">
+  <meta name="keywords" content="FIUBA Agent, agente fiuba, fiuba ia, UBA ingeniería, asistente fiuba, parciales fiuba, altillo, quizzes fiuba, flashcards fiuba, CBC, estudio con ia">
   <link rel="canonical" href="https://agente-fiuba.web.app/">
-  <meta property="og:title" content="FIUBA Agent - Asistente Académico Inteligente">
-  <meta property="og:description" content="Chat con IA, quizzes de parciales del Altillo y repaso con flashcards para materias de FIUBA/UBA.">
+  <meta property="og:title" content="FIUBA Agent - Asistente IA para Ingeniería UBA">
+  <meta property="og:description" content="Chat con IA, quizzes de parciales del Altillo y repaso con flashcards para materias de FIUBA/UBA. Gratis y open source.">
   <meta property="og:url" content="https://agente-fiuba.web.app/">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://agente-fiuba.web.app/icon-512.png">
+  <meta property="og:site_name" content="FIUBA Agent">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FIUBA Agent - Asistente IA para Ingeniería UBA">
+  <meta name="twitter:description" content="Chat con IA, quizzes de parciales del Altillo y flashcards para FIUBA. Gratis.">
+
+  <!-- Structured Data para Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "FIUBA Agent",
+    "alternateName": ["Agente FIUBA", "FIUBA Agent IA"],
+    "url": "https://agente-fiuba.web.app",
+    "description": "Asistente académico con inteligencia artificial para estudiantes de Ingeniería UBA (FIUBA). Chat con apuntes, quizzes de parciales del Altillo, flashcards y biblioteca organizada.",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "ARS"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "FIUBA Agent"
+    },
+    "keywords": "FIUBA, UBA, ingenieria, agente ia, parciales, altillo, quizzes, flashcards, cbc, estudio"
+  }
+  </script>
   
   <!-- Favicon y PWA -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -206,6 +233,12 @@
           <span>⚙️ Servidor IA</span>
           <span style="font-size: 0.75rem; opacity: 0.7;">Cambiar</span>
         </button>
+        <button class="btn-server-config" onclick="openChangelog()" title="Novedades" style="margin-top:0.3rem">
+          <span>📋 Novedades</span>
+        </button>
+        <div style="font-size:0.65rem;color:var(--text-muted);text-align:center;margin-top:0.4rem;opacity:0.6">
+          Ctrl+N nuevo chat · Ctrl+P pomodoro · Ctrl+F fórmulas
+        </div>
       </div>
     </aside>
 
@@ -230,6 +263,12 @@
             <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
           </svg>
           Nueva Consulta
+        </button>
+        <button class="btn-secondary" onclick="shareChat()" title="Compartir chat">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+        <button class="btn-secondary" onclick="exportChatPDF()" title="Exportar a PDF">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
       </header>
 
@@ -738,6 +777,22 @@
     </div>
   </div>
 
+  <!-- Pomodoro FAB -->
+  <button class="calc-fab" id="pomodoro-fab" onclick="togglePomodoro()" title="Timer Pomodoro" style="bottom:4.5rem">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  </button>
+  <div class="pom-overlay" id="pomodoro-overlay" onclick="togglePomodoro()"></div>
+  <div class="pom-panel" id="pomodoro-panel"></div>
+
+  <!-- Fórmulas FAB -->
+  <button class="calc-fab" id="formulas-fab" onclick="openFormulas()" title="Hoja de Fórmulas" style="bottom:7.5rem">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+  </button>
+  <div class="formulas-modal" id="formulas-modal"></div>
+
+  <!-- Changelog modal -->
+  <div class="cl-modal" id="changelog-modal"></div>
+
   <!-- Librería PDF.js para lectura de documentos PDF en el navegador -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="pdf-parser.js"></script>
@@ -745,6 +800,11 @@
   
 
   <script src="gamification.js"></script>
+  <script src="pomodoro.js"></script>
+  <script src="formulas.js"></script>
+  <script src="export-chat.js"></script>
+  <script src="changelog.js"></script>
+  <script src="extras.js"></script>
   <script type="module" src="firebase.js"></script>
   <script type="module" src="progress.js"></script>
   <script type="module" src="auth-ui.js"></script>
@@ -758,6 +818,17 @@
   <!-- Scripts nuevos -->
   <script src="calculator.js"></script>
   <script src="admin-bot.js"></script>
+
+  <!-- Init de features -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.initPomodoro) window.initPomodoro();
+      if (window.initFormulas) window.initFormulas();
+      if (window.initChangelog) window.initChangelog();
+      if (window.initShortcuts) window.initShortcuts();
+      setTimeout(() => { if (window.showOnboarding) window.showOnboarding(); }, 1000);
+    });
+  </script>
 </body>
 </html>
 
