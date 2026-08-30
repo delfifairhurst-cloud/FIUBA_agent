@@ -1473,9 +1473,6 @@ function switchView(view) {
     }
   });
 
-  // Sync mobile FAB bar
-  window.syncMobileFabBar?.();
-
   // Show the selected view
   if (view === 'inicio') {
     if (chatEl) chatEl.style.display = 'flex';

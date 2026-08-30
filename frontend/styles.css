@@ -1746,64 +1746,11 @@ body {
   .chat-input-wrapper { padding: 0.3rem 0.5rem; padding-bottom: calc(0.3rem + env(safe-area-inset-bottom, 0px)); }
   #chat-form { padding: 0.35rem 0.5rem; }
 
-  /* Mobile bottom bar with FABs in a row - shown only when logged in */
-  .mobile-fab-bar {
-    display: none;
-    justify-content: space-around;
-    align-items: center;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 0.5rem 0.75rem;
-    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
-    background: var(--bg-primary);
-    border-top: 1px solid var(--border-color);
-    z-index: 100;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-  }
-  body.logged-in .mobile-fab-bar {
-    display: flex;
-  }
-  .mobile-fab-bar .fab-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    border: none;
-    background: var(--bg-card);
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
-    cursor: pointer;
-  }
-  .mobile-fab-bar .fab-btn:active {
-    transform: scale(0.92);
-    background: var(--bg-tertiary);
-  }
-  .mobile-fab-bar .fab-btn.active {
-    background: var(--accent-purple);
-    color: white;
-    box-shadow: 0 4px 16px rgba(139,92,246,0.4);
-  }
-  .mobile-fab-bar .fab-btn svg {
-    width: 22px;
-    height: 22px;
-    stroke: currentColor;
-  }
-
-  @media (max-width: 768px) {
-    body.logged-in .calc-fab,
-    body.logged-in .pom-fab,
-    body.logged-in .formulas-fab,
-    body.logged-in .admin-bot-fab,
-    body.logged-in .examgen-fab {
-      display: none !important;
-    }
-  }
+  /* FABs: keep original side positions, smaller size */
+  .calc-fab { bottom: 200px; left: 12px; width: 40px; height: 40px; }
+  .pom-fab { bottom: 250px; left: 12px; width: 40px; height: 40px; }
+  .formulas-fab { bottom: 300px; left: 12px; width: 40px; height: 40px; }
+  .admin-bot-fab { bottom: 200px; right: 12px; width: 40px; height: 40px; }
 
   /* Calc panel bottom sheet */
   .calc-panel {
@@ -1840,36 +1787,67 @@ body {
    Scientific Calculator
    ========================================================================== */
 
-.calc-fab,
-.pom-fab,
-.formulas-fab,
-.admin-bot-fab,
-.examgen-fab {
+.calc-fab {
   position: fixed;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  bottom: 100px;
+  left: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-purple), var(--primary));
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
   z-index: 10000;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-/* Posiciones cuando están activos (solo con logged-in) */
-body.logged-in .calc-fab { bottom: 80px; left: 20px; }
-body.logged-in .pom-fab { bottom: 140px; left: 20px; }
-body.logged-in .formulas-fab { bottom: 80px; right: 20px; }
-body.logged-in .admin-bot-fab { bottom: 140px; right: 20px; }
-body.logged-in .examgen-fab { bottom: 200px; right: 20px; }
-
-body.logged-in .calc-fab,
-body.logged-in .pom-fab,
-body.logged-in .formulas-fab,
-body.logged-in .admin-bot-fab,
-body.logged-in .examgen-fab {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  transform: none !important;
+.pom-fab, .formulas-fab {
+  position: fixed;
+  left: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
+.pom-fab {
+  bottom: 160px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
 
+.formulas-fab {
+  bottom: 220px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+}
+
+.pom-fab:hover, .formulas-fab:hover {
+  transform: scale(1.1);
+}
+
+.pom-fab.active {
+  background: linear-gradient(135deg, var(--danger), #dc2626);
+}
+
+.calc-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.5);
+}
+
+.calc-fab.active {
   background: linear-gradient(135deg, var(--danger), #dc2626);
 }
 
@@ -2041,7 +2019,7 @@ body.logged-in .examgen-fab {
 
 .admin-bot-fab {
   position: fixed;
-  bottom: 140px;
+  bottom: 100px;
   right: 20px;
   width: 50px;
   height: 50px;
@@ -2055,13 +2033,7 @@ body.logged-in .examgen-fab {
   justify-content: center;
   box-shadow: 0 4px 16px rgba(6, 182, 212, 0.4);
   z-index: 10000;
-  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-  opacity: 0;
-  pointer-events: none;
-}
-body.logged-in .admin-bot-fab {
-  opacity: 1;
-  pointer-events: auto;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .admin-bot-fab:hover {
@@ -3495,7 +3467,7 @@ body.logged-in .admin-bot-fab {
 
 .examgen-fab {
   position: fixed;
-  bottom: 200px;
+  bottom: 230px;
   right: 20px;
   width: 50px;
   height: 50px;
@@ -3509,13 +3481,7 @@ body.logged-in .admin-bot-fab {
   justify-content: center;
   box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
   z-index: 10000;
-  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-  opacity: 0;
-  pointer-events: none;
-}
-body.logged-in .examgen-fab {
-  opacity: 1;
-  pointer-events: auto;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 .examgen-fab:hover {
   transform: scale(1.1);

@@ -87,43 +87,12 @@ function hideAuthOverlay() {
 function updateAuthUI(user) {
   const el = document.getElementById("auth-status");
   const emailEl = document.getElementById("user-email");
-  const fabElements = [
-    'calc-fab', 'pom-fab', 'formulas-fab', 'admin-bot-fab', 'examgen-fab'
-  ];
   if (user) {
     if (el) { el.textContent = `ID: ${user.uid.slice(0,6)}...`; el.title = user.uid; }
     if (emailEl) emailEl.textContent = user.email;
-    // Show FABs when user is logged in
-    fabElements.forEach(id => {
-      const fab = document.getElementById(id);
-      if (fab) {
-        fab.style.display = 'block';
-        fab.style.opacity = '1';
-        fab.style.pointerEvents = 'auto';
-      }
-    });
-    // Also show mobile FAB bar
-    const mobBar = document.getElementById('mobile-fab-bar');
-    if (mobBar) {
-      mobBar.style.display = 'flex';
-    }
-    document.body.classList.add("logged-in");
   } else {
     if (el) el.textContent = "Sin sesión";
     if (emailEl) emailEl.textContent = "";
-    // Hide FABs when user is logged out
-    fabElements.forEach(id => {
-      const fab = document.getElementById(id);
-      if (fab) {
-        fab.style.display = 'none';
-      }
-    });
-    // Hide mobile FAB bar
-    const mobBar = document.getElementById('mobile-fab-bar');
-    if (mobBar) {
-      mobBar.style.display = 'none';
-    }
-    document.body.classList.remove("logged-in");
   }
 }
 
