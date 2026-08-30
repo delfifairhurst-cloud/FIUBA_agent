@@ -6,8 +6,8 @@ window.ScientificCalculator = (() => {
   const html = `
     <div id="${panelId}" class="calc-panel hidden">
       <div class="calc-header">
-        <span>🧮 Calculadora</span>
-        <button class="calc-close" onclick="ScientificCalculator.toggle()">✕</button>
+        <span>Calculadora</span>
+        <button class="calc-close" id="calc-close-btn">✕</button>
       </div>
       <div class="calc-display">
         <div class="calc-expression" id="calc-expr"></div>
@@ -71,8 +71,8 @@ window.ScientificCalculator = (() => {
         </div>
       </div>
     </div>
-    <button id="${btnId}" class="calc-fab" onclick="ScientificCalculator.toggle()" title="Calculadora">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 8h10"/><path d="M7 12h10"/><path d="M7 16h6"/></svg>
+    <button id="${btnId}" class="calc-fab" title="Calculadora">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/></svg>
     </button>
   `;
   
@@ -84,13 +84,15 @@ window.ScientificCalculator = (() => {
   function init() {
     if (document.getElementById('calc-fab')) return;
     document.body.insertAdjacentHTML('beforeend', html);
+    document.getElementById(btnId).addEventListener('click', toggle);
+    document.getElementById('calc-close-btn').addEventListener('click', toggle);
     attachEvents();
   }
   
   function attachEvents() {
     const panel = document.getElementById('calc-panel');
     
-    panel.querySelectorAll('button').forEach(btn => {
+    panel.querySelectorAll('button[data-num], button[data-op], button[data-fn], button[data-clear], button[data-equal]').forEach(btn => {
       btn.onclick = () => {
         if (btn.dataset.num) appendNum(btn.dataset.num);
         else if (btn.dataset.op) appendOp(btn.dataset.op);

@@ -186,6 +186,51 @@ app.get('/api/altillo/import', async (req, res) => {
 });
 
 // Endpoint del Chat
+app.post('/api/admin-qa', async (req, res) => {
+  try {
+    const { question, context } = req.body;
+    if (!question || question.trim() === '') {
+      return res.status(400).json({ error: 'Falta la pregunta' });
+    }
+
+    const apiKey = (req.body.userApiKey || '').trim();
+    if (!apiKey) {
+      return res.json({ answer: 'Necesito una API Key configurada en ⚙️ Servidor IA para responder. Por ahora no tengo esa info, consultá en https://uba.ar' });
+      return;
+    }
+
+    const systemInstruction = context || 'Sos un asistente administrativo de FIUBA. Respondé preguntas sobre tramites, inscripciones, fechas de parciales y links oficiales de UBA.';
+    const payload = {
+      system_instruction: { parts: [{ text: systemInstruction }] },
+      contents: [{ role: 'user', parts: [{ text: question }] }],
+      generationConfig: { temperature: 0.3 }
+    };
+
+    const models = [process.env.GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-1.5-flash'].filter(Boolean);
+    let reply = null;
+
+    for (const model of models) {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (response.ok) {
+        reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se recibio respuesta.';
+        break;
+      }
+      console.error(`admin-qa error (${model}):`, data.error?.message);
+    }
+
+    res.json({ answer: reply || 'No se pudo obtener respuesta. Intenta de nuevo.' });
+  } catch (error) {
+    console.error('admin-qa error:', error);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, mode = 'profesor', context = '', examState = null, userApiKey, image } = req.body;
