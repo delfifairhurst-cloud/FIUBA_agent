@@ -127,6 +127,8 @@ Si no sabes, dice: "No tengo esa info, consultá en [link oficial]".`;
   return { init, toggle, send };
 })();
 
+window.toggleAdminBot = AdminBot.toggle;
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => AdminBot.init());
 } else {

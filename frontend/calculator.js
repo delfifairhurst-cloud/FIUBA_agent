@@ -334,6 +334,8 @@ window.ScientificCalculator = (() => {
   return { init, toggle };
 })();
 
+window.toggleCalculator = ScientificCalculator.toggle;
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => ScientificCalculator.init());
 } else {
