@@ -90,9 +90,11 @@ function updateAuthUI(user) {
   if (user) {
     if (el) { el.textContent = `ID: ${user.uid.slice(0,6)}...`; el.title = user.uid; }
     if (emailEl) emailEl.textContent = user.email;
+    document.body.classList.add("logged-in");
   } else {
     if (el) el.textContent = "Sin sesión";
     if (emailEl) emailEl.textContent = "";
+    document.body.classList.remove("logged-in");
   }
 }
 

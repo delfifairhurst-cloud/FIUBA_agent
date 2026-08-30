@@ -1507,39 +1507,6 @@ function switchView(view) {
 }
 window.switchView = switchView;
 
-function syncMobileFabBar() {
-  const isMobile = window.innerWidth <= 768;
-  const bar = document.getElementById('mobile-fab-bar');
-  if (bar) {
-    bar.style.display = isMobile ? 'flex' : 'none';
-  }
-  if (!isMobile) return;
-
-  const panels = {
-    'mobile-calc-btn': 'calc-panel',
-    'mobile-pom-btn': 'pomodoro-panel',
-    'mobile-formulas-btn': 'formulas-modal',
-    'mobile-admin-btn': 'admin-bot-panel',
-    'mobile-examgen-btn': 'examgen-modal'
-  };
-
-  Object.entries(panels).forEach(([btnId, panelId]) => {
-    const btn = document.getElementById(btnId);
-    const panel = document.getElementById(panelId);
-    if (btn && panel) {
-      const isOpen = !panel.classList.contains('hidden');
-      btn.classList.toggle('active', isOpen);
-    }
-  });
-}
-
-window.syncMobileFabBar = syncMobileFabBar;
-
-// Call sync on resize
-window.addEventListener('resize', () => {
-  window.syncMobileFabBar?.();
-});
-
 function populateMaterias() {
   const grid = document.getElementById('materias-grid');
   if (!grid) return;
