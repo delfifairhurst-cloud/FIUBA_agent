@@ -3,6 +3,42 @@ let chats = [];
 let activeChatId = null;
 let pendingChatImage = null; // { dataUrl, mimeType }
 
+// --- Theme ---
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('fiuba_theme', theme);
+  const darkBtn = document.getElementById('theme-dark-btn');
+  const lightBtn = document.getElementById('theme-light-btn');
+  if (darkBtn && lightBtn) {
+    if (theme === 'light') {
+      darkBtn.style.background = 'transparent'; darkBtn.style.color = 'var(--text-muted)';
+      lightBtn.style.background = 'var(--primary)'; lightBtn.style.color = 'white';
+    } else {
+      lightBtn.style.background = 'transparent'; lightBtn.style.color = 'var(--text-muted)';
+      darkBtn.style.background = 'var(--primary)'; darkBtn.style.color = 'white';
+    }
+  }
+}
+window.setTheme = setTheme;
+
+(function initTheme() {
+  const saved = localStorage.getItem('fiuba_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  setTimeout(() => {
+    const darkBtn = document.getElementById('theme-dark-btn');
+    const lightBtn = document.getElementById('theme-light-btn');
+    if (darkBtn && lightBtn) {
+      if (saved === 'light') {
+        darkBtn.style.background = 'transparent'; darkBtn.style.color = 'var(--text-muted)';
+        lightBtn.style.background = 'var(--primary)'; lightBtn.style.color = 'white';
+      } else {
+        lightBtn.style.background = 'transparent'; lightBtn.style.color = 'var(--text-muted)';
+        darkBtn.style.background = 'var(--primary)'; darkBtn.style.color = 'white';
+      }
+    }
+  }, 100);
+})();
+
 const DEFAULT_API_BASE = 'http://localhost:3000';
 const API_BASE_STORAGE_KEY = 'fiuba_agent_api_base';
 
@@ -728,13 +764,17 @@ function appendMessageDOM(sender, text, imageUrl = null) {
 
   const avatar = document.createElement('div');
   avatar.className = 'bubble-avatar';
-  avatar.innerText = sender === 'user' ? '👤' : '🤖';
+  if (sender === 'user') {
+    avatar.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  } else {
+    avatar.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>';
+  }
 
   const content = document.createElement('div');
   content.className = 'bubble-content';
 
   let html = "";
-  if (imageUrl) html += `<img src="${imageUrl}" style="max-width:100%;border-radius:8px;border:1px solid var(--border-color);margin-bottom:0.5rem;display:block">`;
+  if (imageUrl) html += `<div class="chat-image-wrapper"><img src="${imageUrl}" class="chat-image" alt="Imagen del usuario"></div>`;
   html += parseSimpleMarkdown(text || "");
   if (sender === 'agent' && text && text.length < 800) {
     const safe = text.replace(/`/g,'').replace(/'/g,"\\'").replace(/"/g,'&quot;').slice(0,300);

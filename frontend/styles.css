@@ -838,6 +838,22 @@ body {
   color: white;
 }
 
+.chat-image-wrapper {
+  margin-bottom: 0.6rem;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  max-height: 300px;
+}
+
+.chat-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  max-height: 300px;
+}
+
 .bubble-content {
   background-color: var(--bg-chat-agent);
   border: 1px solid var(--border-color);
@@ -1860,5 +1876,108 @@ body {
 @keyframes botTyping {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
   30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* ==========================================================================
+   Light Theme
+   ========================================================================== */
+[data-theme="light"] {
+  --bg-dark: #f1f5f9;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-chat-user: linear-gradient(135deg, #2563eb, #1d4ed8);
+  --bg-chat-agent: #ffffff;
+  --bg-surface: #f8fafc;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --border-active: rgba(59, 130, 246, 0.5);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+}
+
+[data-theme="light"] body {
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .sidebar {
+  background-color: var(--bg-sidebar);
+  border-right-color: var(--border-color);
+}
+
+[data-theme="light"] .bubble-content {
+  background-color: var(--bg-chat-agent);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .bubble-content code {
+  background-color: rgba(0, 0, 0, 0.06);
+  color: var(--primary);
+}
+
+[data-theme="light"] .bubble-content pre {
+  background-color: #f1f5f9;
+  border-color: var(--border-color);
+}
+
+[data-theme="light"] .bubble-content pre code {
+  color: #1e293b;
+}
+
+[data-theme="light"] #chat-form {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="light"] .chat-history {
+  scrollbar-color: rgba(0,0,0,0.1) transparent;
+}
+
+[data-theme="light"] .typing-indicator {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="light"] .calc-panel,
+[data-theme="light"] .admin-bot-panel {
+  background: var(--bg-sidebar);
+  border-color: var(--border-color);
+}
+
+[data-theme="light"] .calc-display {
+  background: var(--bg-dark);
+  border-color: var(--border-color);
+}
+
+[data-theme="light"] .admin-bot-bubble {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .modal-dialog,
+[data-theme="light"] .auth-card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="light"] .form-control {
+  background: var(--bg-dark);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .chat-image-wrapper {
+  border-color: var(--border-color);
+}
+
+[data-theme="light"] .suggestion-card {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+[data-theme="light"] .suggestion-card p {
+  color: var(--text-primary);
 }
 

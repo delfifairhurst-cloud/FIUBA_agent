@@ -1,5 +1,5 @@
 // library-ui.js - UI Biblioteca organizada + Altillo import
-import { addLibraryItem, getLibraryItems, deleteLibraryItem, shareCommunityLink, getCommunityLinks } from "./library.js";
+import { addLibraryItem, getLibraryItems, deleteLibraryItem, shareCommunityLink, getCommunityLinks, deleteCommunityLink } from "./library.js";
 import { authReady } from "./firebase.js";
 
 window.importAltillo = async () => {
@@ -205,7 +205,7 @@ async function refreshCommunity() {
       
       return `
         <div style="display:flex;flex-direction:column;gap:0.3rem;margin-bottom:0.5rem">
-          <div style="display:flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.04);border:1px solid ${isDuplicate ? 'var(--warning)' : 'var(--border-color)'};border-radius:8px;padding:0.5rem 0.7rem">
+          <div style="display:flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.04);border:1px solid var(--border-color);border-radius:8px;padding:0.5rem 0.7rem">
             <a href="${mainItem.url}" target="_blank" style="flex:1;display:flex;justify-content:space-between;align-items:center;text-decoration:none;color:var(--text-secondary);gap:0.5rem;min-width:0">
               <span style="font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${mainItem.title}</span>
               <span style="font-size:0.65rem;color:var(--accent-cyan);white-space:nowrap">Abrir →</span>
@@ -215,9 +215,8 @@ async function refreshCommunity() {
             </button>
           </div>
           ${isDuplicate ? `
-            <div style="margin-left:1.5rem;font-size:0.65rem;color:var(--warning);display:flex;gap:0.3rem;flex-wrap:wrap">
-              <span>⚠ Duplicados (${duplicates.length}):</span>
-              ${duplicates.map(d => `<button onclick="handleDeleteCommunity('${d.id}')" style="background:var(--warning);color:var(--bg-dark);border:none;border-radius:4px;padding:0.1rem 0.3rem;font-size:0.6rem;cursor:pointer">Borrar dup #${d.id.slice(-4)}</button>`).join('')}
+            <div style="margin-left:1.5rem;font-size:0.65rem;color:var(--text-muted);display:flex;gap:0.3rem;flex-wrap:wrap">
+              ${duplicates.map(d => `<button onclick="handleDeleteCommunity('${d.id}')" style="background:rgba(255,255,255,0.08);color:var(--text-muted);border:1px solid var(--border-color);border-radius:4px;padding:0.15rem 0.4rem;font-size:0.6rem;cursor:pointer">Borrar dup</button>`).join('')}
             </div>
           ` : ''}
         </div>

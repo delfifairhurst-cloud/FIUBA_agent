@@ -199,12 +199,12 @@ window.ScientificCalculator = (() => {
         .replace(/\)\s*\(/g, ')*(')
         .replace(/\)(\d)/g, ')*$1');
       const mathFuncs = {
-        sin: angleMode === 'deg' ? '(x)=>Math.sin(x*Math.PI/180)' : 'Math.sin',
-        cos: angleMode === 'deg' ? '(x)=>Math.cos(x*Math.PI/180)' : 'Math.cos',
-        tan: angleMode === 'deg' ? '(x)=>Math.tan(x*Math.PI/180)' : 'Math.tan',
-        asin: angleMode === 'deg' ? '(x)=>Math.asin(x)*180/Math.PI' : 'Math.asin',
-        acos: angleMode === 'deg' ? '(x)=>Math.acos(x)*180/Math.PI' : 'Math.acos',
-        atan: angleMode === 'deg' ? '(x)=>Math.atan(x)*180/Math.PI' : 'Math.atan',
+        sin: angleMode === 'deg' ? '(x=>Math.sin(x*Math.PI/180))' : 'Math.sin',
+        cos: angleMode === 'deg' ? '(x=>Math.cos(x*Math.PI/180))' : 'Math.cos',
+        tan: angleMode === 'deg' ? '(x=>Math.tan(x*Math.PI/180))' : 'Math.tan',
+        asin: angleMode === 'deg' ? '(x=>Math.asin(x)*180/Math.PI)' : 'Math.asin',
+        acos: angleMode === 'deg' ? '(x=>Math.acos(x)*180/Math.PI)' : 'Math.acos',
+        atan: angleMode === 'deg' ? '(x=>Math.atan(x)*180/Math.PI)' : 'Math.atan',
         log: 'Math.log10',
         ln: 'Math.log',
         sqrt: 'Math.sqrt'
