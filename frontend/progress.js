@@ -44,6 +44,12 @@ async function handleSaveAttempt() {
     document.getElementById("attempt-topic").value = "";
     document.getElementById("attempt-time").value = "";
     await refreshRecent();
+    // Gamificación: XP por intento registrado
+    if (window.Gamification) {
+      window.Gamification.trackAttempt();
+      const r = window.Gamification.addXp('attempt_logged');
+      if (window.processGamificationResult) window.processGamificationResult(r);
+    }
     // feedback en chat
     if (window.appendMessageDOM) {
       window.appendMessageDOM("agent", `✅ **Intento guardado**: ${subject} / ${topic} — ${result === "correct" ? "Correcto" : result === "incorrect" ? "Incorrecto" : "Parcial"} (confianza: ${confidence || "—"})`);

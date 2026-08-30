@@ -65,6 +65,12 @@ export function endExam() {
   // Guardar en perfil como intentos también
   report += `\n_Revisa "Mi Progreso" para ver el detalle por intento._`;
   if (window.appendMessageDOM) window.appendMessageDOM("agent", report);
+  // Gamificación: XP por examen completado
+  if (window.Gamification) {
+    window.Gamification.trackQuiz(pct === 100);
+    const r = window.Gamification.addXp('quiz_completed');
+    if (window.processGamificationResult) window.processGamificationResult(r);
+  }
   save();
   renderExaminerPanel();
 }
@@ -123,6 +129,13 @@ export async function handleExaminerEvaluation(json, userAnswer) {
   if (json.main_error) fb += `*Error:* ${json.main_error}\n`;
   if (json.feedback) fb += `${json.feedback}\n`;
   if (window.appendMessageDOM) window.appendMessageDOM("agent", fb);
+
+  // Gamificación: XP por pregunta de examinador
+  if (window.Gamification) {
+    const xpType = result === 'correct' ? 'quiz_correct' : 'flashcard_reviewed';
+    const r = window.Gamification.addXp(xpType);
+    if (window.processGamificationResult) window.processGamificationResult(r);
+  }
 
   save();
   renderExaminerPanel();

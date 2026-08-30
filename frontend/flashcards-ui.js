@@ -115,6 +115,12 @@ window.revealFlashcard = () => { showingBack = true; renderFlashcardQuiz(); };
 window.rateFlashcard = async (q) => {
   const c = currentQueue[currentIdx];
   try { await reviewFlashcard(c.id, q); } catch(e){ console.error(e); }
+  // Gamificación: XP por flashcard
+  if (window.Gamification) {
+    window.Gamification.trackFlashcard(q >= 3);
+    const r = window.Gamification.addXp(q >= 3 ? 'flashcard_mastered' : 'flashcard_reviewed');
+    if (window.processGamificationResult) window.processGamificationResult(r);
+  }
   currentIdx++; showingBack = false; renderFlashcardQuiz(); refreshFlashcardsView();
 };
 window.closeFlashcardsQuiz = () => document.getElementById("flashcards-quiz-modal")?.classList.remove("open");

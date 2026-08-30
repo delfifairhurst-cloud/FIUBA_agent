@@ -347,6 +347,17 @@ window.handleSubmitEvaluation = async () => {
       </div>
     `;
     refreshEvaluations();
+    // Gamificación: XP por evaluación
+    if (window.Gamification) {
+      window.Gamification.trackEvaluation();
+      const r = window.Gamification.addXp('evaluation_passed');
+      if (window.processGamificationResult) window.processGamificationResult(r);
+      // Bonus si sacó 10
+      if (result.percentage === 100) {
+        const bonus = window.Gamification.addXp('quiz_correct');
+        if (window.processGamificationResult) window.processGamificationResult(bonus);
+      }
+    }
   } catch(e){ alert("Error: "+e.message); console.error(e); }
 };
 

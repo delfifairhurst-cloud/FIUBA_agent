@@ -364,22 +364,84 @@
         </div>
       </div>
 
-      <!-- Vista Progreso / Analytics -->
+      <!-- Vista Progreso / Gamificación -->
       <div id="progreso-view" class="view-panel hidden">
         <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
-          <h2 style="font-family:var(--font-heading);font-size:1.35rem;color:var(--text-primary);margin-bottom:0.25rem">Tu Progreso</h2>
-          <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem">Evolución por materia, rachas y puntos</p>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem">
-            <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem">
-              <h4 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem">Intentos por semana</h4>
-              <canvas id="chart-attempts" height="180"></canvas>
+
+          <!-- Level Card -->
+          <div id="gam-level-card" class="gam-card gam-level-card">
+            <div class="gam-level-header">
+              <div class="gam-level-icon" id="gam-level-icon">🌱</div>
+              <div class="gam-level-info">
+                <div class="gam-level-title" id="gam-level-title">Novato</div>
+                <div class="gam-level-num" id="gam-level-num">Nivel 1</div>
+              </div>
+              <div class="gam-xp-total" id="gam-xp-total">0 XP</div>
             </div>
-            <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem">
-              <h4 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem">Aciertos por materia</h4>
-              <canvas id="chart-topics" height="180"></canvas>
+            <div class="gam-xp-bar-container">
+              <div class="gam-xp-bar" id="gam-xp-bar" style="width:0%"></div>
+            </div>
+            <div class="gam-xp-bar-label" id="gam-xp-bar-label">0 / 25 XP para siguiente nivel</div>
+          </div>
+
+          <!-- Stats Row -->
+          <div class="gam-stats-row">
+            <div class="gam-stat-card">
+              <div class="gam-stat-icon" id="gam-streak-icon">🔥</div>
+              <div class="gam-stat-value" id="gam-streak-value">0</div>
+              <div class="gam-stat-label">Racha</div>
+            </div>
+            <div class="gam-stat-card">
+              <div class="gam-stat-icon">💬</div>
+              <div class="gam-stat-value" id="gam-messages-value">0</div>
+              <div class="gam-stat-label">Mensajes</div>
+            </div>
+            <div class="gam-stat-card">
+              <div class="gam-stat-icon">📝</div>
+              <div class="gam-stat-value" id="gam-quizzes-value">0</div>
+              <div class="gam-stat-label">Quizzes</div>
+            </div>
+            <div class="gam-stat-card">
+              <div class="gam-stat-icon">🎯</div>
+              <div class="gam-stat-value" id="gam-evals-value">0</div>
+              <div class="gam-stat-label">Evaluaciones</div>
             </div>
           </div>
-          <div id="analytics-ranking" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem"></div>
+
+          <!-- Daily Goal -->
+          <div class="gam-card gam-daily-card">
+            <div class="gam-daily-header">
+              <span class="gam-daily-title">Meta Diaria</span>
+              <span class="gam-daily-xp" id="gam-daily-xp">0 / 30 XP</span>
+            </div>
+            <div class="gam-daily-bar-container">
+              <div class="gam-daily-bar" id="gam-daily-bar" style="width:0%"></div>
+            </div>
+            <div class="gam-daily-hint" id="gam-daily-hint">Gastá tu primera energía: enviá un mensaje o hacé un quiz</div>
+          </div>
+
+          <!-- Charts -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem">
+            <div class="gam-card" style="padding:1rem">
+              <h4 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem">Actividad semanal</h4>
+              <canvas id="chart-attempts" height="160"></canvas>
+            </div>
+            <div class="gam-card" style="padding:1rem">
+              <h4 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem">Aciertos por materia</h4>
+              <canvas id="chart-topics" height="160"></canvas>
+            </div>
+          </div>
+
+          <!-- Achievements -->
+          <div class="gam-card gam-achievements-card">
+            <h3 style="font-size:1rem;color:var(--text-primary);margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14z"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg>
+              Logros
+            </h3>
+            <div id="gam-achievements-grid" class="gam-achievements-grid"></div>
+          </div>
+
+          <div id="analytics-ranking"></div>
         </div>
       </div>
 
@@ -682,6 +744,7 @@
   <script src="app.js?v=40"></script>
   
 
+  <script src="gamification.js"></script>
   <script type="module" src="firebase.js"></script>
   <script type="module" src="progress.js"></script>
   <script type="module" src="auth-ui.js"></script>

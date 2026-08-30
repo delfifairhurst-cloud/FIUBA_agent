@@ -22,7 +22,7 @@ function setTheme(theme) {
 window.setTheme = setTheme;
 
 (function initTheme() {
-  const saved = localStorage.getItem('fiuba_theme') || 'dark';
+  const saved = localStorage.getItem('fiuba_theme') || 'light';
   document.documentElement.setAttribute('data-theme', saved);
   setTimeout(() => {
     const darkBtn = document.getElementById('theme-dark-btn');
@@ -754,6 +754,12 @@ async function handleSend(event) {
           chat.messages.push({ sender: 'agent', text: data.reply });
           saveChatsToStorage();
           appendMessageDOM('agent', data.reply);
+          // Gamificación: XP por mensaje
+          if (window.Gamification) {
+            window.Gamification.trackMessage();
+            const r = window.Gamification.addXp('chat_message');
+            if (window.processGamificationResult) window.processGamificationResult(r);
+          }
         }
         checkBackendStatus();
       }
