@@ -6,7 +6,7 @@ window.ScientificCalculator = (() => {
   const html = `
     <div id="${panelId}" class="calc-panel hidden">
       <div class="calc-header">
-        <span>🧮 Calculadora Científica</span>
+        <span>🧮 Calculadora</span>
         <button class="calc-close" onclick="ScientificCalculator.toggle()">✕</button>
       </div>
       <div class="calc-display">
@@ -31,11 +31,11 @@ window.ScientificCalculator = (() => {
           <button class="calc-fn" data-fn="e">e</button>
         </div>
         <div class="calc-row">
+          <button class="calc-clear" data-clear="all">AC</button>
+          <button class="calc-clear" data-clear="back">⌫</button>
+          <button class="calc-op" data-op="%">%</button>
           <button class="calc-op" data-op="(">(</button>
           <button class="calc-op" data-op=")">)</button>
-          <button class="calc-op" data-op="%">%</button>
-          <button class="calc-clear" data-clear="all">C</button>
-          <button class="calc-clear" data-clear="back">⌫</button>
           <button class="calc-op" data-op="/">÷</button>
         </div>
         <div class="calc-row">
@@ -65,8 +65,9 @@ window.ScientificCalculator = (() => {
         <div class="calc-row">
           <button class="calc-num" data-num="0" style="grid-column:span 2">0</button>
           <button class="calc-num" data-num=".">.</button>
-          <button class="calc-equals" data-equal>=</button>
-          <button class="calc-fn" data-fn="deg">DEG/RAD</button>
+          <button class="calc-equals" data-equal="=">=</button>
+          <button class="calc-fn" data-fn="neg">±</button>
+          <button class="calc-fn" data-fn="deg" id="calc-deg-btn">DEG</button>
         </div>
       </div>
     </div>
@@ -76,7 +77,9 @@ window.ScientificCalculator = (() => {
   `;
   
   let expr = '';
+  let lastResult = '';
   let angleMode = 'deg';
+  let justEvaluated = false;
   
   function init() {
     if (document.getElementById('calc-fab')) return;
@@ -86,8 +89,6 @@ window.ScientificCalculator = (() => {
   
   function attachEvents() {
     const panel = document.getElementById('calc-panel');
-    const exprEl = document.getElementById('calc-expr');
-    const resultEl = document.getElementById('calc-result');
     
     panel.querySelectorAll('button').forEach(btn => {
       btn.onclick = () => {
@@ -100,53 +101,127 @@ window.ScientificCalculator = (() => {
     });
     
     function appendNum(n) {
-      if (n === '.' && expr.slice(-1) === '.') return;
+      if (justEvaluated) { expr = ''; justEvaluated = false; }
+      if (n === '.' && expr.includes('.') && !/[\+\-\*\/\%\(\)]/.test(expr.slice(expr.lastIndexOf('.') + 1))) return;
       expr += n;
       updateDisplay();
     }
+    
     function appendOp(op) {
-      if (!expr || /[\+\-\*\/\%\(]$/.test(expr)) return;
-      expr += op;
+      if (justEvaluated) { expr = lastResult; justEvaluated = false; }
+      if (!expr && op !== '(' && op !== '-') return;
+      const last = expr.slice(-1);
+      if (last && '+-*/%'.includes(last) && '+-*/%'.includes(op)) {
+        expr = expr.slice(0, -1) + op;
+      } else {
+        expr += op;
+      }
       updateDisplay();
     }
+    
     function applyFn(fn) {
-      try {
-        let val = expr ? evalExpr(expr) : 0;
-        switch(fn) {
-          case 'sin': val = trig(Math.sin, val); break;
-          case 'cos': val = trig(Math.cos, val); break;
-          case 'tan': val = trig(Math.tan, val); break;
-          case 'asin': val = aTrig(Math.asin, val); break;
-          case 'acos': val = aTrig(Math.acos, val); break;
-          case 'atan': val = aTrig(Math.atan, val); break;
-          case 'log': val = Math.log10(val); break;
-          case 'ln': val = Math.log(val); break;
-          case 'sqrt': val = Math.sqrt(val); break;
-          case 'pow': expr += '**'; updateDisplay(); return;
-          case 'pi': expr += Math.PI; updateDisplay(); return;
-          case 'e': expr += Math.E; updateDisplay(); return;
-          case 'pow2': val = val * val; break;
-          case 'pow3': val = val * val * val; break;
-          case '10x': val = Math.pow(10, val); break;
-          case '2x': val = Math.pow(2, val); break;
-          case 'fact': val = factorial(val); break;
-          case 'exp': expr += 'e'; updateDisplay(); return;
-          case 'deg': angleMode = angleMode === 'deg' ? 'rad' : 'deg'; updateDisplay(); return;
+      if (justEvaluated) { justEvaluated = false; }
+      switch(fn) {
+        case 'sin': expr += 'sin('; updateDisplay(); return;
+        case 'cos': expr += 'cos('; updateDisplay(); return;
+        case 'tan': expr += 'tan('; updateDisplay(); return;
+        case 'asin': expr += 'asin('; updateDisplay(); return;
+        case 'acos': expr += 'acos('; updateDisplay(); return;
+        case 'atan': expr += 'atan('; updateDisplay(); return;
+        case 'log': expr += 'log('; updateDisplay(); return;
+        case 'ln': expr += 'ln('; updateDisplay(); return;
+        case 'sqrt': expr += 'sqrt('; updateDisplay(); return;
+        case 'pow': expr += '^('; updateDisplay(); return;
+        case 'pi': expr += String(Math.PI); updateDisplay(); return;
+        case 'e': expr += String(Math.E); updateDisplay(); return;
+        case 'pow2': expr += '^2'; updateDisplay(); return;
+        case 'pow3': expr += '^3'; updateDisplay(); return;
+        case '10x': expr += '10^('; updateDisplay(); return;
+        case '2x': expr += '2^('; updateDisplay(); return;
+        case 'fact': {
+          try {
+            const val = evalExpr(expr);
+            expr = String(factorial(val));
+            updateDisplay();
+          } catch(e) {}
+          return;
         }
-        expr = String(val);
-        updateDisplay();
-      } catch(e) { expr = 'Error'; updateDisplay(); }
+        case 'neg': {
+          if (expr) {
+            if (expr.startsWith('-')) expr = expr.slice(1);
+            else expr = '-' + expr;
+            updateDisplay();
+          }
+          return;
+        }
+        case 'deg': {
+          angleMode = angleMode === 'deg' ? 'rad' : 'deg';
+          const degBtn = document.getElementById('calc-deg-btn');
+          if (degBtn) degBtn.textContent = angleMode === 'deg' ? 'DEG' : 'RAD';
+          return;
+        }
+      }
     }
-    function trig(fn, val) { return angleMode === 'deg' ? fn(val * Math.PI / 180) : fn(val); }
-    function aTrig(fn, val) { const res = fn(val); return angleMode === 'deg' ? res * 180 / Math.PI : res; }
+    
     function factorial(n) { if (n < 0 || n !== Math.floor(n)) return NaN; let r = 1; for(let i=2;i<=n;i++) r*=i; return r; }
-    function clear(type) { if (type === 'all') expr = ''; else expr = expr.slice(0,-1); updateDisplay(); }
-    function evaluate() { try { const val = evalExpr(expr); expr = String(val); updateDisplay(); } catch(e) { expr = 'Error'; updateDisplay(); } }
-    function evalExpr(e) { return Function('"use strict"; return (' + e.replace(/\^/g, '**') + ')')(); }
-    function updateDisplay() { 
-      document.getElementById('calc-expr').textContent = expr; 
-      try { document.getElementById('calc-result').textContent = expr ? evalExpr(expr) : ''; } 
-      catch(e) { document.getElementById('calc-result').textContent = ''; } 
+    
+    function clear(type) {
+      if (type === 'all') { expr = ''; lastResult = ''; justEvaluated = false; }
+      else { expr = expr.slice(0, -1); }
+      updateDisplay();
+    }
+    
+    function evaluate() {
+      try {
+        let e = expr;
+        let open = (e.match(/\(/g) || []).length;
+        let close = (e.match(/\)/g) || []).length;
+        while (close < open) { e += ')'; close++; }
+        const val = evalExpr(e);
+        lastResult = String(val);
+        expr = lastResult;
+        justEvaluated = true;
+        updateDisplay();
+      } catch(e) {
+        expr = 'Error';
+        updateDisplay();
+      }
+    }
+    
+    function evalExpr(e) {
+      let normalized = e
+        .replace(/\^/g, '**')
+        .replace(/(\d+\.?\d*)\s*\(/g, '$1*(')
+        .replace(/\)\s*\(/g, ')*(')
+        .replace(/\)(\d)/g, ')*$1');
+      const mathFuncs = {
+        sin: angleMode === 'deg' ? '(x)=>Math.sin(x*Math.PI/180)' : 'Math.sin',
+        cos: angleMode === 'deg' ? '(x)=>Math.cos(x*Math.PI/180)' : 'Math.cos',
+        tan: angleMode === 'deg' ? '(x)=>Math.tan(x*Math.PI/180)' : 'Math.tan',
+        asin: angleMode === 'deg' ? '(x)=>Math.asin(x)*180/Math.PI' : 'Math.asin',
+        acos: angleMode === 'deg' ? '(x)=>Math.acos(x)*180/Math.PI' : 'Math.acos',
+        atan: angleMode === 'deg' ? '(x)=>Math.atan(x)*180/Math.PI' : 'Math.atan',
+        log: 'Math.log10',
+        ln: 'Math.log',
+        sqrt: 'Math.sqrt'
+      };
+      for (const [name, fn] of Object.entries(mathFuncs)) {
+        normalized = normalized.replace(new RegExp(name + '\\(', 'g'), fn + '(');
+      }
+      return Function('"use strict"; return (' + normalized + ')')();
+    }
+    
+    function updateDisplay() {
+      const exprEl = document.getElementById('calc-expr');
+      const resultEl = document.getElementById('calc-result');
+      if (exprEl) exprEl.textContent = expr;
+      if (!resultEl) return;
+      if (!expr) { resultEl.textContent = '0'; return; }
+      try {
+        resultEl.textContent = evalExpr(expr);
+      } catch(e) {
+        resultEl.textContent = '';
+      }
     }
   }
   
@@ -160,7 +235,6 @@ window.ScientificCalculator = (() => {
   return { init, toggle };
 })();
 
-// Auto-init
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => ScientificCalculator.init());
 } else {
