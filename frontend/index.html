@@ -236,6 +236,14 @@
         <button class="btn-server-config" onclick="openChangelog()" title="Novedades" style="margin-top:0.3rem">
           <span>📋 Novedades</span>
         </button>
+        <div style="display:flex;gap:0.3rem;margin-top:0.3rem">
+          <button class="btn-server-config" onclick="openCramMode()" title="Modo Examen Mañana" style="flex:1;font-size:0.78rem">
+            <span>📚 Examen</span>
+          </button>
+          <button class="btn-server-config" onclick="openMnemonics()" title="Generador de Mnemónicos" style="flex:1;font-size:0.78rem">
+            <span>🧠 Mnemo</span>
+          </button>
+        </div>
         <div style="font-size:0.65rem;color:var(--text-muted);text-align:center;margin-top:0.4rem;opacity:0.6">
           Ctrl+N nuevo chat · Ctrl+P pomodoro · Ctrl+F fórmulas
         </div>
@@ -794,6 +802,12 @@
   <!-- Changelog modal -->
   <div class="cl-modal" id="changelog-modal"></div>
 
+  <!-- Cram Mode modal -->
+  <div class="cram-modal" id="cram-modal"></div>
+
+  <!-- Mnemonics modal -->
+  <div class="mn-modal" id="mnemonics-modal"></div>
+
   <!-- Librería PDF.js para lectura de documentos PDF en el navegador -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="pdf-parser.js"></script>
@@ -806,6 +820,8 @@
   <script src="export-chat.js"></script>
   <script src="changelog.js"></script>
   <script src="extras.js"></script>
+  <script src="cram-mode.js"></script>
+  <script src="mnemonics.js"></script>
   <script type="module" src="firebase.js"></script>
   <script type="module" src="progress.js"></script>
   <script type="module" src="auth-ui.js"></script>
@@ -826,6 +842,8 @@
       if (window.initPomodoro) window.initPomodoro();
       if (window.initFormulas) window.initFormulas();
       if (window.initChangelog) window.initChangelog();
+      if (window.initCramMode) window.initCramMode();
+      if (window.initMnemonics) window.initMnemonics();
       if (window.initShortcuts) window.initShortcuts();
       setTimeout(() => { if (window.showOnboarding) window.showOnboarding(); }, 1000);
     });
