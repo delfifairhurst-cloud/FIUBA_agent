@@ -13,22 +13,14 @@ function clearError() { showError(""); }
 function clearRegError() { showRegError(""); }
 
 window.showRegisterPage = () => {
-  const landing = document.getElementById("landing-page");
-  const login = document.getElementById("login-page");
-  const reg = document.getElementById("register-page");
-  if (landing) landing.style.display = "none";
-  if (login) login.style.display = "none";
-  if (reg) reg.style.display = "block";
+  document.getElementById("login-page").style.display = "none";
+  document.getElementById("register-page").style.display = "block";
   clearRegError();
 };
 
 window.showLoginPage = () => {
-  const landing = document.getElementById("landing-page");
-  const login = document.getElementById("login-page");
-  const reg = document.getElementById("register-page");
-  if (landing) landing.style.display = "none";
-  if (reg) reg.style.display = "none";
-  if (login) login.style.display = "block";
+  document.getElementById("register-page").style.display = "none";
+  document.getElementById("login-page").style.display = "block";
   clearError();
 };
 

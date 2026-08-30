@@ -1459,20 +1459,6 @@ function switchView(view) {
     appLayout.classList.toggle('view-open', view !== 'inicio');
   }
 
-  // Hide/show FABs on mobile when in chat view
-  const isMobile = window.innerWidth <= 768;
-  const fabIds = ['calc-fab', 'pomodoro-fab', 'admin-bot-fab', 'examgen-fab', 'formulas-fab'];
-  fabIds.forEach(id => {
-    const fab = document.getElementById(id);
-    if (fab) {
-      if (isMobile && view === 'inicio') {
-        fab.style.display = 'none';
-      } else {
-        fab.style.display = '';
-      }
-    }
-  });
-
   // Show the selected view
   if (view === 'inicio') {
     if (chatEl) chatEl.style.display = 'flex';

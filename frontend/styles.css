@@ -1752,6 +1752,15 @@ body {
   .formulas-fab { bottom: 300px; left: 12px; width: 40px; height: 40px; }
   .admin-bot-fab { bottom: 200px; right: 12px; width: 40px; height: 40px; }
 
+  /* Hide FABs when chat is active (no view panel open) - mobile only */
+  .app-layout:not(.view-open) .calc-fab,
+  .app-layout:not(.view-open) .pom-fab,
+  .app-layout:not(.view-open) .formulas-fab,
+  .app-layout:not(.view-open) .admin-bot-fab,
+  .app-layout:not(.view-open) .examgen-fab {
+    display: none;
+  }
+
   /* Calc panel bottom sheet */
   .calc-panel {
     left: 0; right: 0; bottom: 0;
