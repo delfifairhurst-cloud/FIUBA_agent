@@ -4,7 +4,7 @@ import { authReady } from "./firebase.js";
 const USEFUL_LINKS = [
   { label: "Altillo - Parciales de FIUBA", url: "https://altillo.com/fiuba" },
   { label: "FIUBA - Sitio oficial", url: "https://fi.uba.ar" },
-  { label: "Ejercitador UBA - Práctica", url: "https://www.trabajospracticos.ejercitador.org" },
+  { label: "UBA - Sitio oficial", url: "https://www.uba.ar" },
   { label: "Khan Academy - Matemáticas", url: "https://www.khanacademy.org/math" },
   { label: "Wolfram Alpha - Calculadora", url: "https://www.wolframalpha.com" },
 ];

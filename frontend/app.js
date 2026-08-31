@@ -168,6 +168,11 @@ const MODE_DESCRIPTIONS = {
 // Al cargar la página
 window.loadChatsFromStorage = loadChatsFromStorage;
 document.addEventListener('DOMContentLoaded', () => {
+  // Beta banner: mostrar solo si no se cerró antes
+  if (!localStorage.getItem('fiuba_beta_banner_closed')) {
+    const banner = document.getElementById('beta-banner');
+    if (banner) banner.style.display = 'flex';
+  }
   loadChatsFromStorage();
   checkBackendStatus();
   // Asegurar que el chat sea visible al cargar
@@ -178,6 +183,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isMobileDrawer()) closeSidebar();
   });
 });
+
+window.closeBetaBanner = function() {
+  localStorage.setItem('fiuba_beta_banner_closed', '1');
+  const banner = document.getElementById('beta-banner');
+  if (banner) { banner.style.opacity = '0'; banner.style.transform = 'translateY(-4px)'; setTimeout(() => banner.style.display = 'none', 250); }
+};
 
 // Cargar chats desde LocalStorage o crear uno por defecto
 function loadChatsFromStorage() {

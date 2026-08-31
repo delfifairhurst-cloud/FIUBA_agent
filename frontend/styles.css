@@ -3896,3 +3896,64 @@ body {
   }
 }
 
+/* Beta Banner */
+.beta-banner {
+  background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(249,115,22,0.08));
+  border-bottom: 1px solid rgba(245,158,11,0.2);
+  padding: 0.45rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  animation: betaFadeIn 0.4s ease;
+}
+.beta-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.beta-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.beta-contact {
+  color: var(--accent-cyan);
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.beta-contact:hover { opacity: 0.8; text-decoration: underline; }
+.beta-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.beta-close:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+
+@keyframes betaFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .beta-banner { padding: 0.4rem 0.75rem; font-size: 0.72rem; }
+  .beta-banner-inner { gap: 0.35rem; }
+}
+
