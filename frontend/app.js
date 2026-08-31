@@ -1587,10 +1587,11 @@ const draggableFabs = [
 ];
 
 let activeFab = null;
-let offsetX = 0;
-let offsetY = 0;
+let originalBottom = 0;
+let horizontalOriginal = 0;
+let isDragging = false;
 
-// Obtener posición original desde el estilo computado
+// Obtener posición original bottom desde CSS computado
 function getOriginalBottom(fabId) {
   const fab = document.getElementById(fabId);
   if (!fab) return 100;
@@ -1598,52 +1599,89 @@ function getOriginalBottom(fabId) {
   return parseFloat(style.bottom) || 100;
 }
 
+// Para fórmulas y admin-bot que usan 'right', guardar posición horizontal original
+function getOriginalHorizontal(fabId) {
+  const fab = document.getElementById(fabId);
+  if (!fab) return 20;
+  const style = window.getComputedStyle(fab);
+  // Si usa right, obtener valor; si usa left, ignorar (usar left por defecto)
+  const right = style.right;
+  if (right && right !== 'auto') {
+    return parseFloat(right) || 20;
+  }
+  return parseFloat(style.left) || 20;
+}
+
 function startDraggable(e, fabId) {
   activeFab = document.getElementById(fabId);
   if (!activeFab) return;
-  offsetX = e.clientX;
-  offsetY = e.clientY;
-  activeFab.style.transition = 'none';
-  // Guardar posición original antes de arrastrar
   originalBottom = getOriginalBottom(fabId);
+  horizontalOriginal = getOriginalHorizontal(fabId);
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+  isDragging = false;
+  activeFab.style.transition = 'none';
 }
 
 function drag(e) {
   if (!activeFab) return;
-  const dx = e.clientX - offsetX;
-  const dy = e.clientY - offsetY;
+  const dx = e.clientX - dragStartX;
+  const dy = e.clientY - dragStartY;
   
+  // Si el movimiento es menor a 5px, considerar como click (no arrastrar)
+  if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+    return;
+  }
+  
+  isDragging = true;
   const rect = activeFab.getBoundingClientRect();
-  // Posición original + offset
+  
+  // Nueva posición bottom: posición original + offset vertical
   let newBottom = originalBottom + dy;
-  
-  // Solo mover dentro de la ventana visible
   const maxBottom = window.innerHeight - rect.height - 20;
-  const maxLeft = 20;
-  const maxRight = window.innerWidth - rect.width - 20;
-  
   newBottom = Math.max(20, Math.min(maxBottom, newBottom));
-  const newLeft = Math.max(20, Math.min(maxRight,  // actually this should be left, not right
-    document.getElementById(activeFab.id).dataset.defaultLeft || 20));
+  
+  // Nueva posición horizontal: posición original + offset horizontal
+  // Si el ícono usa 'right' en CSS, invertimos el delta
+  const style = window.getComputedStyle(activeFab);
+  if (style.right !== 'auto' && parseFloat(style.right) > 0) {
+    // Usa right: mover en dirección inversa
+    newHorizontal = horizontalOriginal - dx;
+    const minRight = 20;
+    const maxRight = window.innerWidth - rect.width - 20;
+    newHorizontal = Math.max(minRight, Math.min(maxRight, newHorizontal));
+    activeFab.style.right = newHorizontal + 'px';
+    activeFab.style.left = '';
+  } else {
+    // Usa left: mover directamente
+    newHorizontal = horizontalOriginal + dx;
+    const minLeft = 20;
+    const maxLeft = window.innerWidth - rect.width - 20;
+    newHorizontal = Math.max(minLeft, Math.min(maxLeft, newHorizontal));
+    activeFab.style.left = newHorizontal + 'px';
+    activeFab.style.right = '';
+  }
   
   activeFab.style.bottom = newBottom + 'px';
-  activeFab.style.left = (parseFloat(activeFab.style.left) || 20) + dx + 'px';
   
-  offsetX = e.clientX;
-  offsetY = e.clientY;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
 }
 
 function stopDraggable() {
   if (!activeFab) return;
-  activeFab.style.transition = 'opacity 0.3s';
   
-  // Guardar posición final en localStorage
-  const rect = activeFab.getBoundingClientRect();
-  localStorage.setItem(`fiuba_fab_${activeFab.id}`, 
-    `bottom:${Math.round(rect.bottom)}px;left:${Math.round(rect.right)}px`);
+  // Solo guardar posición si fue un verdadero arrastre (no un click)
+  if (isDragging) {
+    const rect = activeFab.getBoundingClientRect();
+    const rightStr = activeFab.style.right ? 'right:' + Math.round(rect.right) + 'px;' : '';
+    const leftStr = activeFab.style.left ? 'left:' + Math.round(rect.left) + 'px;' : '';
+    localStorage.setItem(`fiuba_fab_${activeFab.id}`, 
+      `bottom:${Math.round(rect.bottom)}px;` + (rightStr || leftStr));
+  }
   
+  isDragging = false;
   activeFab = null;
-  originalBottom = null;
 }
 
 // Event listeners para desktop
@@ -1652,9 +1690,11 @@ draggableFabs.forEach(fabId => {
   if (!fab) return;
   
   fab.addEventListener('mousedown', (e) => startDraggable(e, fabId));
-  document.addEventListener('mousemove', (e) => drag(e));
-  document.addEventListener('mouseup', () => stopDraggable());
 });
+document.addEventListener('mousemove', (e) => {
+  if (activeFab) drag(e);
+});
+document.addEventListener('mouseup', () => stopDraggable());
 
 // Event listeners para móvil (touch)
 draggableFabs.forEach(fabId => {
@@ -1664,10 +1704,12 @@ draggableFabs.forEach(fabId => {
   fab.addEventListener('touchstart', (e) => {
     e.preventDefault();
     startDraggable(e.touches[0], fabId);
+    dragStartX = e.touches[0].clientX;
+    dragStartY = e.touches[0].clientY;
   });
   fab.addEventListener('touchmove', (e) => {
     e.preventDefault();
-    drag(e.touches[0]);
+    if (activeFab) drag(e.touches[0]);
   });
   fab.addEventListener('touchend', () => stopDraggable());
 });
@@ -1679,6 +1721,7 @@ window.resetFabPositions = function() {
     if (fab) {
       fab.style.bottom = '';
       fab.style.left = '';
+      fab.style.right = '';
       localStorage.removeItem(`fiuba_fab_${fabId}`);
     }
   });
