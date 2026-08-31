@@ -41,14 +41,30 @@ window.handleDeleteFlashcard = async (id) => {
 
 window.openFlashcardsGenerateModal = () => {
   if (!getUid()) { alert("Iniciá sesión"); return; }
+  // Populate document selector
+  const chat = window.getActiveChat ? window.getActiveChat() : null;
+  const docs = chat?.loadedDocuments || [];
+  const select = document.getElementById("flashcards-doc-select");
+  if (select) {
+    if (docs.length === 0) {
+      select.innerHTML = '<option value="">— Subí un PDF en Materiales primero —</option>';
+    } else {
+      select.innerHTML = docs.map((d, i) => `<option value="${i}">📄 ${d.filename}</option>`).join("");
+    }
+  }
   document.getElementById("flashcards-generate-modal")?.classList.add("open");
 };
 window.closeFlashcardsGenerateModal = () => document.getElementById("flashcards-generate-modal")?.classList.remove("open");
 
 window.handleGenerateFlashcards = async () => {
   const chat = window.getActiveChat ? window.getActiveChat() : null;
-  const last = chat?.loadedDocuments?.[chat.loadedDocuments.length-1];
-  if (!last || !last.text || last.text.trim().length < 40) { alert("Subí un PDF con texto en Materiales primero"); return; }
+  const docs = chat?.loadedDocuments || [];
+  const selectIdx = parseInt(document.getElementById("flashcards-doc-select")?.value);
+  if (isNaN(selectIdx) || !docs[selectIdx] || !docs[selectIdx].text || docs[selectIdx].text.trim().length < 40) {
+    alert("Elegí un documento válido con texto de Materiales");
+    return;
+  }
+  const doc = docs[selectIdx];
   const count = document.getElementById("flashcards-count-select")?.value || "8";
   const btn = document.getElementById("btn-generate-flashcards");
   const old = btn ? btn.textContent : "";
@@ -59,7 +75,7 @@ window.handleGenerateFlashcards = async () => {
     const resp = await fetch(apiBase + '/api/generate-flashcards', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rawText: last.text, count: parseInt(count), userApiKey })
+      body: JSON.stringify({ rawText: doc.text, count: parseInt(count), userApiKey })
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || 'Error');

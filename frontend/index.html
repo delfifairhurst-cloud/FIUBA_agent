@@ -540,25 +540,29 @@
       <!-- Vista Biblioteca -->
       <div id="biblioteca-view" class="view-panel hidden">
         <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
-            <div>
-              <h2 style="font-family:var(--font-heading);font-size:1.25rem;color:var(--text-primary);margin-bottom:0.2rem">Tu Biblioteca</h2>
-              <p style="color:var(--text-muted);font-size:0.82rem">Tus carpetas por materia — solo vos las ves. Organizá apuntes, guías y parciales.</p>
-            </div>
-            <button class="btn-new-chat" onclick="openLibraryModal()" style="padding:0.5rem 1rem;font-size:0.82rem">+ Nueva carpeta</button>
+          <h2 style="font-family:var(--font-heading);font-size:1.25rem;color:var(--text-primary);margin-bottom:0.2rem">Tus Materiales</h2>
+          <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem">Tus PDFs y documentos subidos se guardan por chat en la sección <strong>Materiales</strong> del sidebar.</p>
+          <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem;margin-bottom:1rem">
+            <h3 style="font-size:0.95rem;font-family:var(--font-heading);color:var(--text-primary);margin-bottom:0.6rem">📄 ¿Dónde están mis archivos?</h3>
+            <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.5rem">
+              <li style="font-size:0.82rem;color:var(--text-secondary);display:flex;gap:0.5rem;align-items:flex-start">
+                <span style="color:var(--accent-cyan)">1.</span> Abrí un chat y subí tus PDFs con el botón <strong>Materiales</strong> del sidebar
+              </li>
+              <li style="font-size:0.82rem;color:var(--text-secondary);display:flex;gap:0.5rem;align-items:flex-start">
+                <span style="color:var(--accent-cyan)">2.</span> Hacé preguntas sobre ellos en el chat
+              </li>
+              <li style="font-size:0.82rem;color:var(--text-secondary);display:flex;gap:0.5rem;align-items:flex-start">
+                <span style="color:var(--accent-cyan)">3.</span> Usá <strong>Flashcards</strong> para generar fichas de estudio desde tus PDFs
+              </li>
+              <li style="font-size:0.82rem;color:var(--text-secondary);display:flex;gap:0.5rem;align-items:flex-start">
+                <span style="color:var(--accent-cyan)">4.</span> Usá <strong>Evaluaciones</strong> para digitalizar tus parciales como quizzes interactivos
+              </li>
+            </ul>
           </div>
-          <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap">
-            <input id="biblioteca-search" class="form-control" placeholder="Buscar por materia o título..." style="flex:1;min-width:180px" oninput="filterBiblioteca(this.value)">
-            <select id="biblioteca-filter-cat" class="form-control" style="width:160px" onchange="filterBiblioteca()"><option value="">Todas las categorías</option><option>Apuntes</option><option>Guías</option><option>Parciales</option><option>Finales</option><option>Resúmenes</option><option>Otros</option></select>
+          <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem">
+            <h3 style="font-size:0.95rem;font-family:var(--font-heading);color:var(--text-primary);margin-bottom:0.6rem">🔗 Links útiles</h3>
+            <div id="biblioteca-view-links" style="display:flex;flex-direction:column;gap:0.4rem"></div>
           </div>
-          <div id="biblioteca-view-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.8rem"></div>
-          <div id="biblioteca-view-empty" class="hidden" style="text-align:center;padding:2rem;background:var(--bg-card);border:1px dashed var(--border-color);border-radius:12px;margin-top:1rem">
-            <div style="display:flex;justify-content:center;margin-bottom:0.4rem;color:var(--accent-cyan)"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1rem">Aún no cargaste material. Creá tu primera carpeta por materia.</p>
-            <button class="btn-secondary" onclick="openLibraryModal()" style="margin:0 auto">Crear carpeta</button>
-          </div>
-          <div id="biblioteca-view-list" style="margin-top:1rem"></div>
-          
         </div>
       </div>
 
@@ -888,7 +892,13 @@
     <div class="modal-dialog" style="max-width:480px">
       <div class="modal-header"><h3>Generar flashcards</h3><button class="btn-close-modal" onclick="closeFlashcardsGenerateModal()">✕</button></div>
       <div class="modal-body">
-        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.75rem">Usa el último PDF subido en Materiales. La IA crea fichas pregunta/respuesta.</p>
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.75rem">Elegí de cuál PDF generar las fichas. La IA crea preguntas/respuestas.</p>
+        <div class="form-group">
+          <label>Documento</label>
+          <select id="flashcards-doc-select" class="form-control">
+            <option value="">— Subí un PDF en Materiales primero —</option>
+          </select>
+        </div>
         <div class="form-group"><label>Cantidad</label><select id="flashcards-count-select" class="form-control"><option value="6">6</option><option value="8" selected>8</option><option value="12">12</option></select></div>
       </div>
       <div class="modal-actions"><button class="btn-modal-reset" onclick="closeFlashcardsGenerateModal()">Cancelar</button><button id="btn-generate-flashcards" class="btn-modal-save" onclick="handleGenerateFlashcards()">Generar</button></div>
@@ -901,21 +911,6 @@
       <div class="modal-header"><h3>Repaso</h3><button class="btn-close-modal" onclick="closeFlashcardsQuiz()">✕</button></div>
       <div class="modal-body" id="flashcards-quiz-card" style="min-height:120px"></div>
       <div class="modal-actions" id="flashcards-quiz-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap"></div>
-    </div>
-  </div>
-
-  <!-- Modal Biblioteca -->
-  <div class="modal-backdrop" id="library-modal" onclick="if(event.target===this) closeLibraryModal()">
-    <div class="modal-dialog">
-      <div class="modal-header"><h3>📚 Organizar en Biblioteca</h3><button class="btn-close-modal" onclick="closeLibraryModal()">✕</button></div>
-      <div class="modal-body">
-        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.75rem">Guardá tu material en carpetas como querés. Ej: <code>Análisis II → Guías → Guía 3</code>. Podés poner link a Arrimo como referencia externa.</p>
-        <div class="form-group"><label>Materia *</label><input id="lib-subject" class="form-control" placeholder="Ej: Álgebra II"></div>
-        <div class="form-group"><label>Categoría *</label><select id="lib-category" class="form-control"><option>Apuntes</option><option>Guías</option><option>Parciales</option><option>Finales</option><option>Resúmenes</option><option>Otros</option></select></div>
-        <div class="form-group"><label>Título *</label><input id="lib-title" class="form-control" placeholder="Ej: Parcial 2023 - Tema 1"></div>
-        <div class="form-group"><label>Archivo (opcional, nombre)</label><input id="lib-filename" class="form-control" placeholder="Ej: parcial_2023.pdf"></div>
-      </div>
-      <div class="modal-actions"><button class="btn-modal-reset" onclick="closeLibraryModal()">Cancelar</button><button class="btn-modal-save" onclick="handleSaveLibrary()">Guardar</button></div>
     </div>
   </div>
 

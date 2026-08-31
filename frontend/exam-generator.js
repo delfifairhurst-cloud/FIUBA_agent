@@ -8,6 +8,18 @@
     if (!initialized) { initExamGen(); initialized = true; }
     const modal = document.getElementById('examgen-modal');
     if (modal) { modal.classList.add('open'); modal.style.display = 'flex'; }
+    // Populate document selector
+    const select = document.getElementById('examgen-doc-select');
+    if (select) {
+      const chat = window.getActiveChat ? window.getActiveChat() : null;
+      const docs = chat?.loadedDocuments || [];
+      if (docs.length === 0) {
+        select.innerHTML = '<option value="">— Opcional: elegí un PDF como base —</option>';
+      } else {
+        select.innerHTML = '<option value="">— Solo por tema (sin PDF) —</option>' +
+          docs.map((d, i) => `<option value="${i}">📄 ${d.filename}</option>`).join("");
+      }
+    }
   }
 
   function closeExamGen() {
@@ -18,6 +30,7 @@
     const topicInput = document.getElementById('examgen-topic');
     const countSelect = document.getElementById('examgen-count');
     const diffSelect = document.getElementById('examgen-diff');
+    const docSelect = document.getElementById('examgen-doc-select');
     const topic = topicInput?.value.trim();
     const count = countSelect?.value || '5';
     const diff = diffSelect?.value || 'media';
@@ -25,6 +38,17 @@
     if (!topic) {
       alert('Escribí la materia o tema');
       return;
+    }
+
+    // Get document context if selected
+    let docContext = '';
+    if (docSelect && docSelect.value !== '') {
+      const chat = window.getActiveChat ? window.getActiveChat() : null;
+      const docs = chat?.loadedDocuments || [];
+      const doc = docs[parseInt(docSelect.value)];
+      if (doc && doc.text) {
+        docContext = `\n\nMATERIAL DEL USUARIO (usá esto como base para las preguntas):\n---\n${doc.text.substring(0, 6000)}\n---`;
+      }
     }
 
     const resultEl = document.getElementById('examgen-result');
@@ -73,7 +97,7 @@ REGLAS:
 - Las preguntas deben ser variadas (no repetir el mismo tema)
 - La dificultad debe ser ${diffLabel[diff]}
 
-Devolvé SOLO el JSON, sin texto extra antes ni después.`;
+Devolvé SOLO el JSON, sin texto extra antes ni después.${docContext}`;
 
     try {
       const userApiKey = (typeof window.getUserGeminiKey === 'function' ? window.getUserGeminiKey() : '');
@@ -168,6 +192,9 @@ Devolvé SOLO el JSON, sin texto extra antes ni después.`;
               <option value="alta">Difícil</option>
             </select>
           </div>
+          <select id="examgen-doc-select" class="examgen-select" style="width:100%;margin-bottom:0.5rem">
+            <option value="">— Opcional: elegí un PDF como base —</option>
+          </select>
           <button class="examgen-btn" onclick="generateExam()">Generar Parcial</button>
           <div id="examgen-result" class="examgen-result"></div>
         </div>
