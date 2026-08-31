@@ -55,6 +55,116 @@ window.openCreateEvalModal = () => {
 };
 window.closeCreateEvalModal = () => document.getElementById("create-eval-modal")?.classList.remove("open");
 
+window.handleEvalFileUpload = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const label = document.getElementById("eval-file-label");
+  if (label) label.textContent = "📄 " + file.name;
+};
+
+window.digitalizeUploadedPdf = async () => {
+  const fileInput = document.getElementById("eval-file-input");
+  let rawText = "";
+  let fileName = "";
+  let fileObj = null;
+  let pagesCount = 1;
+
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    fileObj = fileInput.files[0];
+    fileName = fileObj.name;
+    const btn = document.querySelector('button[onclick="digitalizeUploadedPdf()"]');
+    const oldText = btn ? btn.textContent : '';
+    if (btn) { btn.textContent = '⏳ Parseando PDF...'; btn.disabled = true; }
+    try {
+      const result = await extractTextFromPDF(fileObj);
+      rawText = result.text;
+      pagesCount = result.pages;
+    } catch(err) {
+      alert("Error al leer PDF: " + err.message);
+      if (btn) { btn.textContent = oldText; btn.disabled = false; }
+      return;
+    }
+    if (btn) { btn.textContent = oldText; btn.disabled = false; }
+  } else {
+    alert("Subí un PDF primero usando el botón de arriba");
+    return;
+  }
+
+  if (!rawText || rawText.trim().length < 80) {
+    if (!fileObj) { alert("No se pudo leer el archivo"); return; }
+    if (!confirm("El PDF tiene poco texto (puede ser foto). ¿Querés usar la imagen del enunciado?")) return;
+    try {
+      const pagesToShow = Math.min(pagesCount, 3);
+      tempQuestions = [];
+      for (let p=1; p<=pagesToShow; p++) {
+        const img = await getPdfPageAsImage(fileObj, p, 1.2);
+        tempQuestions.push({ id:"q"+p, statement:"Enunciado página "+p+" (imagen)", statementImage: img.dataUrl, topic:"General", type:"open", options:[], correctAnswer:"", points:1 });
+      }
+      renderQuestionsEditor();
+      const titleInput = document.getElementById("eval-title");
+      if (titleInput && !titleInput.value) titleInput.value = fileName.replace(".pdf","").slice(0,40);
+      alert("Se crearon "+tempQuestions.length+" preguntas con imagen del PDF.");
+      return;
+    } catch(e){ console.error(e); alert("No se pudo renderizar imagen: "+e.message); return; }
+  }
+
+  const quizType = document.getElementById('quiz-type')?.value || 'mixto';
+  const quizCount = document.getElementById('quiz-count')?.value || '10';
+  const btn = document.querySelector('button[onclick="digitalizeUploadedPdf()"]');
+  const oldText = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳ Generando con IA...'; btn.disabled = true; }
+  try {
+    const apiBase = (window.getApiBase ? window.getApiBase() : (localStorage.getItem('fiuba_agent_api_base') || 'https://fiuba-agent-backend-1.onrender.com')).replace(/\/+$/,'');
+    const userApiKey = (window.getUserGeminiKey ? window.getUserGeminiKey() : (localStorage.getItem('fiuba_gemini_key')||''));
+    const resp = await fetch(apiBase + '/api/generate-quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rawText: rawText, quizType: quizType, count: parseInt(quizCount), userApiKey: userApiKey })
+    });
+    const data = await resp.json();
+    if (resp.ok && data.questions && data.questions.length > 0) {
+      tempQuestions = data.questions;
+      try {
+        if (fileObj && pagesCount) {
+          const pagesToRender = Math.min(pagesCount, 3);
+          const pageImages = [];
+          for (let p=1; p<=pagesToRender; p++) {
+            const img = await getPdfPageAsImage(fileObj, p, 1.1);
+            pageImages.push(img.dataUrl);
+          }
+          tempQuestions.forEach((q, idx) => {
+            const needsImage = (q.statement || "").length < 150 || /c[oó]digo|programa|funci[oó]n|algoritmo/i.test(q.statement || "");
+            if (needsImage || pageImages.length === 1) {
+              const pageIdx = Math.min(Math.floor(idx / Math.max(1, tempQuestions.length / pageImages.length)), pageImages.length - 1);
+              q.statementImage = pageImages[pageIdx];
+            }
+          });
+        }
+      } catch(imgErr){ console.warn('No se pudo adjuntar imagen', imgErr); }
+      renderQuestionsEditor();
+      const titleInput = document.getElementById("eval-title");
+      if (titleInput && !titleInput.value) titleInput.value = fileName.replace(".pdf","").slice(0,40);
+      alert("IA generó "+tempQuestions.length+" preguntas ("+quizType+"). Revisalas y guardá.");
+      return;
+    }
+    throw new Error(data.error || 'IA no devolvió preguntas');
+  } catch(e) {
+    console.warn('IA falló, fallback a parser local', e);
+    const parsed = parsePdfTextToQuestions(rawText);
+    if (parsed.length === 0) {
+      tempQuestions = [{id:"q1",statement:rawText.slice(0,800),topic:"General",type:"open",options:[],correctAnswer:"",points:1}];
+    } else {
+      tempQuestions = parsed;
+    }
+    renderQuestionsEditor();
+    const titleInput = document.getElementById("eval-title");
+    if (titleInput && !titleInput.value) titleInput.value = fileName.replace(".pdf","").slice(0,40);
+    alert("IA no disponible, se detectaron "+tempQuestions.length+" preguntas con parser local. Revisalas y guardá.");
+  } finally {
+    if (btn) { btn.textContent = oldText || '📄 Digitalizar con IA'; btn.disabled = false; }
+  }
+};
+
 window.digitalizeLastPdf = async () => {
   const chat = window.getActiveChat ? window.getActiveChat() : null;
   const docs = chat?.loadedDocuments || [];

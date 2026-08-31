@@ -586,7 +586,7 @@
           <div id="flashcards-empty" class="hidden" style="text-align:center;padding:2.5rem 1.5rem;background:var(--bg-card);border:1px dashed var(--border-color);border-radius:16px;margin-top:1rem">
             <div style="display:flex;justify-content:center;margin-bottom:0.6rem;color:var(--accent-purple)"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10"/><path d="M7 12h10"/><path d="M7 16h6"/></svg></div>
             <h3 style="font-family:var(--font-heading);font-size:1.05rem;margin-bottom:0.4rem;color:var(--text-primary)">Sin flashcards aún</h3>
-            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem;max-width:420px;margin-left:auto;margin-right:auto">Subí un apunte o parcial en Materiales y generá fichas con la IA para repasar con el método espaciado.</p>
+            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem;max-width:420px;margin-left:auto;margin-right:auto">Subí un PDF de un apunte o parcial y generá fichas con la IA para repasar con el método espaciado.</p>
             <button class="btn-new-chat" onclick="openFlashcardsGenerateModal()" style="margin:0 auto;padding:0.6rem 1.2rem">Generar flashcards</button>
           </div>
         </div>
@@ -727,7 +727,7 @@
           <div id="evaluaciones-empty" class="hidden" style="text-align:center;padding:2.5rem 1.5rem;background:var(--bg-card);border:1px dashed var(--border-color);border-radius:16px;margin-top:1rem">
             <div style="display:flex;justify-content:center;margin-bottom:0.6rem;color:var(--primary)"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
             <h3 style="font-family:var(--font-heading);font-size:1.05rem;margin-bottom:0.4rem;color:var(--text-primary)">Aún no tenés evaluaciones</h3>
-            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem;max-width:400px;margin-left:auto;margin-right:auto">Subí un PDF de un parcial del Altillo, elegí si querés multiple choice o a desarrollar, y la IA te arma el quiz interactivo.</p>
+            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem;max-width:400px;margin-left:auto;margin-right:auto">Subí un PDF de un parcial y elegí si querés multiple choice o a desarrollar. La IA te arma el quiz interactivo.</p>
             <button class="btn-new-chat" onclick="openCreateEvalModal()" style="margin:0 auto;padding:0.6rem 1.2rem">Crear mi primera evaluación</button>
           </div>
           <div id="evaluaciones-attempts" style="margin-top:1.8rem"></div>
@@ -892,9 +892,14 @@
     <div class="modal-dialog" style="max-width:480px">
       <div class="modal-header"><h3>Generar flashcards</h3><button class="btn-close-modal" onclick="closeFlashcardsGenerateModal()">✕</button></div>
       <div class="modal-body">
-        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.75rem">Elegí de cuál PDF generar las fichas. La IA crea preguntas/respuestas.</p>
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.75rem">Subí un PDF o elegí uno de Materiales. La IA crea fichas para repasar.</p>
+        <label for="flashcards-file-input" style="display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;background:var(--bg-surface);border:2px dashed var(--border-color);border-radius:10px;cursor:pointer;margin-bottom:0.6rem;text-align:center;justify-content:center;transition:border-color 0.2s">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span id="flashcards-file-label" style="font-size:0.82rem;color:var(--text-secondary)">Subí un PDF de apunte o parcial</span>
+        </label>
+        <input type="file" id="flashcards-file-input" accept=".pdf" style="display:none" onchange="handleFlashcardsFileUpload(event)">
+        <div style="text-align:center;font-size:0.75rem;color:var(--text-muted);margin-bottom:0.6rem">— o elegí de Materiales —</div>
         <div class="form-group">
-          <label>Documento</label>
           <select id="flashcards-doc-select" class="form-control">
             <option value="">— Subí un PDF en Materiales primero —</option>
           </select>
@@ -1027,15 +1032,20 @@
     <div class="modal-dialog" style="max-width:640px">
       <div class="modal-header"><h3>📝 Nueva evaluación</h3><button class="btn-close-modal" onclick="closeCreateEvalModal()">✕</button></div>
       <div class="modal-body">
+        <label for="eval-file-input" style="display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;background:var(--bg-surface);border:2px dashed var(--border-color);border-radius:10px;cursor:pointer;margin-bottom:0.8rem;text-align:center;justify-content:center;transition:border-color 0.2s">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span id="eval-file-label" style="font-size:0.82rem;color:var(--text-secondary)">Subí un PDF de parcial para digitalizar con IA</span>
+        </label>
+        <input type="file" id="eval-file-input" accept=".pdf" style="display:none" onchange="handleEvalFileUpload(event)">
         <div class="form-group"><label>Título *</label><input id="eval-title" class="form-control" placeholder="Ej: Parcial Álgebra II - Altillo 2023"></div>
         <div class="form-group"><label>Preguntas * (editá cada enunciado)</label><div id="eval-questions-editor" style="display:flex;flex-direction:column;gap:0.6rem;max-height:50vh;overflow-y:auto"></div></div>
         <button class="btn-secondary" onclick="addEvalQuestion()" style="width:100%;justify-content:center">+ Agregar pregunta</button>
-        <div style="background:var(--bg-surface);padding:0.6rem;border-radius:8px;border:1px solid var(--border-color);font-size:0.78rem;margin-top:0.75rem">💡 Tip: Subí un PDF en Materiales, elegí tipo y cantidad, y digitalizá con IA.</div>
+        <div style="background:var(--bg-surface);padding:0.6rem;border-radius:8px;border:1px solid var(--border-color);font-size:0.78rem;margin-top:0.75rem">💡 Subí un PDF y tocá "Digitalizar con IA" para que la IA genere las preguntas automáticamente.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.6rem">
           <select id="quiz-type" class="form-control"><option value="mixto">Mixto</option><option value="multiple_choice">Solo multiple choice</option><option value="open">Solo a desarrollar</option></select>
           <select id="quiz-count" class="form-control"><option value="5">5 preguntas</option><option value="10" selected>10 preguntas</option><option value="15">15 preguntas</option></select>
         </div>
-        <div style="display:flex;gap:0.5rem;margin-top:0.6rem"><button class="btn-secondary" onclick="digitalizeLastPdf()" style="flex:1;justify-content:center">📄 Digitalizar con IA</button><button class="btn-secondary" onclick="autoGenerateMock()" style="flex:1;justify-content:center">✨ Ejemplo</button></div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.6rem"><button class="btn-secondary" onclick="digitalizeUploadedPdf()" style="flex:1;justify-content:center">📄 Digitalizar con IA</button><button class="btn-secondary" onclick="autoGenerateMock()" style="flex:1;justify-content:center">✨ Ejemplo</button></div>
       </div>
       <div class="modal-actions"><button class="btn-modal-reset" onclick="closeCreateEvalModal()">Cancelar</button><button class="btn-modal-save" onclick="handleCreateEvaluation()">Guardar evaluación</button></div>
     </div>
