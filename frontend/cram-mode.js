@@ -85,7 +85,7 @@ Sé conciso. El estudiante tiene poco tiempo.`;
 
     try {
       const userApiKey = (typeof window.getUserGeminiKey === 'function' ? window.getUserGeminiKey() : '');
-      const backendUrl = (typeof window.getBackendUrl === 'function' ? window.getBackendUrl() : 'http://localhost:3000/api/chat');
+      const backendUrl = (typeof window.getBackendUrl === 'function' ? window.getBackendUrl() : 'https://fiuba-agent-backend-1.onrender.com/api/chat');
       const response = await fetch(backendUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

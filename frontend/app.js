@@ -54,7 +54,7 @@ function getAutoTheme() {
   }, 100);
 })();
 
-const DEFAULT_API_BASE = 'http://localhost:3000';
+const DEFAULT_API_BASE = 'https://fiuba-agent-backend-1.onrender.com';
 const API_BASE_STORAGE_KEY = 'fiuba_agent_api_base';
 
 function getApiBase() {
@@ -123,7 +123,7 @@ function saveServerUrl() {
   const input = document.getElementById('server-url-input');
   const value = (input?.value || '').trim().replace(/\/+$/, '');
   if (!value) {
-    alert('Ingresá una URL válida para el backend (por ejemplo http://localhost:3000).');
+    alert('Ingresá una URL válida para el backend (por ejemplo https://fiuba-agent-backend-1.onrender.com).');
     return;
   }
   localStorage.setItem(API_BASE_STORAGE_KEY, value);

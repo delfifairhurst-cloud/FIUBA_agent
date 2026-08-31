@@ -68,7 +68,7 @@ Si no sabes, dice: "No tengo esa info, consultá en [link oficial]".`;
     input.value = '';
     showTyping(true);
     
-    const apiBase = window.getApiBase ? window.getApiBase() : 'http://localhost:3000';
+    const apiBase = window.getApiBase ? window.getApiBase() : 'https://fiuba-agent-backend-1.onrender.com';
     const userApiKey = (window.getUserGeminiKey ? window.getUserGeminiKey() : (localStorage.getItem('fiuba_gemini_key')||'')).trim();
     
     try {
