@@ -71,8 +71,10 @@ window.showLogin = function() {
 window.showLanding = function() {
   const landing = document.getElementById("landing-page");
   const login = document.getElementById("login-page");
+  const register = document.getElementById("register-page");
   if (landing) landing.style.display = "block";
   if (login) login.style.display = "none";
+  if (register) register.style.display = "none";
 };
 function hideAuthOverlay() {
   document.getElementById("auth-overlay")?.classList.remove("open");
