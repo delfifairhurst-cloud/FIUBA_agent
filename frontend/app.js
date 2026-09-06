@@ -2,6 +2,8 @@
 let chats = [];
 let activeChatId = null;
 let pendingChatImage = null; // { dataUrl, mimeType }
+let isProcessing = false;
+let lastFailedRequest = null;
 
 // --- Theme ---
 function setTheme(theme) {
@@ -685,17 +687,23 @@ function removeDocument(index) {
 
 // Envío de mensaje
 async function handleSend(event) {
-  event.preventDefault();
+  if (event) event.preventDefault();
+  if (isProcessing) return;
 
   const inputEl = document.getElementById('user-input');
-  const message = inputEl.value.trim();
+  const message = inputEl ? inputEl.value.trim() : (lastFailedRequest ? lastFailedRequest.message : '');
   const hasImage = !!pendingChatImage;
 
   if (!message && !hasImage) return;
+  if (!message && lastFailedRequest) {
+    return handleRetry();
+  }
 
   const chat = getActiveChat();
+  isProcessing = true;
+  lastFailedRequest = null;
+  updateSendButton(true);
 
-  // Si es el primer mensaje, asignamos un título automático según la pregunta
   const titleText = message || (hasImage ? "Foto de ejercicio" : "");
   if (chat.messages.length === 0) {
     chat.title = titleText.length > 22 ? titleText.substring(0, 22) + '...' : titleText;
@@ -707,10 +715,11 @@ async function handleSend(event) {
     welcomeBanner.remove();
   }
 
-  inputEl.value = '';
-  inputEl.style.height = 'auto';
+  if (inputEl) {
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+  }
 
-  // Guardar mensaje del usuario (con imagen si hay)
   const imageToSend = pendingChatImage ? { ...pendingChatImage } : null;
   if (hasImage) {
     chat.messages.push({ sender: 'user', text: message || "[Foto]", image: imageToSend.dataUrl });
@@ -719,20 +728,18 @@ async function handleSend(event) {
   }
   saveChatsToStorage();
   appendMessageDOM('user', message, imageToSend ? imageToSend.dataUrl : null);
-  // Limpiar preview
   if (hasImage) removeChatImage();
 
-  // Preparar contexto de materiales
   let contextText = '';
   if (chat.loadedDocuments && chat.loadedDocuments.length > 0) {
     contextText = chat.loadedDocuments.map(d => `--- INICIO DOCUMENTO: ${d.filename} ---\n${d.text}\n--- FIN DOCUMENTO: ${d.filename} ---`).join('\n\n');
   }
 
   showTypingIndicator(true);
+  showAgentStatus('processing');
   try {
     const body = { message: message || (imageToSend ? "Resolvé este ejercicio de la foto. Explicá paso a paso." : ""), mode: chat.mode, context: contextText, userApiKey: (typeof getUserGeminiKey === 'function' ? getUserGeminiKey() : '') };
 
-    // Enviar historial reciente como memoria del chat (últimos 20 mensajes, truncados)
     const recentMsgs = chat.messages.slice(-20).map(m => ({
       role: m.sender === 'user' ? 'user' : 'model',
       parts: [{ text: (m.text || '').slice(0, 2000) }]
@@ -743,20 +750,43 @@ async function handleSend(event) {
       const base64 = imageToSend.dataUrl.split(',')[1];
       body.image = { data: base64, mimeType: imageToSend.mimeType };
     }
-    // Adjuntar examState si está en modo examinador activo
     if (chat.mode === 'examinador' && chat.examState && chat.examState.active) {
       body.examState = chat.examState;
     }
-    const response = await fetch(getBackendUrl(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
 
+    let lastStatus = 0;
+    let response;
+    const maxFrontendRetries = 2;
+
+    for (let attempt = 1; attempt <= maxFrontendRetries; attempt++) {
+      if (attempt > 1) {
+        showAgentStatus('retrying', attempt);
+        const waitMs = 1000 * Math.pow(2, attempt - 1) + Math.random() * 500;
+        await new Promise(r => setTimeout(r, waitMs));
+      }
+      try {
+        response = await fetch(getBackendUrl(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        lastStatus = response.status;
+        if (response.ok || response.status === 400 || response.status === 401 || response.status === 403) {
+          break;
+        }
+        if (attempt === maxFrontendRetries) break;
+      } catch (fetchErr) {
+        lastStatus = 0;
+        if (attempt === maxFrontendRetries) {
+          throw fetchErr;
+        }
+      }
+    }
+
+    showAgentStatus(null);
     const data = await response.json();
 
     if (response.ok) {
-      // Modo examinador estricto: respuesta en JSON
       if (chat.mode === 'examinador' && data.isExaminerJson && data.examinerData) {
         const j = data.examinerData;
         chat.messages.push({ sender: 'agent', text: JSON.stringify(j) });
@@ -765,8 +795,6 @@ async function handleSend(event) {
           if (window.examinerAPI) window.examinerAPI.handleExaminerQuestion(j);
         } else if (j.type === 'evaluation') {
           if (window.examinerAPI) await window.examinerAPI.handleExaminerEvaluation(j, message);
-          // Si no es la última, pedir siguiente pregunta automáticamente en el próximo turno
-          // El frontend no auto-genera la siguiente; el usuario debe enviar "siguiente" o la próxima respuesta generará la siguiente
         } else if (j.type === 'error') {
           appendMessageDOM('agent', `⚠️ ${j.message}`);
         } else {
@@ -774,14 +802,11 @@ async function handleSend(event) {
         }
         checkBackendStatus();
       } else {
-        // Modos normales o fallback
         if (chat.mode === 'examinador' && data.isExaminerJson === false) {
-          // El modelo no devolvió JSON, mostrar texto pero avisar
           appendMessageDOM('agent', `⚠️ El examinador no devolvió JSON estricto, mostrando texto:\n\n${data.reply}`);
         } else {
           chat.messages.push({ sender: 'agent', text: data.reply });
           saveChatsToStorage();
-          // Sugerencias de seguimiento
           const sugList = [];
           const lower = (data.reply || '').toLowerCase();
           if (lower.includes('ejemplo') || lower.includes('paso')) sugList.push('¿Podés poner un ejemplo numérico?');
@@ -792,7 +817,6 @@ async function handleSend(event) {
             sugList.push('Dame un ejercicio parecido');
           }
           appendMessageDOM('agent', data.reply, null, { typing: true, suggestions: sugList.slice(0, 2) });
-          // Gamificación: XP por mensaje
           if (window.Gamification) {
             window.Gamification.trackMessage();
             const r = window.Gamification.addXp('chat_message');
@@ -802,20 +826,71 @@ async function handleSend(event) {
         checkBackendStatus();
       }
     } else {
-      const extra = data.details ? `\n\n${data.details}` : '';
-      const isQuota = (data.error || '').toLowerCase().includes('quota') || (data.details || '').toLowerCase().includes('quota');
-      const errorMsg = isQuota
-        ? `⚠️ **Sin cuota disponible** — Tu API Key de Gemini tiene un límite de 20 requests/día en el tier gratuito.\n\n**Opciones:**\n1. Esperá a mañana (se resetea)\n2. Activá billing en [Google AI Studio](https://aistudio.google.com/app/apikey) para más requests\n3. Usá el botón "⚙️ Servidor IA" para configurar tu key`
-        : `⚠️ **Error en la solicitud**: ${data.error || 'Ocurrió un problema en el servidor.'}${extra}`;
-      appendMessageDOM('agent', errorMsg);
+      const isRetryable = data.retryable === true;
+      const isQuota = (data.error || '').toLowerCase().includes('quota');
+      let errorMsg;
+      if (isQuota) {
+        errorMsg = `⚠️ **Sin cuota disponible** — Tu API Key de Gemini tiene un límite de 20 requests/día en el tier gratuito.\n\n**Opciones:**\n1. Esperá a mañana (se resetea)\n2. Activá billing en [Google AI Studio](https://aistudio.google.com/app/apikey) para más requests\n3. Usá el botón "⚙️ Servidor IA" para configurar tu key`;
+      } else if (isRetryable) {
+        lastFailedRequest = { message, body, chatId: chat.id };
+        errorMsg = `🟡 **El agente está experimentando mucha demanda.**\n\nPodés intentar nuevamente en unos segundos.`;
+      } else {
+        errorMsg = `⚠️ **Error**: ${data.error || 'Ocurrió un problema en el servidor.'}`;
+      }
+      appendMessageDOM('agent', errorMsg, null, { retryable: isRetryable && !isQuota });
     }
 
   } catch (error) {
     console.error('Error enviando mensaje:', error);
-    appendMessageDOM('agent', `❌ **No se pudo conectar con el servidor backend** (${getApiBase()}).\n\nEn esta PC tenés que tener corriendo \`python server.py\` en la carpeta backend.\nSi usás la web publicada en Firebase desde el celu u otra red, configurá un backend público en **⚙️ Servidor IA**.`);
+    showAgentStatus(null);
+    lastFailedRequest = { message, body: { message, mode: chat.mode }, chatId: chat.id };
+    appendMessageDOM('agent', `🟡 **No se pudo conectar con el servidor.**\n\nVerificá tu conexión y intentá nuevamente.`, null, { retryable: true });
     checkBackendStatus();
   } finally {
     showTypingIndicator(false);
+    isProcessing = false;
+    updateSendButton(false);
+  }
+}
+
+async function handleRetry() {
+  if (!lastFailedRequest || isProcessing) return;
+  const inputEl = document.getElementById('user-input');
+  if (inputEl) inputEl.value = lastFailedRequest.message;
+  const req = lastFailedRequest;
+  lastFailedRequest = null;
+  isProcessing = false;
+  handleSend(new Event('submit'));
+}
+window.handleRetry = handleRetry;
+
+function updateSendButton(processing) {
+  const btn = document.getElementById('send-btn');
+  if (!btn) return;
+  btn.disabled = processing;
+  btn.style.opacity = processing ? '0.5' : '1';
+  btn.style.pointerEvents = processing ? 'none' : 'auto';
+}
+
+function showAgentStatus(state, attempt) {
+  let el = document.getElementById('agent-status-bar');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'agent-status-bar';
+    el.style.cssText = 'text-align:center;padding:0.4rem 0.8rem;font-size:0.78rem;border-radius:8px;margin:0.3rem auto;max-width:80%;transition:all 0.3s ease;display:none;';
+    const history = document.getElementById('chat-history');
+    if (history) history.appendChild(el);
+  }
+  if (!state) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  if (state === 'processing') {
+    el.style.background = 'var(--bg-card)';
+    el.style.color = 'var(--text-muted)';
+    el.innerHTML = '🧠 <strong>FIUBA Agent</strong> está pensando...';
+  } else if (state === 'retrying') {
+    el.style.background = 'rgba(251, 191, 36, 0.1)';
+    el.style.color = '#d97706';
+    el.innerHTML = `⏳ Reintentando${attempt ? ` (intento ${attempt})` : ''}... El agente está experimentando mucha demanda.`;
   }
 }
 
@@ -890,11 +965,13 @@ function appendMessageDOM(sender, text, imageUrl = null, options = {}) {
     typeTick();
 
   } else {
-    // Sin efecto de escritura (mensajes del usuario o respuestas instantáneas)
     html += parseSimpleMarkdown(text || "");
     if (sender === 'agent' && text && text.length < 800) {
       const safe = text.replace(/`/g,'').replace(/'/g,"\\'").replace(/"/g,'&quot;').slice(0,300);
       html += `<div style="margin-top:0.5rem"><button onclick="speakText('${safe}')" style="background:rgba(255,255,255,0.06);border:1px solid var(--border-color);border-radius:6px;padding:0.25rem 0.5rem;font-size:0.7rem;cursor:pointer;color:var(--text-muted)">🔊 Escuchar</button></div>`;
+    }
+    if (options.retryable) {
+      html += `<div style="margin-top:0.6rem"><button onclick="window.handleRetry()" style="background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:0.4rem 1rem;font-size:0.8rem;cursor:pointer;color:#d97706;font-weight:600">🔄 Reintentar</button></div>`;
     }
     content.innerHTML = html;
 

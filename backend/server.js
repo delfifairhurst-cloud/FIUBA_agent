@@ -36,6 +36,102 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// --- Error classification and retry logic ---
+const TEMPORARY_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
+const TEMPORARY_GEMINI_REASONS = new Set([
+  'UNAVAILABLE', 'OVERLOADED', 'RESOURCE_EXHAUSTED',
+  'INTERNAL', 'ABORTED', 'DEADLINE_EXCEEDED'
+]);
+
+function isTemporaryError(statusCode, geminiError) {
+  if (TEMPORARY_STATUS_CODES.has(statusCode)) return true;
+  if (geminiError) {
+    const reason = (geminiError.status || '').toUpperCase();
+    const message = (geminiError.message || '').toUpperCase();
+    if (TEMPORARY_GEMINI_REASONS.has(reason)) return true;
+    if (message.includes('UNAVAILABLE') || message.includes('OVERLOADED') ||
+        message.includes('RESOURCE_EXHAUSTED') || message.includes('QUOTA') ||
+        message.includes('TIMEOUT') || message.includes('DEADLINE')) return true;
+  }
+  return false;
+}
+
+function isPermanentError(statusCode, geminiError) {
+  if (statusCode === 400 || statusCode === 401 || statusCode === 403) return true;
+  if (geminiError) {
+    const reason = (geminiError.status || '').toUpperCase();
+    if (reason === 'INVALID_ARGUMENT' || reason === 'UNAUTHENTICATED' ||
+        reason === 'PERMISSION_DENIED' || reason === 'FAILED_PRECONDITION') return true;
+  }
+  return false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function jitter(baseMs) {
+  return baseMs + Math.random() * baseMs * 0.3;
+}
+
+async function callGeminiWithRetry(apiKey, payload, { maxRetries = 3, endpoint = 'chat' } = {}) {
+  const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const start = Date.now();
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(60000)
+      });
+      const elapsed = Date.now() - start;
+      const data = await response.json();
+
+      if (response.ok) {
+        if (attempt > 1) {
+          console.log(`[GEMINI] ${endpoint} OK en intento ${attempt}/${maxRetries} (${elapsed}ms)`);
+        }
+        return { data, attempts: attempt, elapsed };
+      }
+
+      const geminiErr = data.error || {};
+      const status = response.status;
+
+      if (isPermanentError(status, geminiErr)) {
+        console.error(`[GEMINI] ${endpoint} PERMANENTE: ${status} ${geminiErr.message} (${elapsed}ms)`);
+        throw { permanent: true, status, message: geminiErr.message, attempts: attempt };
+      }
+
+      if (attempt === maxRetries || !isTemporaryError(status, geminiErr)) {
+        console.error(`[GEMINI] ${endpoint} FATAL: ${status} ${geminiErr.message} (${elapsed}ms, intentos: ${attempt})`);
+        throw { permanent: true, status, message: geminiErr.message, attempts: attempt };
+      }
+
+      const backoffMs = jitter(1000 * Math.pow(2, attempt - 1));
+      console.log(`[GEMINI] ${endpoint} temporal: ${status} ${geminiErr.message} — retry ${attempt}/${maxRetries} en ${Math.round(backoffMs)}ms`);
+      lastError = { status, message: geminiErr.message };
+      await sleep(backoffMs);
+    } catch (err) {
+      if (err.permanent) throw err;
+      const elapsed = Date.now() - start;
+      const isTimeout = err.name === 'TimeoutError' || err.code === 'ABORT_ERR';
+      const isConnErr = err.type === 'system' || err.cause?.code === 'ECONNREFUSED';
+
+      if (attempt === maxRetries) {
+        console.error(`[GEMINI] ${endpoint} FALLO CONEXION: ${err.message} (${elapsed}ms, intentos: ${attempt})`);
+        throw { permanent: true, status: 0, message: 'No se pudo conectar con Gemini', attempts: attempt };
+      }
+
+      const backoffMs = jitter(isConnErr ? 2000 : 1000 * Math.pow(2, attempt - 1));
+      console.log(`[GEMINI] ${endpoint} ${isTimeout ? 'timeout' : 'conexion'} — retry ${attempt}/${maxRetries} en ${Math.round(backoffMs)}ms`);
+      await sleep(backoffMs);
+      lastError = { status: 0, message: err.message };
+    }
+  }
+  throw lastError || { permanent: true, status: 0, message: 'Error desconocido', attempts: maxRetries };
+}
+
 const SYSTEM_PROMPTS = {
   profesor: `Sos FIUBA Agent en modo PROFESOR PRO. Explicá conceptos de FIUBA/UBA con rigor pero sin humo. Estructura: 1) Idea clave en 1 línea, 2) Desarrollo con analogía de ingeniería real, 3) Ejemplo mínimo con cuentas en bloque de código, 4) Check de comprensión con 1 pregunta al final. Usá Markdown prolijo, inline \`x=2\` o bloque \`\`\`math para fórmulas, y cerrá siempre preguntando si quiere profundizar o ver otro enfoque. Si hay imagen, describí qué ves primero y luego resolvé. IMPORTANTE: Si el estudiante te responde algo, recordá el contexto de la conversación anterior. No asumas que es un tema nuevo a menos que lo pida explícitamente. Respondé siempre en relación a lo que se habló previamente.`,
 
@@ -61,8 +157,6 @@ const SYSTEM_PROMPTS = {
 
   resolucion: `Sos FIUBA Agent en modo RESOLUCIÓN PASO A PASO PRO. Resolvé ejercicios como lo haría el mejor ayudante de FIUBA: cada paso numerado, con "por qué" en 1 línea, cuenta en bloque \`\`\`math o \`code\`, y al final verificación / atajo / error común. Si hay imagen, transcribí el enunciado primero y luego resolvé. Cerrá con "¿Querés que lo hagamos con otros datos?"`
 };
-
-const MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Servidor FIUBA Agent funcionando correctamente' });
@@ -116,19 +210,15 @@ app.post('/api/admin-qa', async (req, res) => {
       generationConfig: { temperature: 0.3 }
     };
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
-    const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await response.json();
-    if (response.ok) {
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se recibió respuesta.';
-      return res.json({ answer: reply });
+    let result;
+    try {
+      result = await callGeminiWithRetry(apiKey, payload, { endpoint: 'admin-qa' });
+    } catch (err) {
+      return res.json({ answer: 'No pude responder con IA en este momento. Consultá en https://fi.uba.ar' });
     }
-    console.error('admin-qa Gemini error:', data.error?.message);
-    res.json({ answer: 'No pude responder con IA. Consultá en https://fi.uba.ar' });
+
+    const reply = result.data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se recibió respuesta.';
+    return res.json({ answer: reply });
   } catch (error) {
     console.error('admin-qa error:', error);
     res.status(500).json({ error: 'Error interno' });
@@ -160,7 +250,6 @@ app.post('/api/chat', async (req, res) => {
       promptContent += `\n\n[ESTADO DEL EXAMEN - NO INVENTAR, RESPETAR]\n${JSON.stringify(examState, null, 2)}`;
     }
 
-    // Construir contents con historial + mensaje actual
     const contents = [];
     if (Array.isArray(history) && history.length > 0) {
       for (const msg of history) {
@@ -169,7 +258,6 @@ app.post('/api/chat', async (req, res) => {
         }
       }
     }
-    // Si el último mensaje del historial ya es del usuario, lo reemplazamos; si no, lo agregamos
     const lastRole = contents.length > 0 ? contents[contents.length - 1].role : null;
     if (lastRole === 'user') {
       contents[contents.length - 1] = { role: 'user', parts: [{ text: promptContent || "Analizá esta imagen del ejercicio y resolvé paso a paso." }] };
@@ -189,21 +277,20 @@ app.post('/api/chat', async (req, res) => {
       payload.generationConfig = { responseMimeType: "application/json" };
     }
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
-    const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error(`Error de Gemini (${MODEL}):`, data.error?.message);
-      return res.status(500).json({
-        error: 'Hubo un inconveniente al comunicarse con el servicio de IA.'
+    let result;
+    try {
+      result = await callGeminiWithRetry(apiKey, payload, { endpoint: 'chat' });
+    } catch (err) {
+      const isQuota = (err.message || '').toLowerCase().includes('quota');
+      return res.status(err.permanent ? 503 : 500).json({
+        error: isQuota
+          ? 'Sin cuota disponible. Esperá a mañana o activá billing en Google AI Studio.'
+          : 'El servicio de IA está temporalmente sobrecargado. Intentá nuevamente en unos segundos.',
+        retryable: !err.permanent && !isQuota
       });
     }
 
+    const data = result.data;
     let reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se recibió respuesta del modelo.';
 
     if (mode === 'examinador') {
@@ -255,14 +342,14 @@ app.post('/api/generate-quiz', async (req, res) => {
       generationConfig: { responseMimeType: "application/json", temperature: 0.4 }
     };
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
-    const response = await fetch(geminiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const data = await response.json();
-    if (!response.ok) {
-      console.error('Gemini quiz error', data.error?.message);
-      return res.status(500).json({ error: 'Error al generar el quiz.' });
+    let result;
+    try {
+      result = await callGeminiWithRetry(apiKey, payload, { endpoint: 'quiz' });
+    } catch (err) {
+      return res.status(503).json({ error: 'El servicio de IA está temporalmente ocupado. Intentá generar el quiz en unos segundos.', retryable: true });
     }
-    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    let text = result.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     text = text.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
     let json;
     try { json = JSON.parse(text); } catch { const m=text.match(/\{[\s\S]*\}/); if(m) json=JSON.parse(m[0]); else throw new Error('No JSON'); }
@@ -285,11 +372,15 @@ app.post('/api/generate-flashcards', async (req, res) => {
     const system = `Sos generador de flashcards para FIUBA. Basándote EXCLUSIVAMENTE en el texto proporcionado, generá ${fcCount} flashcards de repaso espaciado. Cada flashcard: front pregunta corta y concreta, back respuesta breve y memorizable (máx 15 palabras), topic tema. Devolvé JSON PURO {"flashcards":[{"front":"...","back":"...","topic":"..."}] }. No inventes datos no presentes.`;
     const truncated = rawText.slice(0, 9000);
     const payload = { system_instruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts: [{ text: `[TEXTO DEL PDF]\n${truncated}` }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.5 } };
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
-    const response = await fetch(geminiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const data = await response.json();
-    if (!response.ok) { console.error('Gemini flashcards error', data.error?.message); return res.status(500).json({ error: 'Error al generar las flashcards.' }); }
-    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    let result;
+    try {
+      result = await callGeminiWithRetry(apiKey, payload, { endpoint: 'flashcards' });
+    } catch (err) {
+      return res.status(503).json({ error: 'El servicio de IA está temporalmente ocupado. Intentá generar las flashcards en unos segundos.', retryable: true });
+    }
+
+    let text = result.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     text = text.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
     let json; try { json = JSON.parse(text); } catch { const m=text.match(/\{[\s\S]*\}/); if(m) json=JSON.parse(m[0]); else throw new Error('No JSON'); }
     const flashcards = (json.flashcards || []).slice(0, fcCount);
