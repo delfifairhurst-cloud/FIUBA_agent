@@ -43,6 +43,12 @@ const TEMPORARY_GEMINI_REASONS = new Set([
   'INTERNAL', 'ABORTED', 'DEADLINE_EXCEEDED'
 ]);
 
+const MODEL_FALLBACK_CHAIN = [
+  process.env.GEMINI_MODEL || 'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-2.5-flash'
+];
+
 function isTemporaryError(statusCode, geminiError) {
   if (TEMPORARY_STATUS_CODES.has(statusCode)) return true;
   if (geminiError) {
@@ -72,64 +78,79 @@ function jitter(baseMs) {
   return baseMs + Math.random() * baseMs * 0.3;
 }
 
-async function callGeminiWithRetry(apiKey, payload, { maxRetries = 3, endpoint = 'chat' } = {}) {
-  const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+async function callGeminiWithRetry(apiKey, payload, { maxRetries = 2, endpoint = 'chat' } = {}) {
+  const models = MODEL_FALLBACK_CHAIN;
   let lastError = null;
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const start = Date.now();
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(60000)
-      });
-      const elapsed = Date.now() - start;
-      const data = await response.json();
 
-      if (response.ok) {
-        if (attempt > 1) {
-          console.log(`[GEMINI] ${endpoint} OK en intento ${attempt}/${maxRetries} (${elapsed}ms)`);
+  for (let modelIdx = 0; modelIdx < models.length; modelIdx++) {
+    const model = models[modelIdx];
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const isFallback = modelIdx > 0;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const start = Date.now();
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(60000)
+        });
+        const elapsed = Date.now() - start;
+        const data = await response.json();
+
+        if (response.ok) {
+          const logMsg = `[GEMINI] ${endpoint} OK con ${model}` +
+            (isFallback ? ` (fallback ${modelIdx + 1}/${models.length})` : '') +
+            (attempt > 1 ? ` en intento ${attempt}` : '') +
+            ` (${elapsed}ms)`;
+          console.log(logMsg);
+          return { data, attempts: attempt, model, elapsed, fallback: isFallback };
         }
-        return { data, attempts: attempt, elapsed };
+
+        const geminiErr = data.error || {};
+        const status = response.status;
+
+        if (isPermanentError(status, geminiErr)) {
+          console.error(`[GEMINI] ${endpoint} PERMANENTE ${model}: ${status} ${geminiErr.message} (${elapsed}ms)`);
+          throw { permanent: true, status, message: geminiErr.message, model, attempts: attempt };
+        }
+
+        if (attempt < maxRetries && isTemporaryError(status, geminiErr)) {
+          const backoffMs = jitter(1000 * Math.pow(2, attempt - 1));
+          console.log(`[GEMINI] ${endpoint} temporal ${model}: ${status} ${geminiErr.message} — retry ${attempt}/${maxRetries} en ${Math.round(backoffMs)}ms`);
+          lastError = { status, message: geminiErr.message, model };
+          await sleep(backoffMs);
+          continue;
+        }
+
+        lastError = { status, message: geminiErr.message, model };
+        console.error(`[GEMINI] ${endpoint} agota ${model}: ${status} ${geminiErr.message} (${elapsed}ms, intentos: ${attempt})`);
+        break;
+
+      } catch (err) {
+        if (err.permanent) throw err;
+        const elapsed = Date.now() - start;
+        const isTimeout = err.name === 'TimeoutError' || err.code === 'ABORT_ERR';
+        lastError = { status: 0, message: err.message, model };
+
+        if (attempt < maxRetries) {
+          const backoffMs = jitter(isTimeout ? 2000 : 1000 * Math.pow(2, attempt - 1));
+          console.log(`[GEMINI] ${endpoint} ${isTimeout ? 'timeout' : 'conexion'} ${model} — retry ${attempt}/${maxRetries} en ${Math.round(backoffMs)}ms`);
+          await sleep(backoffMs);
+          continue;
+        }
+        console.error(`[GEMINI] ${endpoint} fallo conexion ${model}: ${err.message} (${elapsed}ms)`);
+        break;
       }
+    }
 
-      const geminiErr = data.error || {};
-      const status = response.status;
-
-      if (isPermanentError(status, geminiErr)) {
-        console.error(`[GEMINI] ${endpoint} PERMANENTE: ${status} ${geminiErr.message} (${elapsed}ms)`);
-        throw { permanent: true, status, message: geminiErr.message, attempts: attempt };
-      }
-
-      if (attempt === maxRetries || !isTemporaryError(status, geminiErr)) {
-        console.error(`[GEMINI] ${endpoint} FATAL: ${status} ${geminiErr.message} (${elapsed}ms, intentos: ${attempt})`);
-        throw { permanent: true, status, message: geminiErr.message, attempts: attempt };
-      }
-
-      const backoffMs = jitter(1000 * Math.pow(2, attempt - 1));
-      console.log(`[GEMINI] ${endpoint} temporal: ${status} ${geminiErr.message} — retry ${attempt}/${maxRetries} en ${Math.round(backoffMs)}ms`);
-      lastError = { status, message: geminiErr.message };
-      await sleep(backoffMs);
-    } catch (err) {
-      if (err.permanent) throw err;
-      const elapsed = Date.now() - start;
-      const isTimeout = err.name === 'TimeoutError' || err.code === 'ABORT_ERR';
-      const isConnErr = err.type === 'system' || err.cause?.code === 'ECONNREFUSED';
-
-      if (attempt === maxRetries) {
-        console.error(`[GEMINI] ${endpoint} FALLO CONEXION: ${err.message} (${elapsed}ms, intentos: ${attempt})`);
-        throw { permanent: true, status: 0, message: 'No se pudo conectar con Gemini', attempts: attempt };
-      }
-
-      const backoffMs = jitter(isConnErr ? 2000 : 1000 * Math.pow(2, attempt - 1));
-      console.log(`[GEMINI] ${endpoint} ${isTimeout ? 'timeout' : 'conexion'} — retry ${attempt}/${maxRetries} en ${Math.round(backoffMs)}ms`);
-      await sleep(backoffMs);
-      lastError = { status: 0, message: err.message };
+    if (modelIdx < models.length - 1) {
+      console.log(`[GEMINI] ${endpoint} fallback a ${models[modelIdx + 1]}...`);
     }
   }
-  throw lastError || { permanent: true, status: 0, message: 'Error desconocido', attempts: maxRetries };
+
+  throw lastError || { permanent: true, status: 0, message: 'Todos los modelos fallaron', model: models[0], attempts: 0 };
 }
 
 const SYSTEM_PROMPTS = {
