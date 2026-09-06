@@ -41,6 +41,7 @@ export async function shareCommunityLink({ title, url }) {
   const docRef = await addDoc(ref, {
     title: title.trim().slice(0,120),
     url: url.trim(),
+    uid: uid,
     author: uid.slice(0,6),
     createdAt: serverTimestamp()
   });

@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -7,8 +8,33 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+const ALLOWED_ORIGINS = [
+  'https://agente-fiuba.web.app',
+  'https://fiuba-agent.web.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:8080'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('No permitido por CORS'));
+    }
+  }
+}));
 app.use(express.json({ limit: '10mb' }));
+
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas requests. Esperá un momento.' }
+});
+app.use('/api/', limiter);
 
 const SYSTEM_PROMPTS = {
   profesor: `Sos FIUBA Agent en modo PROFESOR PRO. Explicá conceptos de FIUBA/UBA con rigor pero sin humo. Estructura: 1) Idea clave en 1 línea, 2) Desarrollo con analogía de ingeniería real, 3) Ejemplo mínimo con cuentas en bloque de código, 4) Check de comprensión con 1 pregunta al final. Usá Markdown prolijo, inline \`x=2\` o bloque \`\`\`math para fórmulas, y cerrá siempre preguntando si quiere profundizar o ver otro enfoque. Si hay imagen, describí qué ves primero y luego resolvé. IMPORTANTE: Si el estudiante te responde algo, recordá el contexto de la conversación anterior. No asumas que es un tema nuevo a menos que lo pida explícitamente. Respondé siempre en relación a lo que se habló previamente.`,
@@ -174,8 +200,7 @@ app.post('/api/chat', async (req, res) => {
     if (!response.ok) {
       console.error(`Error de Gemini (${MODEL}):`, data.error?.message);
       return res.status(500).json({
-        error: 'Hubo un inconveniente al comunicarse con el servicio de IA.',
-        details: data.error?.message || JSON.stringify(data)
+        error: 'Hubo un inconveniente al comunicarse con el servicio de IA.'
       });
     }
 
@@ -234,8 +259,8 @@ app.post('/api/generate-quiz', async (req, res) => {
     const response = await fetch(geminiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const data = await response.json();
     if (!response.ok) {
-      console.error('Gemini quiz error', data);
-      return res.status(500).json({ error: data.error?.message || 'Error Gemini' });
+      console.error('Gemini quiz error', data.error?.message);
+      return res.status(500).json({ error: 'Error al generar el quiz.' });
     }
     let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     text = text.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
@@ -245,7 +270,7 @@ app.post('/api/generate-quiz', async (req, res) => {
     res.json({ questions });
   } catch(e){
     console.error('generate-quiz error', e);
-    res.status(500).json({ error: String(e.message || e) });
+    res.status(500).json({ error: 'Error al procesar el quiz.' });
   }
 });
 
@@ -263,22 +288,29 @@ app.post('/api/generate-flashcards', async (req, res) => {
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
     const response = await fetch(geminiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const data = await response.json();
-    if (!response.ok) { console.error('Gemini flashcards error', data); return res.status(500).json({ error: data.error?.message || 'Error Gemini' }); }
+    if (!response.ok) { console.error('Gemini flashcards error', data.error?.message); return res.status(500).json({ error: 'Error al generar las flashcards.' }); }
     let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     text = text.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
     let json; try { json = JSON.parse(text); } catch { const m=text.match(/\{[\s\S]*\}/); if(m) json=JSON.parse(m[0]); else throw new Error('No JSON'); }
     const flashcards = (json.flashcards || []).slice(0, fcCount);
     res.json({ flashcards });
-  } catch(e){ console.error('generate-flashcards error', e); res.status(500).json({ error: String(e.message || e) }); }
+  } catch(e){ console.error('generate-flashcards error', e); res.status(500).json({ error: 'Error al procesar las flashcards.' }); }
 });
 
 // --- Importar parciales del Altillo ---
+const ALTILLO_ALLOWED_HOSTS = ['www.altillo.com', 'altillo.com'];
+
 app.get('/api/altillo/import', async (req, res) => {
   try {
     const url = req.query.url;
-    if (!url || !url.includes('altillo.com')) return res.status(400).json({ error: 'URL debe ser de altillo.com' });
+    if (!url) return res.status(400).json({ error: 'URL es requerida' });
     let target = url;
     if (!target.startsWith('http')) target = 'https://' + target;
+    let parsed;
+    try { parsed = new URL(target); } catch { return res.status(400).json({ error: 'URL inválida' }); }
+    if (!ALTILLO_ALLOWED_HOSTS.includes(parsed.hostname)) {
+      return res.status(403).json({ error: 'Solo se permiten URLs de altillo.com' });
+    }
     const browserHeaders = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -332,7 +364,7 @@ app.get('/api/altillo/import', async (req, res) => {
     res.json({ source: target, sections: grouped, total: allLinks.length, attribution: "Fuente: altillo.com - uso personal, respetar términos" });
   } catch(e){
     console.error("Altillo import error", e);
-    res.status(500).json({ error: String(e) });
+    res.status(500).json({ error: 'Error al importar desde Altillo.' });
   }
 });
 

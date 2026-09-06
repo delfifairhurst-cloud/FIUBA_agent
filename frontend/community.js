@@ -13,7 +13,7 @@ async function refreshCommunity() {
     }
     const uid = getUid();
     list.innerHTML = items.map(function(item) {
-      var isAuthor = uid && item.author === uid.slice(0, 6);
+      var isAuthor = uid && item.uid === uid;
       var dateStr = item.createdAt && item.createdAt.toDate ? item.createdAt.toDate().toLocaleDateString("es-AR") : "";
       return '<div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.7rem">' +
         '<div style="flex:1;min-width:0">' +
