@@ -482,6 +482,37 @@ app.get('/api/altillo/import', async (req, res) => {
   }
 });
 
+app.post('/api/execute-c', async (req, res) => {
+  const { code, stdin } = req.body;
+  if (!code) return res.status(400).json({ error: 'Código requerido.' });
+  if (code.length > 10000) return res.status(400).json({ error: 'Código demasiado largo (max 10000 chars).' });
+  try {
+    const payload = {
+      compiler: 'gcc-head',
+      code: code,
+      stdin: stdin || '',
+      'compiler-options': '-O2 -Wall',
+      options: { warnings: true, timeout: 10000 },
+    };
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch('https://wandbox.org/api/compile.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const data = await response.json();
+    const output = (data.stdout || '') + (data.stderr || '');
+    const hasError = data.status !== '0' && data.status !== 0 && data.stderr;
+    res.json({ output: output || '(sin salida)', error: hasError, status: data.status });
+  } catch (e) {
+    console.error('Wandbox error:', e.message);
+    res.status(500).json({ error: 'Error al ejecutar código C. Intentá de nuevo.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Servidor FIUBA Agent corriendo en http://localhost:${PORT}`);
   console.log(`Endpoint de Chat: http://localhost:${PORT}/api/chat`);
