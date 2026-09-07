@@ -1531,7 +1531,7 @@ function switchView(view) {
   });
 
   // IDs of all view panels
-  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'ratings-view', 'rooms-view'];
+  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view'];
   const chatEl = document.querySelector('.chat-container');
   const appLayout = document.querySelector('.app-layout');
 
@@ -1610,6 +1610,12 @@ function switchView(view) {
   } else if (view === 'rooms') {
     const el = document.getElementById('rooms-view');
     if (el) { el.classList.remove('hidden'); if (window.renderStudyRooms) window.renderStudyRooms(); }
+  } else if (view === 'graphcalc') {
+    const el = document.getElementById('graphcalc-view');
+    if (el) { el.classList.remove('hidden'); if (window.gcRender) window.gcRender(); }
+  } else if (view === 'unitconv') {
+    const el = document.getElementById('unitconv-view');
+    if (el) { el.classList.remove('hidden'); if (window.ucRender) window.ucRender(); }
   }
 }
 window.switchView = switchView;

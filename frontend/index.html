@@ -844,6 +844,20 @@
         </div>
       </div>
 
+      <!-- Vista Calculadora Gráfica -->
+      <div id="graphcalc-view" class="view-panel hidden">
+        <div style="max-width:700px;width:100%;margin:0 auto;padding:1rem 1.2rem">
+          <div id="graphcalc-content"></div>
+        </div>
+      </div>
+
+      <!-- Vista Convertidor de Unidades -->
+      <div id="unitconv-view" class="view-panel hidden">
+        <div style="max-width:500px;width:100%;margin:0 auto;padding:1rem 1.2rem">
+          <div id="unitconv-content"></div>
+        </div>
+      </div>
+
       <!-- Vista Herramientas (hub central) -->
       <div id="herramientas-view" class="view-panel hidden">
         <div style="max-width:900px;width:100%;margin:0 auto;padding:1rem 1.2rem">
@@ -853,6 +867,22 @@
           </div>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.6rem">
+
+            <button onclick="switchView('graphcalc')" class="tool-card" style="--tool-color:#8b5cf6">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(168,85,247,0.15));color:#8b5cf6">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-10"/></svg>
+              </div>
+              <span class="tool-card-name">Gráfica</span>
+              <span class="tool-card-desc">Plotear funciones f(x)</span>
+            </button>
+
+            <button onclick="switchView('unitconv')" class="tool-card" style="--tool-color:#06b6d4">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(14,165,233,0.15));color:#06b6d4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              </div>
+              <span class="tool-card-name">Unidades</span>
+              <span class="tool-card-desc">Convertidor universal</span>
+            </button>
 
             <button onclick="switchView('gpa')" class="tool-card" style="--tool-color:#3b82f6">
               <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(99,102,241,0.15));color:#3b82f6">
@@ -1455,6 +1485,8 @@
   <script src="local-intelligence.js"></script>
   <script src="study-challenge.js"></script>
   <script src="fiuble.js"></script>
+  <script src="graphing-calculator.js"></script>
+  <script src="unit-converter.js"></script>
   <script src="code-playground.js"></script>
   <script type="module" src="professor-ratings.js"></script>
   <script type="module" src="professor-ratings-ui.js"></script>
