@@ -49,32 +49,33 @@ function executeJSInSandbox(code) {
     }, 10000);
 
     const logs = [];
-    let inputRequest = null;
+    let resolved = false;
 
-    window.addEventListener('message', function handler(e) {
+    function handler(e) {
       if (e.source !== iframe.contentWindow) return;
       const d = e.data;
+      if (!d || !d.type) return;
       if (d.type === 'console') {
         logs.push(d.level === 'error' ? '❌ ' + d.args.join(' ') : d.args.join(' '));
       } else if (d.type === 'prompt') {
-        // Can't do real prompt in sandbox, show as placeholder
         logs.push(`[input] ${d.message} → (no disponible en sandbox)`);
         iframe.contentWindow.postMessage({ type: 'prompt-response', value: '' }, '*');
       } else if (d.type === 'done') {
+        if (resolved) return;
+        resolved = true;
         clearTimeout(timeout);
         window.removeEventListener('message', handler);
         iframe.remove();
         resolve({ output: logs.join('\n') || '(sin salida)', error: false });
       }
-    });
+    }
+
+    window.addEventListener('message', handler);
 
     const wrappedCode = `
       <script>
       (function() {
         const _logs = [];
-        const _origConsole = console.log;
-        const _origError = console.error;
-        const _origWarn = console.warn;
         
         console.log = function() { 
           parent.postMessage({type:'console', level:'log', args:Array.from(arguments).map(String)}, '*');
@@ -90,14 +91,14 @@ function executeJSInSandbox(code) {
           parent.postMessage({type:'prompt', message:msg||''}, '*');
           return '';
         };
+        if (typeof prompt === 'undefined') window.prompt = _prompt;
         
         try {
           ${code}
-          parent.postMessage({type:'done'}, '*');
         } catch(e) {
           console.error(e.name + ': ' + e.message);
-          parent.postMessage({type:'done'}, '*');
         }
+        parent.postMessage({type:'done'}, '*');
       })();
       <\/script>`;
 
@@ -188,6 +189,18 @@ function removeCell(id) {
 async function runCell(cellId) {
   const cell = pgCells.find(c => c.id === cellId);
   if (!cell || pgRunning) return;
+
+  // Sync code from textarea if available (prevents stale code)
+  const textarea = document.querySelector(`[data-cell-id="${cellId}"] .pg-cell-editor`);
+  if (textarea) cell.code = textarea.value;
+
+  if (!cell.code.trim()) {
+    cell.output = '⚠️ No hay código para ejecutar. Escribí algo en la celda.';
+    cell.status = 'error';
+    renderPlayground();
+    return;
+  }
+
   pgRunning = true;
   cell.status = 'running';
   cell.output = '';

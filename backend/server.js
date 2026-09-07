@@ -221,7 +221,7 @@ app.post('/api/admin-qa', async (req, res) => {
       }
     }
 
-    const apiKey = (req.body.userApiKey || '').trim();
+    const apiKey = (req.body.userApiKey || '').trim() || process.env.GEMINI_API_KEY || '';
     if (!apiKey) {
       return res.json({ answer: 'No tengo tu API Key configurada. Andá a ⚙️ Servidor IA y pegá tu clave de Google AI Studio (gratuita en aistudio.google.com). Mientras tanto, consultá en https://fi.uba.ar' });
     }
@@ -257,7 +257,7 @@ app.post('/api/chat', async (req, res) => {
       return res.status(400).json({ error: 'El mensaje no puede estar vacío.' });
     }
 
-    const apiKey = (userApiKey && userApiKey.trim()) || '';
+    const apiKey = (userApiKey && userApiKey.trim()) || process.env.GEMINI_API_KEY || '';
     if (!apiKey) {
       return res.status(400).json({ error: 'Falta tu API Key - pegala en ⚙️ Servidor IA (aistudio.google.com/app/apikey)' });
     }
@@ -347,7 +347,7 @@ app.post('/api/generate-quiz', async (req, res) => {
   try {
     const { rawText, quizType = 'mixto', count = 10, userApiKey } = req.body;
     if (!rawText || rawText.trim().length < 20) return res.status(400).json({ error: 'Falta texto del PDF' });
-    const apiKey = (userApiKey && userApiKey.trim()) || '';
+    const apiKey = (userApiKey && userApiKey.trim()) || process.env.GEMINI_API_KEY || '';
     if (!apiKey) return res.status(400).json({ error: 'Falta tu API Key - pegala en ⚙️ Servidor IA (aistudio.google.com/app/apikey)' });
 
     const quizCount = Math.min(Math.max(parseInt(count) || 10, 3), 15);
@@ -389,7 +389,7 @@ app.post('/api/generate-flashcards', async (req, res) => {
   try {
     const { rawText, count = 8, userApiKey } = req.body;
     if (!rawText || rawText.trim().length < 20) return res.status(400).json({ error: 'Falta texto del PDF' });
-    const apiKey = (userApiKey && userApiKey.trim()) || '';
+    const apiKey = (userApiKey && userApiKey.trim()) || process.env.GEMINI_API_KEY || '';
     if (!apiKey) return res.status(400).json({ error: 'Falta tu API Key - pegala en ⚙️ Servidor IA' });
     const fcCount = Math.min(Math.max(parseInt(count) || 8, 3), 12);
     const system = `Sos generador de flashcards para FIUBA. Basándote EXCLUSIVAMENTE en el texto proporcionado, generá ${fcCount} flashcards de repaso espaciado. Cada flashcard: front pregunta corta y concreta, back respuesta breve y memorizable (máx 15 palabras), topic tema. Devolvé JSON PURO {"flashcards":[{"front":"...","back":"...","topic":"..."}] }. No inventes datos no presentes.`;
