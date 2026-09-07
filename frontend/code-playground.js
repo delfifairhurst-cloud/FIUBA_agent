@@ -125,61 +125,51 @@ async function executePython(code) {
     return { output: '⏳ Cargando Python, esperá...', error: false, loading: true };
   }
 
-  const _outputLines = [];
-  const _errorLines = [];
-
-  // Set up JS globals that Python can call
-  pyodideInstance.globals.set('_js_print', (text) => { _outputLines.push(String(text)); });
-  pyodideInstance.globals.set('_js_print_err', (text) => { _errorLines.push(String(text)); });
-  pyodideInstance.globals.set('_js_input', (prompt) => {
-    const val = window.prompt(String(prompt || '')) || '';
-    return val;
-  });
+  // Use window globals for output capture
+  window.__pg_out = [];
+  window.__pg_err = [];
+  window.__pg_print = (t) => window.__pg_out.push(String(t));
+  window.__pg_printerr = (t) => window.__pg_err.push(String(t));
+  window.__pg_input = (msg) => window.prompt(String(msg || '')) || '';
 
   try {
-    // Bootstrap: override print(), input(), sys.stdout/stderr
+    // Set JS functions as Python globals
+    pyodideInstance.globals.set('__pg_print', window.__pg_print);
+    pyodideInstance.globals.set('__pg_printerr', window.__pg_printerr);
+    pyodideInstance.globals.set('__pg_input', window.__pg_input);
+
     pyodideInstance.runPython(`
 import builtins, sys
 
-class _JSWriter:
+class _Writer:
+    def __init__(self, fn):
+        self._fn = fn
     def write(self, s):
-        if s: _js_print(str(s))
+        if s:
+            self._fn(str(s))
     def flush(self):
         pass
 
-class _JSWriterErr:
-    def write(self, s):
-        if s: _js_print_err(str(s))
-    def flush(self):
-        pass
+sys.stdout = _Writer(__pg_print)
+sys.stderr = _Writer(__pg_printerr)
 
-sys.stdout = _JSWriter()
-sys.stderr = _JSWriterErr()
-sys.displayhook = lambda x: _js_print(str(x)) if x is not None else None
+def _py_input(prompt=''):
+    return __pg_input(str(prompt))
 
-def _input(prompt=''):
-    return _js_input(str(prompt))
-
-def _input_int(prompt=''):
-    return int(_js_input(str(prompt)))
-
-def _input_float(prompt=''):
-    return float(_js_input(str(prompt)))
-
-builtins.input = _input
-builtins.print = lambda *args, sep=' ', end='\\n', file=None, flush=False: _js_print(sep.join(str(a) for a in args) + end)
+builtins.input = _py_input
 `);
 
-    // Run user code
     pyodideInstance.runPython(code);
 
-    const output = _outputLines.join('');
-    const errors = _errorLines.join('');
+    const output = window.__pg_out.join('');
+    const errors = window.__pg_err.join('');
     return { output: output || errors || '(sin salida)', error: !!errors };
   } catch (e) {
     const errMsg = e.message || String(e);
-    const partial = _outputLines.join('');
+    const partial = (window.__pg_out || []).join('');
     return { output: (partial ? partial + '\n' : '') + '❌ ' + errMsg, error: true };
+  } finally {
+    try { delete window.__pg_out; delete window.__pg_err; delete window.__pg_print; delete window.__pg_printerr; delete window.__pg_input; } catch {}
   }
 }
 

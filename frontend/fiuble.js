@@ -120,6 +120,14 @@ function getDaySeed() {
   return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
 }
 
+function getTodayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function seededRandom(seed) {
   let s = seed;
   return function() { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
@@ -137,21 +145,34 @@ function saveFiubleState(s) { localStorage.setItem(FIUBLE_KEY, JSON.stringify(s)
 let gameActive = false, attempts = [], maxAttempts = 6, currentGuess = '', puzzle = null, solved = false, gameOver = false;
 let flipAnimating = false;
 let lastPuzzleSeed = null;
+let lastInitDate = null;
 
 function initFiuble() {
   const todaySeed = getDaySeed();
-  // Always regenerate if day changed or first load
-  if (!puzzle || lastPuzzleSeed !== todaySeed) {
+  const today = getTodayStr();
+  const needsReset = !puzzle || lastPuzzleSeed !== todaySeed || lastInitDate !== today;
+
+  if (needsReset) {
     puzzle = generatePuzzle(todaySeed);
     lastPuzzleSeed = todaySeed;
+    lastInitDate = today;
+    attempts = [];
+    solved = false;
+    gameOver = false;
+    gameActive = true;
+    currentGuess = '';
   }
+
   const state = loadFiubleState();
-  const today = new Date().toISOString().slice(0,10);
   if (state.lastPlayed === today && state.history.length > 0) {
     const tg = state.history.find(h => h.date === today);
-    if (tg) { attempts = tg.attempts||[]; solved = tg.solved||false; gameOver = tg.solved || attempts.length >= maxAttempts; gameActive = !gameOver; }
-    else { attempts = []; solved = false; gameOver = false; gameActive = true; }
-  } else { attempts = []; solved = false; gameOver = false; gameActive = true; }
+    if (tg) {
+      attempts = tg.attempts || [];
+      solved = tg.solved || false;
+      gameOver = tg.solved || attempts.length >= maxAttempts;
+      gameActive = !gameOver;
+    }
+  }
   currentGuess = '';
 }
 
@@ -234,7 +255,7 @@ function submitGuess() {
   else if (attempts.length >= maxAttempts) { gameActive = false; gameOver = true; }
 
   const state = loadFiubleState();
-  const today = new Date().toISOString().slice(0,10);
+  const today = getTodayStr();
   if (gameOver) {
     state.totalGames++;
     if (solved) {
@@ -257,11 +278,11 @@ function submitGuess() {
   }
 }
 
-function getYesterday() { const d=new Date(); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); }
+function getYesterday() { const d=new Date(); d.setDate(d.getDate()-1); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
 function getTimeUntilReset() { const now=new Date(),tom=new Date(now); tom.setDate(tom.getDate()+1); tom.setHours(0,0,0,0); const diff=tom-now; return `${Math.floor(diff/3600000)}h ${Math.floor((diff%3600000)/60000)}m`; }
 
 function getShareText() {
-  const today = new Date().toISOString().slice(0,10);
+  const today = getTodayStr();
   const diffBadge = puzzle.difficulty===1?'⚡':puzzle.difficulty===2?'🔥':'💀';
   const emoji = solved ? '🟢' : '🔴';
   const grid = attempts.map(a => {
