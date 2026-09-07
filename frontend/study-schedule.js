@@ -3,6 +3,7 @@ const SCHEDULE_KEY = 'fiuba_study_schedule';
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const HOURS = [];
 for (let h = 7; h <= 23; h++) HOURS.push(`${String(h).padStart(2,'0')}:00`);
+let selectedScheduleSubjectId = null;
 
 function loadSchedule() {
   try { return JSON.parse(localStorage.getItem(SCHEDULE_KEY)) || { subjects: [], blocks: {} }; }
@@ -16,22 +17,30 @@ function saveSchedule(data) {
 function addScheduleSubject(name, color) {
   const data = loadSchedule();
   const colors = ['#3b82f6','#ef4444','#22c55e','#f59e0b','#8b5cf6','#06b6d4','#ec4899','#f97316'];
-  data.subjects.push({ id: Date.now(), name: name.trim(), color: color || colors[data.subjects.length % colors.length] });
+  const id = Date.now();
+  data.subjects.push({ id, name: name.trim(), color: color || colors[data.subjects.length % colors.length] });
   saveSchedule(data);
+  selectedScheduleSubjectId = id;
 }
 
 function removeScheduleSubject(id) {
   const data = loadSchedule();
   data.subjects = data.subjects.filter(s => s.id !== id);
   Object.keys(data.blocks).forEach(k => { if (data.blocks[k] === id) delete data.blocks[k]; });
+  if (selectedScheduleSubjectId === id) selectedScheduleSubjectId = data.subjects[0]?.id || null;
   saveSchedule(data);
+}
+
+function selectScheduleSubject(id) {
+  selectedScheduleSubjectId = id;
+  renderSchedule();
 }
 
 function toggleBlock(dayIdx, hour) {
   const data = loadSchedule();
   const key = `${dayIdx}-${hour}`;
-  const selector = document.getElementById('schedule-subject-select');
-  const subjectId = selector ? parseInt(selector.value) : (data.subjects[0]?.id || null);
+  let subjectId = selectedScheduleSubjectId;
+  if (!subjectId) subjectId = data.subjects[0]?.id || null;
   if (!subjectId) { alert('Agregá una materia primero'); return; }
   if (data.blocks[key] === subjectId) {
     delete data.blocks[key];
@@ -48,6 +57,7 @@ function renderSchedule() {
 
   const data = loadSchedule();
   const totalBlocks = Object.keys(data.blocks).length;
+  if (!selectedScheduleSubjectId && data.subjects.length > 0) selectedScheduleSubjectId = data.subjects[0].id;
 
   let html = `
     <div class="sch-header">
@@ -70,11 +80,12 @@ function renderSchedule() {
   } else {
     data.subjects.forEach(s => {
       const hours = Object.values(data.blocks).filter(v => v === s.id).length;
-      html += `<div class="sch-subject-chip" style="background:${s.color}18;border-color:${s.color}40">
+      const isSelected = s.id === selectedScheduleSubjectId;
+      html += `<div class="sch-subject-chip ${isSelected ? 'sch-selected' : ''}" style="--sch-color:${s.color};background:${isSelected ? s.color+'30' : s.color+'10'};border-color:${isSelected ? s.color : s.color+'40'};box-shadow:${isSelected ? '0 0 0 2px '+s.color+'50' : 'none'}" onclick="window.selectScheduleSubject(${s.id})">
         <span class="sch-chip-dot" style="background:${s.color}"></span>
         <span>${s.name}</span>
         <span class="sch-chip-hours">${hours}h</span>
-        <button class="sch-chip-remove" onclick="window.removeScheduleSubject(${s.id})">✕</button>
+        <button class="sch-chip-remove" onclick="event.stopPropagation();window.removeScheduleSubject(${s.id})">✕</button>
       </div>`;
     });
   }
@@ -123,14 +134,16 @@ window.handleAddScheduleSubject = function() {
 };
 
 window.removeScheduleSubject = function(id) {
-  removeScheduleSubject(id);
+  removeScheduleSubject(Number(id));
   renderSchedule();
 };
 
+window.selectScheduleSubject = selectScheduleSubject;
 window.toggleBlock = toggleBlock;
 
 window.clearSchedule = function() {
   if (!confirm('¿Limpiar todo el horario?')) return;
+  selectedScheduleSubjectId = null;
   saveSchedule({ subjects: [], blocks: {} });
   renderSchedule();
 };
