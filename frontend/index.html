@@ -858,6 +858,13 @@
         </div>
       </div>
 
+      <!-- Vista Selector de Materias con IA -->
+      <div id="materias-ai-view" class="view-panel hidden">
+        <div style="max-width:600px;width:100%;margin:0 auto;padding:1rem 1.2rem">
+          <div id="materias-ai-content"></div>
+        </div>
+      </div>
+
       <!-- Vista Herramientas (hub central) -->
       <div id="herramientas-view" class="view-panel hidden">
         <div style="max-width:900px;width:100%;margin:0 auto;padding:1rem 1.2rem">
@@ -882,6 +889,14 @@
               </div>
               <span class="tool-card-name">Unidades</span>
               <span class="tool-card-desc">Convertidor universal</span>
+            </button>
+
+            <button onclick="switchView('materias-ai')" class="tool-card" style="--tool-color:#ec4899">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(236,72,153,0.15),rgba(244,114,182,0.15));color:#ec4899">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a7 7 0 0 1 7 7c0 3-2 5.5-4 7.5L12 19l-3-2.5C7 14.5 5 12 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              </div>
+              <span class="tool-card-name">Materias IA</span>
+              <span class="tool-card-desc">Tips por materia</span>
             </button>
 
             <button onclick="switchView('gpa')" class="tool-card" style="--tool-color:#3b82f6">
@@ -1487,6 +1502,7 @@
   <script src="fiuble.js"></script>
   <script src="graphing-calculator.js"></script>
   <script src="unit-converter.js"></script>
+  <script src="subject-selector.js"></script>
   <script src="code-playground.js"></script>
   <script type="module" src="professor-ratings.js"></script>
   <script type="module" src="professor-ratings-ui.js"></script>

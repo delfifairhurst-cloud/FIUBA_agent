@@ -165,6 +165,7 @@ function initFiuble() {
     gameOver = false;
     gameActive = true;
     currentGuess = '';
+    return;
   }
 
   const state = loadFiubleState();
