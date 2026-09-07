@@ -36,16 +36,16 @@ const GEN = {
     const templates = [
       { gen(r) { const m = randInt(r,1,10), a = randInt(r,1,10); return { eq: `F=ma: m=${m}, a=${a} → F=?`, answer: String(m*a), hint: 'F = m × a' }; } },
       { gen(r) { const i = randInt(r,1,15), R = randInt(r,1,10); return { eq: `V=IR: I=${i}, R=${R} → V=?`, answer: String(i*R), hint: 'V = I × R' }; } },
-      { gen(r) { const F = randInt(r,5,50), A = randInt(r,1,10); return { eq: `P=F/A: F=${F}, A=${A} → P=?`, answer: String(F/A), hint: 'Presión = Fuerza / Área' }; } },
+      { gen(r) { const F = randInt(r,5,50), A = randInt(r,1,10); const ans = Math.round(F/A*100)/100; return { eq: `P=F/A: F=${F}, A=${A} → P=?`, answer: String(ans), hint: 'Presión = Fuerza / Área' }; } },
       { gen(r) { const t = randInt(r,1,8); return { eq: `Caída libre: h=5t², t=${t} → h=?`, answer: String(5*t*t), hint: '5 por t al cuadrado' }; } },
-      { gen(r) { const d = randInt(r,20,200), t = randInt(r,2,10); return { eq: `Velocidad: d=${d}, t=${t} → v=?`, answer: String(d/t), hint: 'v = d / t' }; } },
+      { gen(r) { const d = randInt(r,20,200), t = randInt(r,2,10); const ans = Math.round(d/t*100)/100; return { eq: `Velocidad: d=${d}, t=${t} → v=?`, answer: String(ans), hint: 'v = d / t' }; } },
       { gen(r) { const m = randInt(r,1,8), v = randInt(r,1,8); return { eq: `½mv²: m=${m}, v=${v} → ½mv²=?`, answer: String(Math.round(0.5*m*v*v)), hint: '0.5 × m × v²' }; } },
       { gen(r) { const rad = randInt(r,1,10); return { eq: `Área círculo: r=${rad} → A=?`, answer: String(Math.round(3.1416*rad*rad)), hint: 'π × r²' }; } },
     ];
     if (diff >= 2) {
       templates.push(
         { gen(r) { const m = randInt(r,5,20), v = randInt(r,2,10); return { eq: `p=mv: m=${m}, v=${v} → p=?`, answer: String(m*v), hint: 'Momentum = masa × velocidad' }; } },
-        { gen(r) { const q = randInt(r,1,5), d = randInt(r,2,10); return { eq: `F=kq/d²: k=1, q=${q}, d=${d} → F=?`, answer: String(q/(d*d)), hint: 'Ley de Coulomb simplificada' }; } },
+        { gen(r) { const q = randInt(r,1,5), d = randInt(r,2,10); const ans = Math.round(q/(d*d)*100)/100; return { eq: `F=kq/d²: k=1, q=${q}, d=${d} → F=?`, answer: String(ans), hint: 'Ley de Coulomb simplificada' }; } },
       );
     }
     return pick(rng, templates).gen(rng);
@@ -91,11 +91,15 @@ const GEN = {
       const [a,b,c] = pick(rng, triples);
       return { eq: `${a}² + ${b}² = ? (Pitágoras)`, answer: String(c*c), hint: `Teorema de Pitágoras`, difficulty: diff };
     } else if (diff === 2) {
-      const angles = [{deg:30,sin:'0.5',cos:'√3/2',tan:'1/√3'},{deg:45,sin:'√2/2',cos:'√2/2',tan:'1'},{deg:60,sin:'√3/2',cos:'0.5',tan:'√3'}];
-      const a = pick(rng, angles); const fn = pick(rng, ['sin','cos','tan']);
-      const val = fn==='sin'?a.sin:fn==='cos'?a.cos:a.tan;
-      const numVal = fn==='tan'&&a.deg===45?1:fn==='sin'&&a.deg===30?0.5:fn==='cos'&&a.deg===60?0.5:0.5;
-      return { eq: `${fn}(${a.deg}°) = ?`, answer: String(numVal), hint: 'Trigonométrica clásica', difficulty: diff };
+      const angles = [30,45,60];
+      const deg = pick(rng, angles); const fn = pick(rng, ['sin','cos','tan']);
+      const rad = deg * Math.PI / 180;
+      let numVal;
+      if (fn === 'sin') numVal = Math.round(Math.sin(rad) * 1000) / 1000;
+      else if (fn === 'cos') numVal = Math.round(Math.cos(rad) * 1000) / 1000;
+      else numVal = Math.round(Math.tan(rad) * 1000) / 1000;
+      if (numVal === Math.round(numVal)) numVal = Math.round(numVal);
+      return { eq: `${fn}(${deg}°) = ?`, answer: String(numVal), hint: 'Trigonométrica clásica', difficulty: diff };
     } else {
       const a = randInt(rng, 2, 5); const b = randInt(rng, 1, 10); const c = randInt(rng, 1, 5);
       const result = a + b * 0 + c;
@@ -231,9 +235,12 @@ function launchConfetti() {
 }
 
 // ─── GAME LOGIC ───
+function normalizeAnswer(s) {
+  return String(s).replace(/,/g, '.').replace(/\.?0+$/, '');
+}
 function checkGuess(guess) {
   const target = puzzle.answer;
-  const gs = guess.toString(), ts = target.toString();
+  const gs = normalizeAnswer(guess), ts = normalizeAnswer(target);
   if (gs === ts) return 'correct';
   const gd = gs.split(''), td = ts.split('');
   const result = Array(gs.length).fill('absent');
@@ -445,7 +452,7 @@ function renderFiuble() {
 
 // ─── WINDOW EXPORTS ───
 window.setFiubleGuess = function(v) {
-  currentGuess = v.replace(/[^0-9.\-]/g,'');
+  currentGuess = v.replace(/[^0-9,.\-]/g,'');
   const inp = document.getElementById('fiuble-input');
   if (inp && inp.value !== currentGuess) inp.value = currentGuess;
 };
