@@ -58,6 +58,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="styles.css?v=40">
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <!-- KaTeX CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -91,7 +92,7 @@
         </div>
         <div class="brand-text">
           <h2>FIUBA Agent</h2>
-          <span class="badge-version">v1.0 MVP</span>
+          <span class="badge-version">v1.5</span>
         </div>
       </div>
 
@@ -166,6 +167,10 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
               Nueva evaluación
             </button>
+            <button class="btn-upload" onclick="switchView('evaluaciones');setTimeout(()=>{if(window.ExerciseBank){const s=window.ExerciseBank.getSubjects();if(s.length)window.startPractice(s[Math.floor(Math.random()*s.length)])}},400)" style="background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(6,182,212,0.1));border-color:rgba(34,197,94,0.3);color:#22c55e">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              Práctica rápida
+            </button>
             <div id="evaluations-list" class="recent-attempts"></div>
           </div>
         </div>
@@ -193,6 +198,21 @@
             <!-- Renderizado dinámicamente -->
           </div>
         </div>
+
+        <!-- Herramientas de estudio -->
+        <div class="nav-group">
+          <label class="group-title">Herramientas</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem">
+            <button class="btn-server-config" onclick="switchView('gpa')" title="Calculadora de promedio">📊 Promedio</button>
+            <button class="btn-server-config" onclick="switchView('correlativas')" title="Mapa de correlativas">🔗 Correlativas</button>
+            <button class="btn-server-config" onclick="switchView('periodic')" title="Tabla periódica interactiva">⚛️ Tabla Periódica</button>
+            <button class="btn-server-config" onclick="switchView('schedule')" title="Cronograma de estudio">📅 Horarios</button>
+            <button class="btn-server-config" onclick="switchView('reference')" title="Derivadas e integrales">📐 Fórmulas</button>
+            <button class="btn-server-config" onclick="switchView('local-intel')" title="Análisis de tus chats">🧠 Inteligencia</button>
+            <button class="btn-server-config" onclick="switchView('challenge')" title="Desafío de estudio relámpago" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(239,68,68,0.1));border-color:rgba(245,158,11,0.3);color:#f59e0b;font-weight:600">⚡ Desafío de Estudio</button>
+            <button class="btn-server-config" onclick="switchView('fiuble')" title="FIUBLE - Wordle matemático diario" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(168,85,247,0.1));border-color:rgba(139,92,246,0.3);color:#8b5cf6;font-weight:600">🧩 FIUBLE diario</button>
+          </div>
+        </div>
       </nav>
 
 
@@ -204,28 +224,15 @@
           <span class="status-dot" id="status-dot"></span>
           <span id="status-text">Backend listo</span>
         </div>
-        <button class="btn-server-config" onclick="openServerConfigModal()" title="Configurar conexión del servidor backend">
-          <span>⚙️ Servidor IA</span>
-          <span style="font-size: 0.75rem; opacity: 0.7;">Cambiar</span>
-        </button>
-        <button class="btn-server-config" onclick="openChangelog()" title="Novedades" style="margin-top:0.3rem">
-          <span>📋 Novedades</span>
-        </button>
-        <div style="display:flex;gap:0.3rem;margin-top:0.3rem">
-          <button class="btn-server-config" onclick="openCramMode()" title="Modo Examen Mañana" style="flex:1;font-size:0.78rem">
-            <span>📚 Examen</span>
-          </button>
-          <button class="btn-server-config" onclick="openMnemonics()" title="Generador de Mnemónicos" style="flex:1;font-size:0.78rem">
-            <span>🧠 Mnemo</span>
-          </button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;margin-top:0.5rem">
+          <button class="btn-server-config" onclick="openCramMode()" title="Modo Examen Mañana">📚 Examen</button>
+          <button class="btn-server-config" onclick="openMnemonics()" title="Generador de Mnemónicos">🧠 Mnemo</button>
+          <button class="btn-server-config" onclick="openExamGen()" title="Generador de Parciales">📝 Parcial</button>
+          <button class="btn-server-config" onclick="openStepCalc()" title="Calculadora con Pasos">🔢 Pasos</button>
         </div>
-        <div style="display:flex;gap:0.3rem;margin-top:0.3rem">
-          <button class="btn-server-config" onclick="openExamGen()" title="Generador de Parciales" style="flex:1;font-size:0.78rem">
-            <span>📝 Parcial</span>
-          </button>
-          <button class="btn-server-config" onclick="openStepCalc()" title="Calculadora con Pasos" style="flex:1;font-size:0.78rem">
-            <span>🔢 Pasos</span>
-          </button>
+        <div style="display:flex;gap:0.3rem;margin-top:0.4rem">
+          <button class="btn-server-config" onclick="openServerConfigModal()" title="Configurar conexión" style="flex:1;font-size:0.72rem">⚙️ Servidor IA</button>
+          <button class="btn-server-config" onclick="openChangelog()" title="Novedades" style="flex:1;font-size:0.72rem">📋 Novedades</button>
         </div>
         <div class="sidebar-delf-footer">
           <span>by Delf</span>
@@ -315,6 +322,11 @@
         <button class="top-menu-btn" data-view="progreso" onclick="switchView('progreso')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
           Progreso
+        </button>
+        <button class="top-menu-btn" data-view="herramientas" onclick="switchView('herramientas')" style="position:relative">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Herramientas
+          <span style="position:absolute;top:2px;right:4px;width:6px;height:6px;background:#f59e0b;border-radius:50%"></span>
         </button>
         <button class="top-menu-btn" data-view="contacto" onclick="switchView('contacto')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -608,6 +620,21 @@
       <div id="progreso-view" class="view-panel hidden">
         <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
 
+          <!-- Dashboard personal de progreso -->
+          <div id="dashboard-stats"></div>
+
+          <!-- Calendario de estudio -->
+          <div class="gam-card" style="padding:1rem;margin-bottom:1rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem">
+              <h4 style="font-size:0.85rem;color:var(--text-secondary);margin:0;display:flex;align-items:center;gap:0.4rem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Calendario
+              </h4>
+              <button onclick="openCalendarModal()" style="background:var(--primary);color:white;border:none;border-radius:6px;padding:0.25rem 0.7rem;font-size:0.72rem;cursor:pointer;font-weight:600">+ Evento</button>
+            </div>
+            <div id="calendar-events"></div>
+          </div>
+
           <!-- Level Card -->
           <div id="gam-level-card" class="gam-card gam-level-card">
             <div class="gam-level-header">
@@ -692,7 +719,7 @@
           <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem">¿Dudas, feedback o propuestas para FIUBA Agent? Escribime.</p>
           <div style="display:grid;gap:0.7rem;text-align:left">
             <a href="mailto:fiuba.agent@gmail.com" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Email</span><p>fiuba.agent@gmail.com</p></a>
-            <a href="https://www.linkedin.com/in/delfina-fairhurst/" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">LinkedIn</span><p>Delf — Desarrollo</p></a>
+            <a href="https://www.linkedin.com/in/delfina-fairhurst-guzian-7401a3369" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">LinkedIn</span><p>Delf — Desarrollo</p></a>
           </div>
           <div style="margin-top:1.5rem;padding:1rem;background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(59,130,246,0.08));border:1px solid rgba(139,92,246,0.2);border-radius:12px;text-align:center">
             <div style="font-size:1.5rem;margin-bottom:0.3rem">☕</div>
@@ -734,14 +761,213 @@
             <button class="btn-new-chat" onclick="openCreateEvalModal()" style="padding:0.55rem 1.1rem;font-size:0.85rem;white-space:nowrap">+ Nueva evaluación</button>
           </div>
           <div id="evaluaciones-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.7rem;margin-bottom:1.5rem"></div>
+
+          <!-- Banco de ejercicios local -->
+          <div class="exercise-bank-section" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:1.2rem;margin-bottom:1.5rem">
+            <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.8rem">
+              <div style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(6,182,212,0.15));border-radius:10px;padding:0.45rem;display:flex">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="13" y2="11"/></svg>
+              </div>
+              <div>
+                <h3 style="font-size:0.9rem;color:var(--text-primary);margin:0;font-weight:700">Banco de ejercicios</h3>
+                <p style="font-size:0.7rem;color:var(--text-muted);margin:0">Practicá sin IA · Sin costo · Respuesta al instante</p>
+              </div>
+            </div>
+            <div id="exercise-bank-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.6rem"></div>
+          </div>
+
           <div id="evaluaciones-dashboard-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.9rem"></div>
           <div id="evaluaciones-empty" class="hidden" style="text-align:center;padding:2.5rem 1.5rem;background:var(--bg-card);border:1px dashed var(--border-color);border-radius:16px;margin-top:1rem">
             <div style="display:flex;justify-content:center;margin-bottom:0.6rem;color:var(--primary)"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
             <h3 style="font-family:var(--font-heading);font-size:1.05rem;margin-bottom:0.4rem;color:var(--text-primary)">Aún no tenés evaluaciones</h3>
-            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem;max-width:400px;margin-left:auto;margin-right:auto">Subí un PDF de un parcial y elegí si querés multiple choice o a desarrollar. La IA te arma el quiz interactivo.</p>
-            <button class="btn-new-chat" onclick="openCreateEvalModal()" style="margin:0 auto;padding:0.6rem 1.2rem">Crear mi primera evaluación</button>
+            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1rem;max-width:420px;margin-left:auto;margin-right:auto">Subí un PDF de un parcial, o hacé práctica rápida con el banco de ejercicios local (sin IA).</p>
+            <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">
+              <button class="btn-new-chat" onclick="openCreateEvalModal()" style="padding:0.55rem 1rem">Subir PDF y crear evaluación</button>
+              <button class="btn-new-chat" onclick="window.startPractice && window.startPractice('Algebra')" style="padding:0.55rem 1rem;background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--text-primary)">Practicar Algebra</button>
+            </div>
           </div>
           <div id="evaluaciones-attempts" style="margin-top:1.8rem"></div>
+        </div>
+      </div>
+
+      <!-- Vista Tabla Periódica -->
+      <div id="periodic-view" class="view-panel hidden">
+        <div style="max-width:1100px;width:100%;margin:0 auto;padding:1rem">
+          <div id="periodic-view-content"></div>
+        </div>
+      </div>
+
+      <!-- Vista Correlativas -->
+      <div id="correlativas-view" class="view-panel hidden">
+        <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <div id="correlativas-view-content"></div>
+        </div>
+      </div>
+
+      <!-- Vista Calculadora de Promedio -->
+      <div id="gpa-view" class="view-panel hidden">
+        <div style="max-width:700px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <div id="gpa-view-content"></div>
+        </div>
+      </div>
+
+      <!-- Vista Cronograma de Estudio -->
+      <div id="schedule-view" class="view-panel hidden">
+        <div style="max-width:1000px;width:100%;margin:0 auto;padding:1.5rem 1rem">
+          <div id="schedule-view-content"></div>
+        </div>
+      </div>
+
+      <!-- Vista Referencia Matemática -->
+      <div id="reference-view" class="view-panel hidden">
+        <div style="max-width:800px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <div id="reference-view-content"></div>
+        </div>
+      </div>
+
+      <!-- Vista Inteligencia Local -->
+      <div id="local-intel-view" class="view-panel hidden">
+        <div style="max-width:800px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <div id="local-intel-content"></div>
+        </div>
+      </div>
+
+      <!-- Vista Desafío de Estudio -->
+      <div id="challenge-view" class="view-panel hidden">
+        <div style="max-width:700px;width:100%;margin:0 auto;padding:1.5rem 2rem">
+          <div id="challenge-content"></div>
+        </div>
+      </div>
+
+      <!-- Vista FIUBLE -->
+      <div id="fiuble-view" class="view-panel hidden">
+        <div style="max-width:500px;width:100%;margin:0 auto;padding:1.5rem 1rem">
+          <div id="fiuble-content"></div>
+        </div>
+      </div>
+
+      <!-- Vista Herramientas (hub central) -->
+      <div id="herramientas-view" class="view-panel hidden">
+        <div style="max-width:900px;width:100%;margin:0 auto;padding:1rem 1.2rem">
+          <div style="text-align:center;margin-bottom:1rem">
+            <h2 style="font-family:var(--font-heading);font-size:1.2rem;color:var(--text-primary);margin-bottom:0.2rem">Herramientas de Estudio</h2>
+            <p style="color:var(--text-muted);font-size:0.78rem">Todo lo que necesitás para estudiar, sin IA y sin costo</p>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.6rem">
+
+            <button onclick="switchView('gpa')" class="tool-card" style="--tool-color:#3b82f6">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(99,102,241,0.15));color:#3b82f6">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 12 0v-5"/></svg>
+              </div>
+              <span class="tool-card-name">Promedio</span>
+              <span class="tool-card-desc">Calculadora ponderada</span>
+            </button>
+
+            <button onclick="switchView('periodic')" class="tool-card" style="--tool-color:#22c55e">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(6,182,212,0.15));color:#22c55e">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="4 3"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)" stroke-dasharray="4 3"/></svg>
+              </div>
+              <span class="tool-card-name">Periódica</span>
+              <span class="tool-card-desc">118 elementos</span>
+            </button>
+
+            <button onclick="switchView('correlativas')" class="tool-card" style="--tool-color:#f59e0b">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(249,115,22,0.15));color:#f59e0b">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </div>
+              <span class="tool-card-name">Correlativas</span>
+              <span class="tool-card-desc">Mapa de materias</span>
+            </button>
+
+            <button onclick="switchView('schedule')" class="tool-card" style="--tool-color:#8b5cf6">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(168,85,247,0.15));color:#8b5cf6">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <span class="tool-card-name">Cronograma</span>
+              <span class="tool-card-desc">Horario semanal</span>
+            </button>
+
+            <button onclick="switchView('reference')" class="tool-card" style="--tool-color:#06b6d4">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(14,165,233,0.15));color:#06b6d4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              </div>
+              <span class="tool-card-name">Fórmulas</span>
+              <span class="tool-card-desc">Derivadas e integrales</span>
+            </button>
+
+            <button onclick="switchView('local-intel')" class="tool-card" style="--tool-color:#ec4899">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(236,72,153,0.15),rgba(244,114,182,0.15));color:#ec4899">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a7 7 0 0 1 7 7c0 3-2 5.5-4 7.5L12 19l-3-2.5C7 14.5 5 12 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              </div>
+              <span class="tool-card-name">Inteligencia</span>
+              <span class="tool-card-desc">Análisis de chats</span>
+            </button>
+
+            <button onclick="switchView('challenge')" class="tool-card tool-card-featured" style="--tool-color:#f59e0b">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(239,68,68,0.15));color:#f59e0b">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <span class="tool-card-name">Desafío</span>
+              <span class="tool-card-desc">Quiz gamificado</span>
+            </button>
+
+            <button onclick="switchView('playground')" class="tool-card tool-card-featured" style="--tool-color:#06b6d4">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(14,165,233,0.15));color:#06b6d4">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <span class="tool-card-name">Code</span>
+              <span class="tool-card-desc">JS, Python, C</span>
+            </button>
+
+            <button onclick="switchView('fiuble')" class="tool-card tool-card-featured" style="--tool-color:#8b5cf6">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(168,85,247,0.15));color:#8b5cf6">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/><rect x="16" y="9" width="6" height="6" rx="1"/></svg>
+              </div>
+              <span class="tool-card-name">FIUBLE</span>
+              <span class="tool-card-desc">Wordle matemático</span>
+            </button>
+
+            <button onclick="switchView('ratings')" class="tool-card" style="--tool-color:#f59e0b">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(249,115,22,0.15));color:#f59e0b">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              </div>
+              <span class="tool-card-name">Profesores</span>
+              <span class="tool-card-desc">Ranking y reseñas</span>
+            </button>
+
+            <button onclick="switchView('rooms')" class="tool-card" style="--tool-color:#8b5cf6">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(168,85,247,0.15));color:#8b5cf6">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <span class="tool-card-name">Salas</span>
+              <span class="tool-card-desc">Chat grupal</span>
+            </button>
+
+            <button onclick="switchView('fiuble')" class="tool-card tool-card-featured" style="--tool-color:#8b5cf6;grid-column:1/-1">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(168,85,247,0.15));color:#8b5cf6;width:64px;height:64px">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/><rect x="16" y="9" width="6" height="6" rx="1"/></svg>
+              </div>
+              <span class="tool-card-name" style="font-size:1rem">FIUBLE</span>
+              <span class="tool-card-desc" style="font-size:0.78rem">El Wordle matemático diario · Nuevo todos los días</span>
+            </button>
+
+          </div>
+        </div>
+      </div>
+
+      <div id="playground-view" class="view-panel hidden">
+        <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem" id="playground-content">
+        </div>
+      </div>
+
+      <div id="ratings-view" class="view-panel hidden">
+        <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem" id="ratings-content">
+        </div>
+      </div>
+
+      <div id="rooms-view" class="view-panel hidden">
+        <div style="max-width:950px;width:100%;margin:0 auto;padding:1.5rem 2rem" id="rooms-content">
         </div>
       </div>
 
@@ -767,6 +993,31 @@
                 <span class="sugg-tag">Algoritmos</span>
                 <p>Pregunta de examen sobre memoria en C.</p>
               </button>
+            </div>
+
+            <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-color)">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.6rem;text-transform:uppercase;letter-spacing:0.05em;font-weight:600">Herramientas de estudio sin IA</p>
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;justify-content:center">
+                <button onclick="switchView('herramientas')" class="suggestion-card" style="padding:0.4rem 0.7rem;min-width:auto;display:flex;align-items:center;gap:0.3rem">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                  <span style="font-size:0.78rem">Ver todas</span>
+                </button>
+                <button onclick="switchView('gpa')" class="suggestion-card" style="padding:0.4rem 0.7rem;min-width:auto">
+                  <span style="font-size:0.78rem">📊 Promedio</span>
+                </button>
+                <button onclick="switchView('challenge')" class="suggestion-card" style="padding:0.4rem 0.7rem;min-width:auto">
+                  <span style="font-size:0.78rem">⚡ Desafío</span>
+                </button>
+                <button onclick="switchView('reference')" class="suggestion-card" style="padding:0.4rem 0.7rem;min-width:auto">
+                  <span style="font-size:0.78rem">📐 Fórmulas</span>
+                </button>
+                <button onclick="switchView('periodic')" class="suggestion-card" style="padding:0.4rem 0.7rem;min-width:auto">
+                  <span style="font-size:0.78rem">⚛️ Periódica</span>
+                </button>
+                <button onclick="switchView('fiuble')" class="suggestion-card" style="padding:0.4rem 0.7rem;min-width:auto;background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(168,85,247,0.08));border-color:rgba(139,92,246,0.3)">
+                  <span style="font-size:0.78rem">🧩 FIUBLE</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1100,6 +1351,58 @@
   <!-- Step Calculator modal -->
   <div class="stepcalc-modal" id="stepcalc-modal"></div>
 
+  <!-- Calendar modal -->
+  <div id="calendar-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s ease">
+    <div class="cal-modal-content" style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:18px;padding:0;width:90%;max-width:420px;box-shadow:0 25px 80px rgba(0,0,0,0.4);transform:translateY(20px) scale(0.97);transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1);overflow:hidden">
+      <div style="background:linear-gradient(135deg,var(--primary),#6366f1);padding:1.2rem 1.5rem;display:flex;align-items:center;gap:0.7rem">
+        <div style="background:rgba(255,255,255,0.2);border-radius:10px;padding:0.5rem;display:flex">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div style="flex:1">
+          <h3 style="font-size:1rem;color:white;margin:0;font-weight:700">Nuevo evento</h3>
+          <p style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin:0">Agregá un parcial, final o entrega</p>
+        </div>
+        <button onclick="closeCalendarModal()" style="background:rgba(255,255,255,0.15);border:none;color:white;cursor:pointer;font-size:1rem;padding:0.4rem;border-radius:8px;transition:background 0.15s" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="padding:1.2rem 1.5rem 1.5rem;display:flex;flex-direction:column;gap:0.8rem">
+        <div>
+          <label class="cal-label">Título del evento</label>
+          <input id="cal-event-title" class="cal-input" placeholder="Ej: Parcial de Álgebra Lineal">
+        </div>
+        <div>
+          <label class="cal-label">Materia</label>
+          <input id="cal-event-subject" class="cal-input" placeholder="Ej: Álgebra y Geometría Analítica">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.7rem">
+          <div>
+            <label class="cal-label">Fecha</label>
+            <input id="cal-event-date" type="date" class="cal-input">
+          </div>
+          <div>
+            <label class="cal-label">Tipo</label>
+            <select id="cal-event-type" class="cal-input cal-select">
+              <option value="parcial">📝 Parcial</option>
+              <option value="recuperatorio">🔄 Recuperatorio</option>
+              <option value="final">🎓 Final</option>
+              <option value="tp">📁 TP / Entrega</option>
+              <option value="estudio">📖 Sesión de estudio</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="cal-label">Notas <span style="opacity:0.5">(opcional)</span></label>
+          <textarea id="cal-event-notes" class="cal-input cal-textarea" rows="2" placeholder="Anotaciones..."></textarea>
+        </div>
+        <button onclick="handleSaveEvent()" class="cal-btn-primary cal-modal-save" style="width:100%;margin-top:0.2rem;padding:0.7rem;font-size:0.88rem">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Guardar evento
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Copyright footer -->
   <div class="app-copyright" id="app-copyright">
     <span>FIUBA Agent © 2026 Delf — Propiedad protegida</span>
@@ -1150,6 +1453,23 @@
   <script type="module" src="flashcards.js"></script>
   <script type="module" src="flashcards-ui.js"></script>
   <script type="module" src="analytics.js"></script>
+  <script type="module" src="dashboard.js"></script>
+  <script type="module" src="calendar.js"></script>
+  <script src="exercise-bank.js"></script>
+  <script src="career-data.js"></script>
+  <script src="gpa-calculator.js"></script>
+  <script src="periodic-table.js"></script>
+  <script src="correlativas.js"></script>
+  <script src="study-schedule.js"></script>
+  <script src="reference-tables.js"></script>
+  <script src="local-intelligence.js"></script>
+  <script src="study-challenge.js"></script>
+  <script src="fiuble.js"></script>
+  <script src="code-playground.js"></script>
+  <script type="module" src="professor-ratings.js"></script>
+  <script type="module" src="professor-ratings-ui.js"></script>
+  <script type="module" src="study-rooms.js"></script>
+  <script type="module" src="study-rooms-ui.js"></script>
   <script type="module" src="examiner.js"></script>
   <script type="module" src="library-ui.js"></script>
   <!-- Scripts nuevos -->

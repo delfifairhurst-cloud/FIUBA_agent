@@ -4,9 +4,23 @@
 
   const ENTRIES = [
     {
+      version: '1.5.0',
+      date: '06 Septiembre 2026',
+      tag: 'Última actualización',
+      changes: [
+        { type: 'new', text: 'Code Playground — ejecutá JS, Python y C en tu navegador' },
+        { type: 'new', text: 'Ranking de Profesores — 50+ reseñas de profes FIUBA' },
+        { type: 'new', text: 'Salas de Estudio — chat grupal en tiempo real' },
+        { type: 'new', text: 'Herramientas hub rediseñado — grid compacto pro' },
+        { type: 'fix', text: 'Menú superior compacto — entra todo sin scroll' },
+        { type: 'fix', text: 'Python input() muestra error claro en vez de trabarse' },
+        { type: 'fix', text: 'Salas de estudio — error de imports corregido' },
+        { type: 'fix', text: 'Reseñas marcadas como ejemplos (no inventadas)' },
+      ]
+    },
+    {
       version: '1.4.0',
       date: '29 Agosto 2026',
-      tag: 'Última actualización',
       changes: [
         { type: 'new', text: 'Timer Pomodoro con sonidos ambientales (lluvia, fuego, olas)' },
         { type: 'new', text: 'Hoja de fórmulas rápida por materia' },

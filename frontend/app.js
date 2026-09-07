@@ -1531,7 +1531,7 @@ function switchView(view) {
   });
 
   // IDs of all view panels
-  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view'];
+  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'ratings-view', 'rooms-view'];
   const chatEl = document.querySelector('.chat-container');
   const appLayout = document.querySelector('.app-layout');
 
@@ -1552,7 +1552,7 @@ function switchView(view) {
     if (chatEl) chatEl.style.display = 'flex';
   } else if (view === 'evaluaciones') {
     const ev = document.getElementById('evaluaciones-view');
-    if (ev) { ev.classList.remove('hidden'); if (window.refreshEvaluations) window.refreshEvaluations(); }
+    if (ev) { ev.classList.remove('hidden'); if (window.refreshEvaluations) window.refreshEvaluations(); if (window.refreshExerciseBank) window.refreshExerciseBank(); }
   } else if (view === 'materias') {
     const mv = document.getElementById('materias-view');
     if (mv) { mv.classList.remove('hidden'); populateMaterias(); }
@@ -1573,7 +1573,43 @@ function switchView(view) {
     if (fv) { fv.classList.remove('hidden'); if (window.refreshFlashcardsView) window.refreshFlashcardsView(); }
   } else if (view === 'progreso') {
     const pv = document.getElementById('progreso-view');
-    if (pv) { pv.classList.remove('hidden'); if (window.refreshAnalytics) window.refreshAnalytics(); }
+    if (pv) { pv.classList.remove('hidden'); if (window.refreshAnalytics) window.refreshAnalytics(); if (window.refreshDashboard) window.refreshDashboard(); }
+  } else if (view === 'periodic') {
+    const el = document.getElementById('periodic-view');
+    if (el) { el.classList.remove('hidden'); if (window.renderPeriodicTable) window.renderPeriodicTable(); }
+  } else if (view === 'correlativas') {
+    const el = document.getElementById('correlativas-view');
+    if (el) { el.classList.remove('hidden'); if (window.renderCorrelativas) window.renderCorrelativas(); }
+  } else if (view === 'gpa') {
+    const el = document.getElementById('gpa-view');
+    if (el) { el.classList.remove('hidden'); if (window.renderGPACalculator) window.renderGPACalculator(); }
+  } else if (view === 'schedule') {
+    const el = document.getElementById('schedule-view');
+    if (el) { el.classList.remove('hidden'); if (window.renderSchedule) window.renderSchedule(); }
+  } else if (view === 'reference') {
+    const el = document.getElementById('reference-view');
+    if (el) { el.classList.remove('hidden'); if (window.renderReferenceTables) window.renderReferenceTables(); }
+  } else if (view === 'local-intel') {
+    const el = document.getElementById('local-intel-view');
+    if (el) { el.classList.remove('hidden'); if (window.renderLocalIntelligence) window.renderLocalIntelligence(); }
+  } else if (view === 'challenge') {
+    const el = document.getElementById('challenge-view');
+    if (el) { el.classList.remove('hidden'); if (window.renderStudyChallenge) window.renderStudyChallenge(); }
+  } else if (view === 'herramientas') {
+    const el = document.getElementById('herramientas-view');
+    if (el) el.classList.remove('hidden');
+  } else if (view === 'fiuble') {
+    const el = document.getElementById('fiuble-view');
+    if (el) { el.classList.remove('hidden'); if (window.renderFiuble) window.renderFiuble(); }
+  } else if (view === 'playground') {
+    const el = document.getElementById('playground-view');
+    if (el) { el.classList.remove('hidden'); if (window.renderPlayground) window.renderPlayground(); }
+  } else if (view === 'ratings') {
+    const el = document.getElementById('ratings-view');
+    if (el) { el.classList.remove('hidden'); if (window.renderProfessorRatings) window.renderProfessorRatings(); }
+  } else if (view === 'rooms') {
+    const el = document.getElementById('rooms-view');
+    if (el) { el.classList.remove('hidden'); if (window.renderStudyRooms) window.renderStudyRooms(); }
   }
 }
 window.switchView = switchView;

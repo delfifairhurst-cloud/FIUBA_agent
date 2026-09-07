@@ -11,5 +11,23 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
+    // Ranking de profesores - lectura pública, escritura autenticada
+    match /professorRatings/{ratingId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow update: if request.auth != null;
+    }
+    // Salas de estudio - lectura autenticada, escritura miembros
+    match /studyRooms/{roomId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid in resource.data.members;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.createdBy;
+      match /messages/{msgId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+      }
+    }
   }
 }
