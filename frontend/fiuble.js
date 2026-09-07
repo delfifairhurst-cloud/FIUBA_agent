@@ -136,14 +136,21 @@ function saveFiubleState(s) { localStorage.setItem(FIUBLE_KEY, JSON.stringify(s)
 
 let gameActive = false, attempts = [], maxAttempts = 6, currentGuess = '', puzzle = null, solved = false, gameOver = false;
 let flipAnimating = false;
+let lastPuzzleSeed = null;
 
 function initFiuble() {
-  puzzle = generatePuzzle(getDaySeed());
+  const todaySeed = getDaySeed();
+  // Always regenerate if day changed or first load
+  if (!puzzle || lastPuzzleSeed !== todaySeed) {
+    puzzle = generatePuzzle(todaySeed);
+    lastPuzzleSeed = todaySeed;
+  }
   const state = loadFiubleState();
   const today = new Date().toISOString().slice(0,10);
   if (state.lastPlayed === today && state.history.length > 0) {
     const tg = state.history.find(h => h.date === today);
     if (tg) { attempts = tg.attempts||[]; solved = tg.solved||false; gameOver = tg.solved || attempts.length >= maxAttempts; gameActive = !gameOver; }
+    else { attempts = []; solved = false; gameOver = false; gameActive = true; }
   } else { attempts = []; solved = false; gameOver = false; gameActive = true; }
   currentGuess = '';
 }
@@ -290,7 +297,7 @@ function getDiffColor(d) { return d===1?'#22c55e':d===2?'#f59e0b':'#ef4444'; }
 function renderFiuble() {
   const container = document.getElementById('fiuble-content');
   if (!container) return;
-  if (!puzzle) initFiuble();
+  initFiuble();
   if (!puzzle) return;
   const state = loadFiubleState();
   const showTutorial = !localStorage.getItem(FIUBLE_TUTORIAL);

@@ -46,9 +46,9 @@ const TEMPORARY_GEMINI_REASONS = new Set([
 const MODEL_FALLBACK_CHAIN = [
   process.env.GEMINI_MODEL || 'gemini-3.6-flash',
   'gemini-3.8-flash',
-  'gemini-3.7-flash',
   'gemini-3.5-flash',
-  'gemini-2.5-flash'
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash'
 ];
 
 function isTemporaryError(statusCode, geminiError) {
@@ -80,7 +80,7 @@ function jitter(baseMs) {
   return baseMs + Math.random() * baseMs * 0.3;
 }
 
-async function callGeminiWithRetry(apiKey, payload, { maxRetries = 2, endpoint = 'chat' } = {}) {
+async function callGeminiWithRetry(apiKey, payload, { maxRetries = 3, endpoint = 'chat' } = {}) {
   const models = MODEL_FALLBACK_CHAIN;
   let lastError = null;
 

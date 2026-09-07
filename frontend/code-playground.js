@@ -40,7 +40,7 @@ function executeJSInSandbox(code) {
   return new Promise((resolve) => {
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
-    iframe.sandbox = 'allow-scripts';
+    iframe.sandbox = 'allow-scripts allow-modals';
     document.body.appendChild(iframe);
 
     const timeout = setTimeout(() => {
@@ -115,10 +115,6 @@ async function executePython(code) {
     pyodideLoading = true;
     try {
       pyodideInstance = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/' });
-      // Register JS prompt() function for Python input()
-      pyodideInstance.registerJsModule('browser_api', {
-        prompt: (msg) => window.prompt(msg || '') || ''
-      });
     } catch (e) {
       pyodideLoading = false;
       return { output: '❌ Error cargando Python: ' + e.message, error: true };
@@ -128,32 +124,62 @@ async function executePython(code) {
   if (!pyodideInstance) {
     return { output: '⏳ Cargando Python, esperá...', error: false, loading: true };
   }
+
+  const _outputLines = [];
+  const _errorLines = [];
+
+  // Set up JS globals that Python can call
+  pyodideInstance.globals.set('_js_print', (text) => { _outputLines.push(String(text)); });
+  pyodideInstance.globals.set('_js_print_err', (text) => { _errorLines.push(String(text)); });
+  pyodideInstance.globals.set('_js_input', (prompt) => {
+    const val = window.prompt(String(prompt || '')) || '';
+    return val;
+  });
+
   try {
+    // Bootstrap: override print(), input(), sys.stdout/stderr
     pyodideInstance.runPython(`
-import sys, io, builtins
-_stdout = io.StringIO()
-_stderr = io.StringIO()
-sys.stdout = _stdout
-sys.stderr = _stderr
-from browser_api import prompt as _browser_prompt
+import builtins, sys
+
+class _JSWriter:
+    def write(self, s):
+        if s: _js_print(str(s))
+    def flush(self):
+        pass
+
+class _JSWriterErr:
+    def write(self, s):
+        if s: _js_print_err(str(s))
+    def flush(self):
+        pass
+
+sys.stdout = _JSWriter()
+sys.stderr = _JSWriterErr()
+sys.displayhook = lambda x: _js_print(str(x)) if x is not None else None
+
 def _input(prompt=''):
-    return _browser_prompt(str(prompt))
-builtins.input = _input
+    return _js_input(str(prompt))
+
 def _input_int(prompt=''):
-    return int(_browser_prompt(str(prompt)))
+    return int(_js_input(str(prompt)))
+
 def _input_float(prompt=''):
-    return float(_browser_prompt(str(prompt)))
+    return float(_js_input(str(prompt)))
+
 builtins.input = _input
+builtins.print = lambda *args, sep=' ', end='\\n', file=None, flush=False: _js_print(sep.join(str(a) for a in args) + end)
 `);
+
+    // Run user code
     pyodideInstance.runPython(code);
-    const stdout = pyodideInstance.runPython('_stdout.getvalue()');
-    const stderr = pyodideInstance.runPython('_stderr.getvalue()');
-    pyodideInstance.runPython('sys.stdout = sys.__stdout__\nsys.stderr = sys.__stderr__');
-    const output = stdout + stderr;
-    return { output: output || '(sin salida)', error: !!stderr };
+
+    const output = _outputLines.join('');
+    const errors = _errorLines.join('');
+    return { output: output || errors || '(sin salida)', error: !!errors };
   } catch (e) {
-    pyodideInstance.runPython('sys.stdout = sys.__stdout__\nsys.stderr = sys.__stderr__');
-    return { output: '❌ ' + e.message, error: true };
+    const errMsg = e.message || String(e);
+    const partial = _outputLines.join('');
+    return { output: (partial ? partial + '\n' : '') + '❌ ' + errMsg, error: true };
   }
 }
 
