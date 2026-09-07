@@ -125,51 +125,51 @@ async function executePython(code) {
     return { output: '⏳ Cargando Python, esperá...', error: false, loading: true };
   }
 
-  // Use window globals for output capture
-  window.__pg_out = [];
-  window.__pg_err = [];
-  window.__pg_print = (t) => window.__pg_out.push(String(t));
-  window.__pg_printerr = (t) => window.__pg_err.push(String(t));
-  window.__pg_input = (msg) => window.prompt(String(msg || '')) || '';
-
   try {
-    // Set JS functions as Python globals
-    pyodideInstance.globals.set('__pg_print', window.__pg_print);
-    pyodideInstance.globals.set('__pg_printerr', window.__pg_printerr);
-    pyodideInstance.globals.set('__pg_input', window.__pg_input);
-
+    // Reset stdout/stderr buffers
     pyodideInstance.runPython(`
-import builtins, sys
+import sys, io, builtins
 
-class _Writer:
-    def __init__(self, fn):
-        self._fn = fn
+class _PyStdout(io.StringIO):
     def write(self, s):
-        if s:
-            self._fn(str(s))
+        super().write(s)
+        return len(s)
     def flush(self):
         pass
 
-sys.stdout = _Writer(__pg_print)
-sys.stderr = _Writer(__pg_printerr)
+class _PyStderr(io.StringIO):
+    def write(self, s):
+        super().write(s)
+        return len(s)
+    def flush(self):
+        pass
+
+_py_stdout = _PyStdout()
+_py_stderr = _PyStderr()
+sys.stdout = _py_stdout
+sys.stderr = _py_stderr
 
 def _py_input(prompt=''):
-    return __pg_input(str(prompt))
+    import js
+    val = js.prompt(str(prompt)) if hasattr(js, 'prompt') else ''
+    return val if val is not None else ''
 
 builtins.input = _py_input
 `);
 
+    // Run user code
     pyodideInstance.runPython(code);
 
-    const output = window.__pg_out.join('');
-    const errors = window.__pg_err.join('');
+    // Read output from StringIO
+    const output = pyodideInstance.runPython('_py_stdout.getvalue()');
+    const errors = pyodideInstance.runPython('_py_stderr.getvalue()');
+
     return { output: output || errors || '(sin salida)', error: !!errors };
   } catch (e) {
+    let partial = '';
+    try { partial = pyodideInstance.runPython('_py_stdout.getvalue()'); } catch {}
     const errMsg = e.message || String(e);
-    const partial = (window.__pg_out || []).join('');
     return { output: (partial ? partial + '\n' : '') + '❌ ' + errMsg, error: true };
-  } finally {
-    try { delete window.__pg_out; delete window.__pg_err; delete window.__pg_print; delete window.__pg_printerr; delete window.__pg_input; } catch {}
   }
 }
 

@@ -444,7 +444,11 @@ function renderFiuble() {
 }
 
 // ─── WINDOW EXPORTS ───
-window.setFiubleGuess = function(v) { currentGuess = v.replace(/[^0-9.\-]/g,''); };
+window.setFiubleGuess = function(v) {
+  currentGuess = v.replace(/[^0-9.\-]/g,'');
+  const inp = document.getElementById('fiuble-input');
+  if (inp && inp.value !== currentGuess) inp.value = currentGuess;
+};
 window.submitFiubleGuess = function() { submitGuess(); };
 
 window.copyFiubleShare = function() {

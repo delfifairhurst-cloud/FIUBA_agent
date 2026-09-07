@@ -42,7 +42,7 @@ function renderRatingCard(r) {
           <div class="pr-card-meta">
             <span class="pr-badge" style="background:${color}18;color:${color}">${r.category || getRatingLabel(r.rating)}</span>
             <span class="pr-card-date">${dateStr}</span>
-            <span class="pr-card-author">${r.source || r.displayName || 'Anónimo'}</span>
+            <span class="pr-card-author">${r.isSeed || r.uid === 'seed' ? '📖 datos de ejemplo' : (r.displayName || 'Anónimo')}</span>
           </div>
           <div class="pr-card-votes">
             <button class="pr-vote-btn" onclick="event.stopPropagation();window.voteProfRating('${r.id}','up')" title="Útil">👍 ${r.upvotes || 0}</button>
@@ -208,7 +208,7 @@ function renderProfList() {
               </div>
               ${r.review ? `<div class="pr-mini-text">"${r.review}"</div>` : ''}
               <div class="pr-mini-footer">
-                <span class="pr-mini-author">${r.source || r.displayName || 'Anónimo'}</span>
+                <span class="pr-mini-author">${r.isSeed || r.uid === 'seed' ? '📖 datos de ejemplo' : (r.displayName || 'Anónimo')}</span>
                 <div class="pr-mini-votes">
                   <button onclick="window.voteProfRating('${r.id}','up')">👍 ${r.upvotes||0}</button>
                   <button onclick="window.voteProfRating('${r.id}','down')">👎 ${r.downvotes||0}</button>
