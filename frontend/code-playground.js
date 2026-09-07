@@ -115,6 +115,10 @@ async function executePython(code) {
     pyodideLoading = true;
     try {
       pyodideInstance = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/' });
+      // Register JS prompt() function for Python input()
+      pyodideInstance.registerJsModule('browser_api', {
+        prompt: (msg) => window.prompt(msg || '') || ''
+      });
     } catch (e) {
       pyodideLoading = false;
       return { output: '❌ Error cargando Python: ' + e.message, error: true };
@@ -125,18 +129,21 @@ async function executePython(code) {
     return { output: '⏳ Cargando Python, esperá...', error: false, loading: true };
   }
   try {
-    // Redirect input() to raise clear error (Pyodide can't do interactive input)
     pyodideInstance.runPython(`
-import sys, io
+import sys, io, builtins
 _stdout = io.StringIO()
 _stderr = io.StringIO()
 sys.stdout = _stdout
 sys.stderr = _stderr
-
-def _mock_input(prompt=''):
-    raise RuntimeError('input() no está soportado en el navegador. Reemplazá input() con un valor fijo para probar tu código.')
-import builtins
-builtins.input = _mock_input
+from browser_api import prompt as _browser_prompt
+def _input(prompt=''):
+    return _browser_prompt(str(prompt))
+builtins.input = _input
+def _input_int(prompt=''):
+    return int(_browser_prompt(str(prompt)))
+def _input_float(prompt=''):
+    return float(_browser_prompt(str(prompt)))
+builtins.input = _input
 `);
     pyodideInstance.runPython(code);
     const stdout = pyodideInstance.runPython('_stdout.getvalue()');

@@ -8,14 +8,12 @@
       date: '06 Septiembre 2026',
       tag: 'Última actualización',
       changes: [
-        { type: 'new', text: 'Code Playground — ejecutá JS, Python y C en tu navegador' },
-        { type: 'new', text: 'Ranking de Profesores — 50+ reseñas de profes FIUBA' },
-        { type: 'new', text: 'Salas de Estudio — chat grupal en tiempo real' },
-        { type: 'new', text: 'Herramientas hub rediseñado — grid compacto pro' },
-        { type: 'fix', text: 'Menú superior compacto — entra todo sin scroll' },
-        { type: 'fix', text: 'Python input() muestra error claro en vez de trabarse' },
-        { type: 'fix', text: 'Salas de estudio — error de imports corregido' },
-        { type: 'fix', text: 'Reseñas marcadas como ejemplos (no inventadas)' },
+        { type: 'new', text: 'Code Playground — ejecutá JavaScript, Python y C directo en tu navegador' },
+        { type: 'new', text: 'Python con input() — probá tus programas con entrada del usuario' },
+        { type: 'new', text: 'Ranking de Profesores — conocé a los profes antes de anotarte' },
+        { type: 'new', text: 'Salas de Estudio — chat grupal en tiempo real con otros alumnos' },
+        { type: 'new', text: 'Herramientas de estudio rediseñadas — más rápido y prolijo' },
+        { type: 'fix', text: 'Mejoras de rendimiento y estabilidad general' },
       ]
     },
     {
