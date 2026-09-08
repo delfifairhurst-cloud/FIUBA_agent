@@ -121,6 +121,13 @@ function kgDrawTypeIcon(ctx, x, y, r, type, alpha) {
 }
 
 function kgInit() {
+  const KG_VERSION = 3;
+  const stored = parseInt(localStorage.getItem("kg_version") || "0");
+  if (stored < KG_VERSION) {
+    localStorage.removeItem("kg_nodes");
+    localStorage.removeItem("kg_edges");
+    localStorage.setItem("kg_version", KG_VERSION);
+  }
   try { KG.nodes = JSON.parse(localStorage.getItem("kg_nodes") || "[]"); } catch { KG.nodes = []; }
   try { KG.edges = JSON.parse(localStorage.getItem("kg_edges") || "[]"); } catch { KG.edges = []; }
   if (KG.nodes.length === 0) kgCreateMock();
@@ -133,49 +140,78 @@ function kgSave() {
 
 function kgCreateMock() {
   const n = [
-    // Materias
-    { id:"m-alg", type:"materia", title:"Álgebra Lineal", materia:"Álgebra Lineal", content:"Rama de las matemáticas que estudia vectores, matrices y transformaciones lineales.\n\n**Conceptos clave:**\n- Vectores y espacios vectoriales\n- Matrices y operaciones\n- Determinantes\n- Autovalores y autovectores\n- Transformaciones lineales\n\n**Aplicaciones en ingeniería:**\n- Gráficos por computadora\n- Machine learning\n- Mecánica cuántica\n- Procesamiento de señales" },
-    { id:"m-calc1", type:"materia", title:"Cálculo I", materia:"Cálculo I", content:"Análisis de límites, derivadas e integrales básicas.\n\n**Temas principales:**\n- Límites y continuidad\n- Derivadas y sus aplicaciones\n- Reglas de derivación\n- Integrales definidas e indefinidas\n\n**Fórmulas fundamentales:**\n$$f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}$$\n$$\\int_a^b f(x)dx = F(b) - F(a)$$" },
-    { id:"m-fis1", type:"materia", title:"Física I", materia:"Física I", content:"Mecánica clásica: cinemática, dinámica y energética.\n\n**Temas:**\n- Cinemática (movimiento)\n- Dinámica (fuerzas)\n- Trabajo y energía\n- Momento angular\n- Oscilaciones" },
-    { id:"m-prog", type:"materia", title:"Programación", materia:"Programación", content:"Fundamentos de programación y pensamiento computacional.\n\n**Paradigmas:**\n- Imperativo\n- Orientado a objetos\n- Funcional\n\n**Estructuras:**\n- Variables, bucles, condicionales\n- Funciones y módulos\n- Estructuras de datos básicas" },
-    { id:"m-elec", type:"materia", title:"Circuitos Eléctricos", materia:"Circuitos Eléctricos", content:"Análisis de circuitos resistivos, RC, RL y RLC.\n\n**Leyes fundamentales:**\n- Ley de Ohm\n- Kirchhoff (KCL y KVL)\n- Thévenin y Norton\n- Superposición" },
-    // Conceptos de Álgebra
-    { id:"c-matrices", type:"concepto", title:"Matrices", materia:"Álgebra Lineal", content:"**Definición:** Tabla rectangular de números organizados en filas y columnas.\n\n**Operaciones:**\n- Suma: $A + B = [a_{ij} + b_{ij}]$\n- Multiplicación: $(AB)_{ij} = \\sum_k a_{ik}b_{kj}$\n- Transposta: $(A^T)_{ij} = a_{ji}$\n\n**Propiedades importantes:**\n- $AB \\neq BA$ en general\n- $(AB)^T = B^T A^T$\n- $A \\cdot A^{-1} = I$" },
-    { id:"c-determ", type:"concepto", title:"Determinantes", materia:"Álgebra Lineal", content:"**Definición:** Un número escalar asociado a una matriz cuadrada.\n\n**Para 2x2:**\n$$\\det(A) = ad - bc$$\n\n**Propiedades:**\n- $\\det(AB) = \\det(A)\\det(B)$\n- $\\det(A^T) = \\det(A)$\n- $\\det(A^{-1}) = 1/\\det(A)$\n- Si $\\det(A) = 0$, la matriz no tiene inversa\n\n**Aplicación:** Resolver sistemas con la regla de Cramer." },
-    { id:"c-autoval", type:"concepto", title:"Autovalores", materia:"Álgebra Lineal", content:"**Definición:** Un autovalor $\\lambda$ es un escalar tal que existe un vector $v \\neq 0$ donde:\n\n$$Av = \\lambda v$$\n\n**Cálculo:** Resolver $\\det(A - \\lambda I) = 0$\n\n**Autovalores y autovectores:**\n- Los autovalores indican las direcciones donde la transformación solo escala\n- Los autovectores son las direcciones de esa escalación\n\n**Aplicaciones:**\n- Análisis de estabilidad\n- PCA (análisis de componentes principales)\n- Valores propios de sistemas dinámicos" },
-    { id:"c-espvec", type:"concepto", title:"Espacios Vectoriales", materia:"Álgebra Lineal", content:"**Definición:** Conjunto de vectores cerrado bajo suma y multiplicación por escalar.\n\n**Axiomas:**\n- Asociatividad y conmutatividad de la suma\n- Elemento neutro: $0$\n- Inverso aditivo: $-v$\n- Distributividad\n\n**Ejemplos:**\n- $\\mathbb{R}^n$\n- Espacios de polinomios\n- Espacios de funciones\n\n**Base y dimensión:**\n- Base: conjunto linealmente independiente que genera el espacio\n- Dimensión: cantidad de vectores en la base" },
-    { id:"c-dialg", type:"concepto", title:"Diagonalización", materia:"Álgebra Lineal", content:"**Proceso:** Encontrar una matriz diagonal $D$ tal que:\n\n$$A = PDP^{-1}$$\n\n**Cuándo se puede diagonalizar:**\n- La matriz tiene $n$ autovalores linealmente independientes\n- Cada autovalor tiene multiplicidad geométrica = algebraica\n\n**Ventajas:**\n- $A^n = PD^nP^{-1}$\n- Cálculo de potencias rápido\n- Análisis de sistemas dinámicos" },
-    // Conceptos de Cálculo
-    { id:"c-deriv", type:"concepto", title:"Derivadas", materia:"Cálculo I", content:"**Definición:**\n$$f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}$$\n\n**Reglas:**\n- Potencia: $(x^n)' = nx^{n-1}$\n- Producto: $(fg)' = f'g + fg'$\n- Cociente: $(f/g)' = (f'g - fg')/g^2$\n- Cadena: $[f(g(x))]' = f'(g(x)) \\cdot g'(x)$\n\n**Aplicaciones:**\n- Velocidad y aceleración\n- Puntos críticos\n- Optimización\n- Recta tangente" },
-    { id:"c-integ", type:"concepto", title:"Integrales", materia:"Cálculo I", content:"**Integral definida:**\n$$\\int_a^b f(x)dx = F(b) - F(a)$$\n\n**Técnicas:**\n- Sustitución\n- Partes: $\\int u\\,dv = uv - \\int v\\,du$\n- Fracciones parciales\n\n**Teorema Fundamental del Cálculo:**\nLa integral y la derivada son operaciones inversas." },
-    // Conceptos de Física
-    { id:"c-newton", type:"concepto", title:"Leyes de Newton", materia:"Física I", content:"**1ª Ley (Inercia):** Un cuerpo en reposo permanece en reposo.\n\n**2ª Ley:**\n$$\\vec{F} = m\\vec{a}$$\n\n**3ª Ley (Acción-Reacción):**\n$$\\vec{F}_{AB} = -\\vec{F}_{BA}$$\n\n**Aplicación:** Todo problema de dinámica se resuelve con un diagrama de cuerpo libre." },
-    { id:"c-energia", type:"concepto", title:"Energía y Trabajo", materia:"Física I", content:"**Trabajo:**\n$$W = \\vec{F} \\cdot \\vec{d} = Fd\\cos\\theta$$\n\n**Energía cinética:**\n$$KE = \\frac{1}{2}mv^2$$\n\n**Energía potencial:**\n$$U = mgh$$\n\n**Conservación:**\n$$KE_i + PE_i = KE_f + PE_f$$" },
-    // Conceptos de Programación
-    { id:"c-oop", type:"concepto", title:"Programación Orientada a Objetos", materia:"Programación", content:"**Pilares:**\n- **Encapsulamiento:** Datos + métodos juntos\n- **Herencia:** Reutilizar código de clases padre\n- **Polimorfismo:** Mismo método, comportamiento diferente\n- **Abstracción:** Ocultar complejidad\n\n**Ejemplo:**\n```python\nclass Animal:\n    def __init__(self, nombre):\n        self.nombre = nombre\n    def hablar(self):\n        pass\n\nclass Perro(Animal):\n    def hablar(self):\n        return \"Guau\"\n```" },
-    { id:"c-estruc", type:"concepto", title:"Estructuras de Datos", materia:"Programación", content:"**Lineales:**\n- Array: acceso O(1)\n- Linked List: inserción O(1)\n- Stack: LIFO\n- Queue: FIFO\n\n**No lineales:**\n- Árbol BST: búsqueda O(log n)\n- Heap: min/max O(1)\n- Grafo: representación de relaciones\n\n**Complejidad:**\n$$O(1) < O(\\log n) < O(n) < O(n^2)$$" },
-    // Conceptos de Circuitos
-    { id:"c-ohm", type:"concepto", title:"Ley de Ohm", materia:"Circuitos Eléctricos", content:"**Relación fundamental:**\n$$V = IR$$\n\n- **V** = Voltaje (Voltios)\n- **I** = Corriente (Amperios)\n- **R** = Resistencia (Ohms)\n\n**Analogía hidráulica:**\nVoltaje = presión, Corriente = caudal, Resistencia = diámetro de tubería." },
-    { id:"c-kirch", type:"concepto", title:"Leyes de Kirchhoff", materia:"Circuitos Eléctricos", content:"**KCL (Corrientes):**\nLa suma de corrientes que entran a un nodo es igual a las que salen.\n$$\\sum I_{entran} = \\sum I_{salen}$$\n\n**KVL (Voltajes):**\nLa suma de voltajes en una malla cerrada es cero.\n$$\\sum V_{malla} = 0$$" },
-    // Apuntes
-    { id:"a-alg-autoval", type:"apunte", title:"Apuntes: Autovalores y Autovectores", materia:"Álgebra Lineal", content:"## Resumen de autovalores\n\nPara encontrar autovalores:\n1. Calcular $\\det(A - \\lambda I) = 0$\n2. Resolver el polinomio característico\n3. Para cada $\\lambda$, resolver $(A - \\lambda I)v = 0$\n\n**Ejemplo:**\n$$A = \\begin{pmatrix} 2 & 1 \\\\ 1 & 2 \\end{pmatrix}$$\n$$\\det(A - \\lambda I) = (2-\\lambda)^2 - 1 = 0$$\n$$\\lambda_1 = 3, \\lambda_2 = 1$$" },
-    { id:"a-calc-deriv", type:"apunte", title:"Apuntes: Reglas de Derivación", materia:"Cálculo I", content:"## Tabla de derivadas comunes\n\n| Función | Derivada |\n|---------|----------|\n| $x^n$ | $nx^{n-1}$ |\n| $e^x$ | $e^x$ |\n| $\\ln x$ | $1/x$ |\n| $\\sin x$ | $\\cos x$ |\n| $\\cos x$ | $-\\sin x$ |\n| $\\tan x$ | $\\sec^2 x$ |\n\n## Regla de la cadena\n$$[f(g(x))]' = f'(g(x)) \\cdot g'(x)$$" },
-    { id:"a-fis-newton", type:"apunte", title:"Apuntes: Diagrama de Cuerpo Libre", materia:"Física I", content:"## Pasos para DCL\n\n1. **Identificar** el objeto de interés\n2. **Dibujar** el objeto como punto\n3. **Identificar** todas las fuerzas:\n   - Peso ($mg$) hacia abajo\n   - Normal ($N$) perpendicular a superficie\n   - Fricción ($f$) opuesta al movimiento\n   - Tensión ($T$) a lo largo de cuerda\n   - Fuerza aplicada ($F$)\n4. **Elegir** sistema de coordenadas\n5. **Aplicar** $\\sum F = ma$" },
-    // Ejercicios
-    { id:"e-alg-det", type:"ejercicio", title:"Ej: Calcular Determinante 3x3", materia:"Álgebra Lineal", content:"## Ejercicio\n\nCalcular el determinante de:\n$$A = \\begin{pmatrix} 1 & 2 & 3 \\\\ 0 & 1 & 4 \\\\ 5 & 6 & 0 \\end{pmatrix}$$\n\n**Método de Sarrus:**\n$$\\det(A) = 1(1\\cdot0 - 4\\cdot6) - 2(0\\cdot0 - 4\\cdot5) + 3(0\\cdot6 - 1\\cdot5)$$\n$$= 1(-24) - 2(-20) + 3(-5)$$\n$$= -24 + 40 - 15 = 1$$" },
-    { id:"e-calc-deriv", type:"ejercicio", title:"Ej: Derivada Compuesta", materia:"Cálculo I", content:"## Ejercicio\n\nCalcular la derivada de:\n$$f(x) = \\sin(x^2 + 1)$$\n\n**Resolución:**\nPor la regla de la cadena:\n- Función externa: $\\sin(u)$ → derivada: $\\cos(u)$\n- Función interna: $x^2 + 1$ → derivada: $2x$\n\n$$f'(x) = \\cos(x^2 + 1) \\cdot 2x = 2x\\cos(x^2 + 1)$$" },
-    { id:"e-fis-energia", type:"ejercicio", title:"Ej: Conservación de Energía", materia:"Física I", content:"## Ejercicio\n\nUn bloque de 2 kg baja un plano sin fricción desde $h = 5m$. ¿Qué velocidad tiene al fondo?\n\n**Resolución:**\n$$mgh = \\frac{1}{2}mv^2$$\n$$v = \\sqrt{2gh} = \\sqrt{2 \\cdot 9.8 \\cdot 5} = \\sqrt{98} = 9.9 \\, m/s$$" },
-    // Recursos
-    { id:"r-3blue1brown", type:"recurso", title:"3Blue1Brown: Lineal Algebra", materia:"Álgebra Lineal", content:"Serie de videos sobre álgebra lineal con visualizaciones increíbles.\n\n**Temas cubiertos:**\n- Espacios vectoriales\n- Transformaciones lineales\n- Autovalores y autovectores\n- Producto punto y cruz\n\n**Link:** 3blue1brown.com/series/essence-of-linear-algebra" },
-    { id:"r-khan-calc", type:"recurso", title:"Khan Academy: Cálculo", materia:"Cálculo I", content:"Curso completo de cálculo con ejercicios interactivos.\n\n**Temas:**\n- Límites\n- Derivadas\n- Integrales\n- Series\n\n**Link:** khanacademy.org/math/calculus-1" },
-    // Exámenes
-    { x:"parcial-alg-2024", type:"examen", title:"Parcial Álgebra 2024", materia:"Álgebra Lineal", content:"## Parcial 1 - Álgebra Lineal (2024)\n\n**Ejercicio 1:** Calcular el determinante de una matriz 3x3.\n\n**Ejercicio 2:** Encontrar autovalores y autovectores de:\n$$A = \\begin{pmatrix} 3 & 1 \\\\ 0 & 2 \\end{pmatrix}$$\n\n**Ejercicio 3:** Determinar si la siguiente transformación es lineal:\n$$T(x, y) = (x + y, xy)$$" },
+    // ═══ MATERIAS ═══
+    { id:"m-alg", type:"materia", title:"Algebra Lineal", materia:"Algebra Lineal", content:"Rama de las matematicas que estudia vectores, matrices y transformaciones lineales.\n\n**Conceptos clave:**\n- Vectores y espacios vectoriales\n- Matrices y operaciones\n- Determinantes\n- Autovalores y autovectores\n- Transformaciones lineales\n\n**Aplicaciones en ingenieria:**\n- Graficos por computadora\n- Machine learning\n- Mecanica cuantica\n- Procesamiento de senales" },
+    { id:"m-calc1", type:"materia", title:"Calculo I", materia:"Calculo I", content:"Analisis de limites, derivadas e integrales basicas.\n\n**Temas principales:**\n- Limites y continuidad\n- Derivadas y sus aplicaciones\n- Reglas de derivacion\n- Integrales definidas e indefinidas\n\n**Formulas fundamentales:**\n$$f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}$$\n$$\\int_a^b f(x)dx = F(b) - F(a)$$" },
+    { id:"m-calc2", type:"materia", title:"Calculo II", materia:"Calculo II", content:"Integrales multiples, series y ecuaciones diferenciales.\n\n**Temas:**\n- Integrales dobles y triples\n- Coordenadas polares\n- Series infinitas\n- Ecuaciones diferenciales de 1er y 2do orden\n\n**Formulas clave:**\n$$\\iint_D f(x,y) \\, dA$$\n$$\\sum_{n=0}^{\\infty} a_n x^n$$" },
+    { id:"m-qa", type:"materia", title:"Quimica General", materia:"Quimica General", content:"Fundamentos de quimica para ingenieros.\n\n**Temas:**\n- Estructura atomica\n- Enlaces quimicos\n- Termodinamica quimica\n- Cinetica y equilibrio\n- Electroquimica" },
+    { id:"m-fis1", type:"materia", title:"Fisica I", materia:"Fisica I", content:"Mecanica clasica: cinematica, dinamica y energetica.\n\n**Temas:**\n- Cinematica (movimiento)\n- Dinamica (fuerzas)\n- Trabajo y energia\n- Momento angular\n- Oscilaciones" },
+    { id:"m-fis2", type:"materia", title:"Fisica II", materia:"Fisica II", content:"Electromagnetismo y optica.\n\n**Temas:**\n- Campos electricos y magneticos\n- Ley de Gauss y Ampere\n- Induccion electromagnetica\n- Ondas electromagneticas\n- Optica geometrica" },
+    { id:"m-prog", type:"materia", title:"Programacion", materia:"Programacion", content:"Fundamentos de programacion y pensamiento computacional.\n\n**Paradigmas:**\n- Imperativo\n- Orientado a objetos\n- Funcional\n\n**Estructuras:**\n- Variables, bucles, condicionales\n- Funciones y modulos\n- Estructuras de datos basicas" },
+    { id:"m-elec", type:"materia", title:"Circuitos Electricos", materia:"Circuitos Electricos", content:"Analisis de circuitos resistivos, RC, RL y RLC.\n\n**Leyes fundamentales:**\n- Ley de Ohm\n- Kirchhoff (KCL y KVL)\n- Thevenin y Norton\n- Superposicion" },
+    { id:"m-senales", type:"materia", title:"Senales y Sistemas", materia:"Senales y Sistemas", content:"Analisis de senales en tiempo continuo y discreto.\n\n**Temas:**\n- Transformada de Fourier\n- Transformada de Laplace\n- Respuesta impulsional\n- Funcion de transferencia\n- Filtrado" },
+    { id:"m-ef", type:"materia", title:"Estructuras de Fluidos", materia:"Estructuras de Fluidos", content:"Mecanica de fluidos y resistencia de materiales.\n\n**Temas:**\n- Presion y flujos\n- Ecuacion de Bernoulli\n- Esfuerzos y deformaciones\n- Mohr y falla\n- Torsion y flexion" },
+
+    // ═══ CONCEPTOS ═══
+    { id:"c-matrices", type:"concepto", title:"Matrices", materia:"Algebra Lineal", content:"**Definicion:** Tabla rectangular de numeros organizados en filas y columnas.\n\n**Operaciones:**\n- Suma: $A + B = [a_{ij} + b_{ij}]$\n- Multiplicacion: $(AB)_{ij} = \\sum_k a_{ik}b_{kj}$\n- Transpuesta: $(A^T)_{ij} = a_{ji}$\n\n**Propiedades importantes:**\n- $AB \\neq BA$ en general\n- $(AB)^T = B^T A^T$\n- $A \\cdot A^{-1} = I$" },
+    { id:"c-determ", type:"concepto", title:"Determinantes", materia:"Algebra Lineal", content:"**Definicion:** Un numero escalar asociado a una matriz cuadrada.\n\n**Para 2x2:**\n$$\\det(A) = ad - bc$$\n\n**Propiedades:**\n- $\\det(AB) = \\det(A)\\det(B)$\n- $\\det(A^T) = \\det(A)$\n- $\\det(A^{-1}) = 1/\\det(A)$\n- Si $\\det(A) = 0$, la matriz no tiene inversa\n\n**Aplicacion:** Resolver sistemas con la regla de Cramer." },
+    { id:"c-autoval", type:"concepto", title:"Autovalores", materia:"Algebra Lineal", content:"**Definicion:** Un autovalor $\\lambda$ es un escalar tal que existe un vector $v \\neq 0$ donde:\n\n$$Av = \\lambda v$$\n\n**Calculo:** Resolver $\\det(A - \\lambda I) = 0$\n\n**Aplicaciones:**\n- Analisis de estabilidad\n- PCA (analisis de componentes principales)\n- Valores propios de sistemas dinamicos" },
+    { id:"c-espvec", type:"concepto", title:"Espacios Vectoriales", materia:"Algebra Lineal", content:"**Definicion:** Conjunto de vectores cerrado bajo suma y multiplicacion por escalar.\n\n**Ejemplos:**\n- $\\mathbb{R}^n$\n- Espacios de polinomios\n- Espacios de funciones\n\n**Base y dimension:**\n- Base: conjunto linealmente independiente que genera el espacio\n- Dimension: cantidad de vectores en la base" },
+    { id:"c-dialg", type:"concepto", title:"Diagonalizacion", materia:"Algebra Lineal", content:"**Proceso:** Encontrar una matriz diagonal $D$ tal que:\n\n$$A = PDP^{-1}$$\n\n**Ventajas:**\n- $A^n = PD^nP^{-1}$\n- Calculo de potencias rapido\n- Analisis de sistemas dinamicos" },
+    { id:"c-deriv", type:"concepto", title:"Derivadas", materia:"Calculo I", content:"**Definicion:**\n$$f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}$$\n\n**Reglas:**\n- Potencia: $(x^n)' = nx^{n-1}$\n- Producto: $(fg)' = f'g + fg'$\n- Cociente: $(f/g)' = (f'g - fg')/g^2$\n- Cadena: $[f(g(x))]' = f'(g(x)) \\cdot g'(x)$\n\n**Aplicaciones:**\n- Velocidad y aceleracion\n- Puntos criticos\n- Optimizacion\n- Recta tangente" },
+    { id:"c-integ", type:"concepto", title:"Integrales", materia:"Calculo I", content:"**Integral definida:**\n$$\\int_a^b f(x)dx = F(b) - F(a)$$\n\n**Tecnicas:**\n- Sustitucion\n- Partes: $\\int u\\,dv = uv - \\int v\\,du$\n- Fracciones parciales\n\n**Teorema Fundamental del Calculo:**\nLa integral y la derivada son operaciones inversas." },
+    { id:"c-series", type:"concepto", title:"Series Infinitas", materia:"Calculo II", content:"**Serie geometrica:**\n$$\\sum_{n=0}^{\\infty} ar^n = \\frac{a}{1-r}, \\quad |r| < 1$$\n\n**Criterios de convergencia:**\n- Criterio del termino general\n- Criterio de la razon\n- Criterio de la raiz\n- Criterio de comparacion\n\n**Serie de Taylor:**\n$$f(x) = \\sum_{n=0}^{\\infty} \\frac{f^{(n)}(a)}{n!}(x-a)^n$$" },
+    { id:"c-newton", type:"concepto", title:"Leyes de Newton", materia:"Fisica I", content:"**1ra Ley (Inercia):** Un cuerpo en reposo permanece en reposo.\n\n**2da Ley:**\n$$\\vec{F} = m\\vec{a}$$\n\n**3ra Ley (Accion-Reaccion):**\n$$\\vec{F}_{AB} = -\\vec{F}_{BA}$$\n\n**Aplicacion:** Todo problema de dinamica se resuelve con un diagrama de cuerpo libre." },
+    { id:"c-energia", type:"concepto", title:"Energia y Trabajo", materia:"Fisica I", content:"**Trabajo:**\n$$W = \\vec{F} \\cdot \\vec{d} = Fd\\cos\\theta$$\n\n**Energia cinetica:**\n$$KE = \\frac{1}{2}mv^2$$\n\n**Energia potencial:**\n$$U = mgh$$\n\n**Conservacion:**\n$$KE_i + PE_i = KE_f + PE_f$$" },
+    { id:"c-campo-e", type:"concepto", title:"Campo Electrico", materia:"Fisica II", content:"**Ley de Coulomb:**\n$$\\vec{F} = k\\frac{q_1 q_2}{r^2}\\hat{r}$$\n\n**Campo electrico:**\n$$\\vec{E} = \\frac{\\vec{F}}{q}$$\n\n**Ley de Gauss:**\n$$\\oint \\vec{E} \\cdot d\\vec{A} = \\frac{Q_{enc}}{\\epsilon_0}$$" },
+    { id:"c-induccion", type:"concepto", title:"Induccion Electromagnetica", materia:"Fisica II", content:"**Ley de Faraday:**\n$$\\mathcal{E} = -\\frac{d\\Phi_B}{dt}$$\n\n**Ley de Lenz:**\nLa fuerza electromotriz inducida se opone al cambio que la produce.\n\n**Autoinduccion:**\n$$\\mathcal{E} = -L\\frac{dI}{dt}$$" },
+    { id:"c-oop", type:"concepto", title:"POO", materia:"Programacion", content:"**Pilares:**\n- **Encapsulamiento:** Datos + metodos juntos\n- **Herencia:** Reutilizar codigo de clases padre\n- **Polimorfismo:** Mismo metodo, comportamiento diferente\n- **Abstraccion:** Ocultar complejidad" },
+    { id:"c-estruc", type:"concepto", title:"Estructuras de Datos", materia:"Programacion", content:"**Lineales:**\n- Array: acceso O(1)\n- Linked List: insercion O(1)\n- Stack: LIFO\n- Queue: FIFO\n\n**No lineales:**\n- Arbol BST: busqueda O(log n)\n- Heap: min/max O(1)\n- Grafo: representacion de relaciones\n\n**Complejidad:**\n$$O(1) < O(\\log n) < O(n) < O(n^2)$$" },
+    { id:"c-ohm", type:"concepto", title:"Ley de Ohm", materia:"Circuitos Electricos", content:"**Relacion fundamental:**\n$$V = IR$$\n\n- **V** = Voltaje (Voltios)\n- **I** = Corriente (Amperios)\n- **R** = Resistencia (Ohms)\n\n**Potencia:** $P = VI = I^2R = V^2/R$" },
+    { id:"c-kirch", type:"concepto", title:"Leyes de Kirchhoff", materia:"Circuitos Electricos", content:"**KCL (Corrientes):**\n$$\\sum I_{entran} = \\sum I_{salen}$$\n\n**KVL (Voltajes):**\n$$\\sum V_{malla} = 0$$" },
+    { id:"c-fourier", type:"concepto", title:"Transformada de Fourier", materia:"Senales y Sistemas", content:"**Transformada continua:**\n$$X(\\omega) = \\int_{-\\infty}^{\\infty} x(t) e^{-j\\omega t} dt$$\n\n**Transformada inversa:**\n$$x(t) = \\frac{1}{2\\pi}\\int_{-\\infty}^{\\infty} X(\\omega) e^{j\\omega t} d\\omega$$\n\n**Propiedades:**\n- Linealidad\n- Desplazamiento temporal\n- Convolucion" },
+    { id:"c-laplace", type:"concepto", title:"Transformada de Laplace", materia:"Senales y Sistemas", content:"**Definicion:**\n$$X(s) = \\int_0^{\\infty} x(t) e^{-st} dt$$\n\n**Usos:**\n- Resolver EDOs\n- Analisis de estabilidad\n- Funcion de transferencia\n- Sistemas LTI" },
+    { id:"c-bernoulli", type:"concepto", title:"Ecuacion de Bernoulli", materia:"Estructuras de Fluidos", content:"$$P_1 + \\frac{1}{2}\\rho v_1^2 + \\rho g h_1 = P_2 + \\frac{1}{2}\\rho v_2^2 + \\rho g h_2$$\n\n**Significado:**\nLa energia mecanica por unidad de volumen se conserva a lo largo de una linea de corriente." },
+    { id:"c-mohr", type:"concepto", title:"Circulo de Mohr", materia:"Estructuras de Fluidos", content:"**Representacion grafica** del estado de esfuerzo en un punto.\n\n$$\\sigma_{avg} = \\frac{\\sigma_x + \\sigma_y}{2}$$\n$$R = \\sqrt{\\left(\\frac{\\sigma_x - \\sigma_y}{2}\\right)^2 + \\tau_{xy}^2}$$\n\n**Esfuerzos principales:**\n$$\\sigma_{1,2} = \\sigma_{avg} \\pm R$$" },
+
+    // ═══ APUNTES ═══
+    { id:"a-alg-autoval", type:"apunte", title:"Apuntes: Autovalores", materia:"Algebra Lineal", content:"## Resumen de autovalores\n\nPara encontrar autovalores:\n1. Calcular $\\det(A - \\lambda I) = 0$\n2. Resolver el polinomio caracteristico\n3. Para cada $\\lambda$, resolver $(A - \\lambda I)v = 0$\n\n**Ejemplo:**\n$$A = \\begin{pmatrix} 2 & 1 \\\\ 1 & 2 \\end{pmatrix}$$\n$$\\det(A - \\lambda I) = (2-\\lambda)^2 - 1 = 0$$\n$$\\lambda_1 = 3, \\lambda_2 = 1$$" },
+    { id:"a-calc-deriv", type:"apunte", title:"Apuntes: Reglas de Derivacion", materia:"Calculo I", content:"## Tabla de derivadas comunes\n\n| Funcion | Derivada |\n|---------|----------|\n| $x^n$ | $nx^{n-1}$ |\n| $e^x$ | $e^x$ |\n| $\\ln x$ | $1/x$ |\n| $\\sin x$ | $\\cos x$ |\n| $\\cos x$ | $-\\sin x$ |\n| $\\tan x$ | $\\sec^2 x$ |\n\n## Regla de la cadena\n$$[f(g(x))]' = f'(g(x)) \\cdot g'(x)$$" },
+    { id:"a-fis-newton", type:"apunte", title:"Apuntes: Diagrama de Cuerpo Libre", materia:"Fisica I", content:"## Pasos para DCL\n\n1. **Identificar** el objeto de interes\n2. **Dibujar** el objeto como punto\n3. **Identificar** todas las fuerzas:\n   - Peso ($mg$) hacia abajo\n   - Normal ($N$) perpendicular a superficie\n   - Friccion ($f$) opuesta al movimiento\n   - Tension ($T$) a lo largo de cuerda\n   - Fuerza aplicada ($F$)\n4. **Elegir** sistema de coordenadas\n5. **Aplicar** $\\sum F = ma$" },
+    { id:"a-fis2-campo", type:"apunte", title:"Apuntes: Campos y Potencial", materia:"Fisica II", content:"## Resumen de electrostatica\n\n**Campo de una carga puntual:**\n$$\\vec{E} = k\\frac{q}{r^2}\\hat{r}$$\n\n**Potencial electrico:**\n$$V = k\\frac{q}{r}$$\n\n**Relacion:**\n$$\\vec{E} = -\\nabla V$$\n\n**Superconductores:** $E = 0$ dentro del material" },
+    { id:"a-prog-alg", type:"apunte", title:"Apuntes: complejidad algoritmica", materia:"Programacion", content:"## Notacion Big-O\n\n| Complejidad | Nombre | Ejemplo |\n|------------|--------|--------|\n| O(1) | Constante | Acceso array |\n| O(log n) | Logaritmica | Busqueda binaria |\n| O(n) | Lineal | For simple |\n| O(n log n) | Linealitica | Merge sort |\n| O(n^2) | Cuadratica | Bubble sort |\n| O(2^n) | Exponencial | Fuerza bruta |\n\n**Regla de oro:** Si podes elegir un algoritmo O(n log n) en vez de O(n^2), elegilo." },
+
+    // ═══ EJERCICIOS ═══
+    { id:"e-alg-det", type:"ejercicio", title:"Ej: Determinante 3x3", materia:"Algebra Lineal", content:"## Ejercicio\n\nCalcular el determinante de:\n$$A = \\begin{pmatrix} 1 & 2 & 3 \\\\ 0 & 1 & 4 \\\\ 5 & 6 & 0 \\end{pmatrix}$$\n\n**Metodo de Sarrus:**\n$$\\det(A) = 1(-24) - 2(-20) + 3(-5) = 1$$" },
+    { id:"e-calc-deriv", type:"ejercicio", title:"Ej: Derivada Compuesta", materia:"Calculo I", content:"## Ejercicio\n\nCalcular la derivada de:\n$$f(x) = \\sin(x^2 + 1)$$\n\n**Resolucion:**\n$$f'(x) = \\cos(x^2 + 1) \\cdot 2x = 2x\\cos(x^2 + 1)$$" },
+    { id:"e-fis-energia", type:"ejercicio", title:"Ej: Conservacion de Energia", materia:"Fisica I", content:"## Ejercicio\n\nUn bloque de 2 kg baja un plano sin friccion desde $h = 5m$.\n\n$$v = \\sqrt{2gh} = \\sqrt{2 \\cdot 9.8 \\cdot 5} = \\sqrt{98} = 9.9 \\, m/s$$" },
+    { id:"e-elec-th", type:"ejercicio", title:"Ej: Thevenin", materia:"Circuitos Electricos", content:"## Ejercicio: Teorema de Thevenin\n\nEncontrar el equivalente de Thevenin visto desde la resistencia $R_L$.\n\n**Pasos:**\n1. Calcular $V_{th} = V_{OC}$ (voltaje circuito abierto)\n2. Calcular $R_{th}$ (apagando fuentes)\n3. Circuito equivalente: $V_{th}$ en serie con $R_{th}$" },
+    { id:"e-senales-filtros", type:"ejercicio", title:"Ej: Filtro Pasabajos", materia:"Senales y Sistemas", content:"## Ejercicio: Filtro RC\n\n**Transferencia:**\n$$H(j\\omega) = \\frac{1}{1 + j\\omega RC}$$\n\n**Frecuencia de corte:**\n$$f_c = \\frac{1}{2\\pi RC}$$\n\n**Para $f << f_c$:** la senal pasa sin atenuacion.\n**Para $f >> f_c$:** la senal se atenua a $-20$ dB/decada." },
+
+    // ═══ RECURSOS (videos, imagenes, PDFs) ═══
+    { id:"r-3blue1brown", type:"recurso", title:"3Blue1Brown: Linear Algebra", materia:"Algebra Lineal", content:"Serie de videos sobre algebra lineal con visualizaciones.\n\n**Temas:**\n- Espacios vectoriales\n- Transformaciones lineales\n- Autovalores\n\n**Link:** [3blue1brown.com](https://www.3blue1brown.com/topics/linear-algebra)\n\n**Video recomendado:** Essence of Linear Algebra (serie completa)" },
+    { id:"r-3blue-calc", type:"recurso", title:"3Blue1Brown: Calculus", materia:"Calculo I", content:"Visualizaciones de derivadas e integrales.\n\n**Link:** [3blue1brown.com](https://www.3blue1brown.com/topics/calculus)\n\n**Video clave:** Essence of Calculus - Derivadas" },
+    { id:"r-khan-calc", type:"recurso", title:"Khan Academy: Calculo", materia:"Calculo I", content:"Curso completo con ejercicios interactivos.\n\n**Temas:** Limites, Derivadas, Integrales\n\n**Link:** [khanacademy.org](https://www.khanacademy.org/math/calculus-1)" },
+    { id:"r-khan-fis", type:"recurso", title:"Khan Academy: Fisica", materia:"Fisica I", content:"Fisica mecanica con simulaciones.\n\n**Temas:** Cinematica, Dinamica, Energia\n\n**Link:** [khanacademy.org](https://www.khanacademy.org/science/physics)" },
+    { id:"r-feynman", type:"recurso", title:"The Feynman Lectures", materia:"Fisica I", content:"Las legendarias clases de Feynman de fisica.\n\n**Capitulos clave:**\n- Vol 1: Mecanica\n- Vol 2: Electromagnetismo\n\n**Link:** [feynmanlectures.caltech.edu](https://www.feynmanlectures.caltech.edu/)" },
+    { id:"r-vestigium", type:"recurso", title:"Vestigium: Algebra Lineal", materia:"Algebra Lineal", content:"Canal de YouTube en espanol sobre algebra lineal.\n\n**Videos recomendados:**\n- Vectores y espacios\n- Matrices y transformaciones\n- Autovalores\n\n**Link:** [youtube.com/@vestigium](https://www.youtube.com/@Vestigium)" },
+    { id:"r-caffeina", type:"recurso", title:"Caffeina: Calculo", materia:"Calculo I", content:"Clases de calculo en espanol.\n\n**Link:** [youtube.com/@Caffeina](https://www.youtube.com/@Caffeina)" },
+    { id:"r-allen", type:"recurso", title:"Michelle Kuttel: Fisica II", materia:"Fisica II", content:"Clases completas de Fisica II (Electromagnetismo).\n\n**Temas:**\n- Campos electricos\n- Ley de Gauss\n- Induccion\n\n**Link:** [youtube.com/@michellekuttel](https://www.youtube.com/@michellekuttel)" },
+    { id:"r-circuitos", type:"recurso", title:"All About Circuits", materia:"Circuitos Electricos", content:"Textos y ejercicios de circuitos electricos.\n\n**Link:** [allaboutcircuits.com](https://www.allaboutcircuits.com/textbook/)" },
+    { id:"r-prog-book", type:"recurso", title:"Structure and Interpretation", materia:"Programacion", content:"Libro clasico de programacion (SICP).\n\n**Capitulos clave:**\n- Abstracciones\n- datos\n- estados\n- Metacirculares\n\n**Link:** [mitpress.mit.edu](https://mitpress.mit.edu/9780262512978/)" },
+    { id:"r-matlab", type:"recurso", title:"MATLAB Onramp", materia:"Calculo II", content:"Curso oficial de MATLAB de MathWorks.\n\n**Aprenderas:**\n- Operaciones matriciales\n- Graficos\n- Resolucion de EDOs\n\n**Link:** [mathworks.com/learn/tutorials/matlab-onramp](https://www.mathworks.com/learn/tutorials/matlab-onramp)" },
+
+    // ═══ EXAMENES ═══
+    { id:"e-parcial-alg", type:"examen", title:"Parcial Algebra 2024", materia:"Algebra Lineal", content:"## Parcial 1 - Algebra Lineal (2024)\n\n**Ej 1:** Calcular determinante 3x3\n**Ej 2:** Encontrar autovalores de $A = \\begin{pmatrix} 3 & 1 \\\\ 0 & 2 \\end{pmatrix}$\n**Ej 3:** ¿Es lineal $T(x,y) = (x+y, xy)$?" },
+    { id:"e-parcial-calc", type:"examen", title:"Parcial Calculo 2024", materia:"Calculo I", content:"## Parcial - Calculo I (2024)\n\n**Ej 1:** Calcular $\\lim_{x\\to 0} \\frac{\\sin x}{x}$\n**Ej 2:** Derivar $f(x) = e^{x^2}\\ln(x)$\n**Ej 3:** Calcular $\\int x e^x dx$" },
+    { id:"e-parcial-fis", type:"examen", title:"Parcial Fisica 2024", materia:"Fisica I", content:"## Parcial - Fisica I (2024)\n\n**Ej 1:** Bloque en plano inclinado con friccion\n**Ej 2:** Choque elastico 2D\n**Ej 3:** Movimiento armonico simple: periodo y amplitud" },
+
+    // ═══ CONEXIONES CRUZADAS (red neuronal) ═══
   ];
 
   n.forEach(item => {
-    const id = item.id || item.x; // some use 'x' instead of 'id'
     KG.nodes.push({
-      id: id,
+      id: item.id,
       type: item.type,
       title: item.title,
       materia: item.materia || "",
@@ -185,9 +221,9 @@ function kgCreateMock() {
     });
   });
 
-  // Edges with labels
+  // Edges - neural network connections
   const e = [
-    // Materia → Conceptos
+    // Materia contains concepts
     { s:"m-alg", t:"c-matrices", label:"contiene" },
     { s:"m-alg", t:"c-determ", label:"contiene" },
     { s:"m-alg", t:"c-autoval", label:"contiene" },
@@ -195,37 +231,76 @@ function kgCreateMock() {
     { s:"m-alg", t:"c-dialg", label:"contiene" },
     { s:"m-calc1", t:"c-deriv", label:"contiene" },
     { s:"m-calc1", t:"c-integ", label:"contiene" },
+    { s:"m-calc2", t:"c-series", label:"contiene" },
     { s:"m-fis1", t:"c-newton", label:"contiene" },
     { s:"m-fis1", t:"c-energia", label:"contiene" },
+    { s:"m-fis2", t:"c-campo-e", label:"contiene" },
+    { s:"m-fis2", t:"c-induccion", label:"contiene" },
     { s:"m-prog", t:"c-oop", label:"contiene" },
     { s:"m-prog", t:"c-estruc", label:"contiene" },
     { s:"m-elec", t:"c-ohm", label:"contiene" },
     { s:"m-elec", t:"c-kirch", label:"contiene" },
-    // Conceptos relacionados
+    { s:"m-senales", t:"c-fourier", label:"contiene" },
+    { s:"m-senales", t:"c-laplace", label:"contiene" },
+    { s:"m-ef", t:"c-bernoulli", label:"contiene" },
+    { s:"m-ef", t:"c-mohr", label:"contiene" },
+    // Concept relations (neural synapses)
     { s:"c-matrices", t:"c-determ", label:"relacionado" },
     { s:"c-determ", t:"c-autoval", label:"necesario para" },
     { s:"c-autoval", t:"c-dialg", label:"necesario para" },
     { s:"c-espvec", t:"c-autoval", label:"relacionado" },
     { s:"c-deriv", t:"c-integ", label:"inverso de" },
+    { s:"c-integ", t:"c-series", label:"relacionado" },
     { s:"c-newton", t:"c-energia", label:"relacionado" },
     { s:"c-oop", t:"c-estruc", label:"relacionado" },
     { s:"c-ohm", t:"c-kirch", label:"relacionado" },
-    // Apuntes → Conceptos
+    { s:"c-fourier", t:"c-laplace", label:"relacionado" },
+    { s:"c-campo-e", t:"c-induccion", label:"relacionado" },
+    { s:"c-bernoulli", t:"c-mohr", label:"relacionado" },
+    // Cross-discipline neural connections
+    { s:"c-deriv", t:"c-newton", label:"aplicacion de" },
+    { s:"c-deriv", t:"c-energia", label:"aplicacion de" },
+    { s:"c-matrices", t:"c-estruc", label:"base de" },
+    { s:"c-laplace", t:"c-ohm", label:"analisis de" },
+    { s:"c-fourier", t:"c-induccion", label:"analisis de" },
+    { s:"c-integ", t:"c-energia", label:"calcula" },
+    { s:"c-matrices", t:"c-fourier", label:"base de" },
+    { s:"c-bernoulli", t:"c-newton", label:"deriva de" },
+    // Apuntes -> Concepts
     { s:"a-alg-autoval", t:"c-autoval", label:"describe" },
     { s:"a-calc-deriv", t:"c-deriv", label:"describe" },
     { s:"a-fis-newton", t:"c-newton", label:"describe" },
-    // Ejercicios → Conceptos
+    { s:"a-fis2-campo", t:"c-campo-e", label:"describe" },
+    { s:"a-prog-alg", t:"c-estruc", label:"describe" },
+    // Ejercicios -> Concepts
     { s:"e-alg-det", t:"c-determ", label:"ejercicio de" },
     { s:"e-calc-deriv", t:"c-deriv", label:"ejercicio de" },
     { s:"e-fis-energia", t:"c-energia", label:"ejercicio de" },
-    // Recursos → Materias
+    { s:"e-elec-th", t:"c-kirch", label:"ejercicio de" },
+    { s:"e-senales-filtros", t:"c-fourier", label:"ejercicio de" },
+    // Recursos -> Materias
     { s:"r-3blue1brown", t:"m-alg", label:"recurso para" },
+    { s:"r-3blue-calc", t:"m-calc1", label:"recurso para" },
     { s:"r-khan-calc", t:"m-calc1", label:"recurso para" },
-    // Exámenes → Materias
-    { s:"parcial-alg-2024", t:"m-alg", label:"examen de" },
-    // Materias relacionadas
+    { s:"r-khan-fis", t:"m-fis1", label:"recurso para" },
+    { s:"r-feynman", t:"m-fis1", label:"recurso para" },
+    { s:"r-vestigium", t:"m-alg", label:"recurso para" },
+    { s:"r-caffeina", t:"m-calc1", label:"recurso para" },
+    { s:"r-allen", t:"m-fis2", label:"recurso para" },
+    { s:"r-circuitos", t:"m-elec", label:"recurso para" },
+    { s:"r-prog-book", t:"m-prog", label:"recurso para" },
+    { s:"r-matlab", t:"m-calc2", label:"recurso para" },
+    // Examenes -> Materias
+    { s:"e-parcial-alg", t:"m-alg", label:"examen de" },
+    { s:"e-parcial-calc", t:"m-calc1", label:"examen de" },
+    { s:"e-parcial-fis", t:"m-fis1", label:"examen de" },
+    // Materias relacionadas (prerequisite chain)
     { s:"m-alg", t:"m-calc1", label:"base para" },
+    { s:"m-calc1", t:"m-calc2", label:"base para" },
     { s:"m-fis1", t:"m-calc1", label:"requiere" },
+    { s:"m-fis1", t:"m-fis2", label:"base para" },
+    { s:"m-calc2", t:"m-senales", label:"base para" },
+    { s:"m-fis2", t:"m-elec", label:"base para" },
   ];
 
   e.forEach(edge => {
@@ -364,6 +439,14 @@ function kgMd(text) {
     .replace(/\n/g,"<br>");
   h = h.replace(/(<li[^>]*>.*?<\/li>)(?:<br>)?/g,"$1");
   h = h.replace(/((?:<li[^>]*>.*?<\/li>\s*)+)/g,"<ul>$1</ul>");
+  // YouTube embeds: ![alt](youtube.com/watch?v=XXX) or ![alt](youtu.be/XXX)
+  h = h.replace(/!\[([^\]]*)\]\(https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)[^)]*\)/g,
+    '<div style="margin:0.5rem 0;border-radius:8px;overflow:hidden;aspect-ratio:16/9"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/$2" frameborder="0" allowfullscreen style="border-radius:8px"></iframe></div>');
+  h = h.replace(/!\[([^\]]*)\]\(https?:\/\/(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]+)[^)]*\)/g,
+    '<div style="margin:0.5rem 0;border-radius:8px;overflow:hidden;aspect-ratio:16/9"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/$2" frameborder="0" allowfullscreen style="border-radius:8px"></iframe></div>');
+  // Regular images
+  h = h.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
+    '<div style="margin:0.5rem 0"><img src="$2" alt="$1" style="max-width:100%;border-radius:8px;border:1px solid var(--border-color)" onerror="this.style.display=\'none\'"></div>');
   h = "<p>" + h + "</p>";
   return kgKatex(h);
 }
@@ -594,8 +677,7 @@ function kgRenderSidePanel() {
 }
 
 function kgRenderSide(el) {
-  // Same as graph view but with side panel open
-  KG.view = "graph";
+  // Just re-render normally, side panel is built into the graph view
   kgRender();
 }
 
@@ -1169,10 +1251,19 @@ function kgEditNodeContent() {
 function kgSaveEdit(nodeId) {
   const n = kgNode(nodeId);
   if (!n) return;
-  n.title = document.getElementById("kg-edit-title")?.value?.trim() || n.title;
-  n.type = document.getElementById("kg-edit-type")?.value || n.type;
-  n.content = document.getElementById("kg-edit-content")?.value || "";
-  kgSave(); kgRender();
+  const newTitle = document.getElementById("kg-edit-title")?.value?.trim();
+  const newType = document.getElementById("kg-edit-type")?.value;
+  const newContent = document.getElementById("kg-edit-content")?.value;
+  if (newTitle !== undefined && newTitle !== "") n.title = newTitle;
+  if (newType) n.type = newType;
+  if (newContent !== undefined) n.content = newContent;
+  n.updated = new Date().toISOString();
+  kgSave();
+  // Update just the side panel, don't rebuild entire DOM
+  const side = document.getElementById("kg-side");
+  if (side) { side.innerHTML = kgRenderSidePanel(); }
+  // Also re-render the graph nodes to reflect changes
+  kgSetupCanvas();
 }
 
 function kgDeleteNode(nodeId) {
