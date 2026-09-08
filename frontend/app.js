@@ -1665,7 +1665,7 @@ function switchView(view) {
     if (el) { el.classList.remove('hidden'); if (window.ssRender) window.ssRender(); }
   } else if (view === 'tech-tree') {
     const el = document.getElementById('tech-tree-view');
-    if (el) { el.classList.remove('hidden'); if (window.khRender) window.khRender(); }
+    if (el) { el.classList.remove('hidden'); if (window.kgRender) window.kgRender(); }
   }
 }
 window.switchView = switchView;
