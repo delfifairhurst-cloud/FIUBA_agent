@@ -442,12 +442,16 @@ function kgRenderSidePanel() {
   const typeInfo = KG_TYPES[n.type] || KG_TYPES.concepto;
   const incoming = KG.edges.filter(e => e.target === n.id);
   const outgoing = KG.edges.filter(e => e.source === n.id);
+  const allTypes = Object.keys(KG_TYPES);
+  const allMaterias = [...new Set(KG.nodes.map(x => x.materia).filter(Boolean))];
 
   return `
     <div class="kg-side-header">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
-        <div style="display:flex;align-items:center;gap:0.4rem">
-          <span style="font-size:1.4rem">${typeInfo.icon}</span>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <div style="width:36px;height:36px;border-radius:50%;background:${typeInfo.color}25;display:flex;align-items:center;justify-content:center;border:2px solid ${typeInfo.color}50">
+            <span style="font-size:1rem;font-weight:700;color:${typeInfo.color}">${typeInfo.icon}</span>
+          </div>
           <div>
             <h3 style="font-size:0.95rem;font-weight:700;margin:0">${n.title}</h3>
             <span class="kg-type-badge" style="background:${typeInfo.color}18;color:${typeInfo.color};border:1px solid ${typeInfo.color}40;margin-top:0.15rem">${typeInfo.label}</span>
@@ -458,6 +462,89 @@ function kgRenderSidePanel() {
       ${n.materia ? `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:0.2rem">📚 ${n.materia}</div>` : ""}
     </div>
     <div class="kg-side-body">
+
+      <!-- Quick Actions -->
+      <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.7rem">
+        <button class="kg-btn" onclick="kgFocus('${n.id}')" title="Centrar">⊙ Centrar</button>
+        <button class="kg-btn" onclick="kgExplore('${n.id}')" title="Explorar">🔍 Explorar</button>
+        <button class="kg-btn" onclick="kgShowConnectForm()" id="kg-connect-btn" title="Conectar con otro nodo">🔗 Conectar</button>
+        <button class="kg-btn" onclick="kgShowNewNodeForm()" title="Crear nodo nuevo">＋ Nuevo nodo</button>
+        <button class="kg-btn" onclick="kgEditNodeContent('${n.id}')" title="Editar contenido">✏️ Editar</button>
+      </div>
+
+      <!-- Connect Form -->
+      <div id="kg-connect-form" style="display:none;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.6rem">
+        <div style="font-size:0.7rem;font-weight:600;color:var(--text-primary);margin-bottom:0.4rem">🔗 Conectar "${n.title}" con...</div>
+        <input id="kg-connect-search" type="text" placeholder="Buscar nodo destino..." oninput="kgFilterConnectTargets(this.value)"
+          style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.5rem;font-size:0.72rem;color:var(--text-primary);outline:none;margin-bottom:0.3rem">
+        <div id="kg-connect-targets" style="max-height:120px;overflow-y:auto;margin-bottom:0.3rem">
+          ${KG.nodes.filter(x => x.id !== n.id).map(x => {
+            const ti = KG_TYPES[x.type] || KG_TYPES.concepto;
+            return `<div class="kg-conn-item" onclick="kgSelectConnectTarget('${x.id}','${x.title}')" style="display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.5rem">
+              <div style="width:22px;height:22px;border-radius:50%;background:${ti.color}20;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:${ti.color};border:1px solid ${ti.color}30;flex-shrink:0">${ti.icon}</div>
+              <span style="font-size:0.72rem">${x.title}</span>
+            </div>`;
+          }).join("")}
+        </div>
+        <input id="kg-connect-label" type="text" placeholder="Tipo de relación (ej: requiere, relacionado con...)" style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.7rem;color:var(--text-primary);margin-bottom:0.3rem;outline:none">
+        <div style="display:flex;gap:0.3rem">
+          <button class="kg-btn" onclick="kgConfirmConnect('${n.id}')" style="background:var(--accent);color:white;border:none;flex:1;font-weight:600">Crear conexión</button>
+          <button class="kg-btn" onclick="document.getElementById('kg-connect-form').style.display='none'" style="flex:0">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- New Node Form -->
+      <div id="kg-newnode-form" style="display:none;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.6rem">
+        <div style="font-size:0.7rem;font-weight:600;color:var(--text-primary);margin-bottom:0.4rem">＋ Crear nodo nuevo</div>
+        <input id="kg-newnode-title" type="text" placeholder="Título del nodo..." style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.5rem;font-size:0.72rem;color:var(--text-primary);outline:none;margin-bottom:0.3rem">
+        <div style="display:flex;gap:0.3rem;margin-bottom:0.3rem">
+          <select id="kg-newnode-type" style="flex:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.68rem;color:var(--text-primary);cursor:pointer">
+            ${allTypes.map(t => `<option value="${t}">[${KG_TYPES[t].icon}] ${KG_TYPES[t].label}</option>`).join("")}
+          </select>
+          <select id="kg-newnode-materia" style="flex:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.68rem;color:var(--text-primary);cursor:pointer">
+            <option value="">Sin materia</option>
+            ${allMaterias.map(m => `<option value="${m}">${m}</option>`).join("")}
+          </select>
+        </div>
+        <textarea id="kg-newnode-content" placeholder="Contenido (soporta Markdown, \$math\$, links, imágenes...)" rows="3" style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.5rem;font-size:0.72rem;color:var(--text-primary);outline:none;resize:vertical;font-family:inherit;margin-bottom:0.3rem"></textarea>
+        <div style="font-size:0.62rem;color:var(--text-muted);margin-bottom:0.3rem">Tips: [nodo] para link, \$math\$ para fórmulas, ![alt](url) para imágenes</div>
+        <div style="display:flex;gap:0.3rem">
+          <button class="kg-btn" onclick="kgCreateNode('${n.id}')" style="background:var(--accent);color:white;border:none;flex:1;font-weight:600">Crear y conectar</button>
+          <button class="kg-btn" onclick="kgCreateNode(null)" style="flex:1">Crear sin conectar</button>
+          <button class="kg-btn" onclick="document.getElementById('kg-newnode-form').style.display='none'" style="flex:0">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- Edit Content Form -->
+      <div id="kg-edit-form" style="display:none;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.6rem">
+        <div style="font-size:0.7rem;font-weight:600;color:var(--text-primary);margin-bottom:0.4rem">✏️ Editar contenido de "${n.title}"</div>
+        <div style="display:flex;gap:0.3rem;margin-bottom:0.3rem">
+          <input id="kg-edit-title" type="text" value="${n.title.replace(/"/g,"&quot;")}" style="flex:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.5rem;font-size:0.72rem;color:var(--text-primary);outline:none">
+          <select id="kg-edit-type" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.68rem;color:var(--text-primary);cursor:pointer">
+            ${allTypes.map(t => `<option value="${t}" ${n.type===t?"selected":""}>[${KG_TYPES[t].icon}] ${KG_TYPES[t].label}</option>`).join("")}
+          </select>
+        </div>
+        <textarea id="kg-edit-content" rows="6" style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.4rem 0.5rem;font-size:0.78rem;color:var(--text-primary);outline:none;resize:vertical;font-family:inherit;margin-bottom:0.3rem;line-height:1.6">${(n.content||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</textarea>
+
+        <!-- Attachment buttons -->
+        <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.4rem">
+          <button class="kg-btn" onclick="kgInsertContent('kg-edit-content','\\n## Nota\\nTu nota aquí\\n')" style="font-size:0.65rem">📝 Nota</button>
+          <button class="kg-btn" onclick="kgInsertLink('kg-edit-content')" style="font-size:0.65rem">🔗 Link</button>
+          <button class="kg-btn" onclick="kgInsertImage('kg-edit-content')" style="font-size:0.65rem">🖼️ Imagen</button>
+          <button class="kg-btn" onclick="kgInsertContent('kg-edit-content','\\n## Fórmula\\n$$E=mc^2$$\\n')" style="font-size:0.65rem">∑ Fórmula</button>
+          <button class="kg-btn" onclick="kgInsertContent('kg-edit-content','\\n> [!info]\\n> Nota importante\\n')" style="font-size:0.65rem">💡 Info</button>
+        </div>
+
+        <div style="font-size:0.6rem;color:var(--text-muted);margin-bottom:0.3rem">
+          Formato: <b>negro</b> · <i>cursiva</i> · codigo · math · [nodo](link) · ![img](url) · cita · titulo
+        </div>
+        <div style="display:flex;gap:0.3rem">
+          <button class="kg-btn" onclick="kgSaveEdit('${n.id}')" style="background:var(--accent);color:white;border:none;flex:1;font-weight:600">Guardar</button>
+          <button class="kg-btn" onclick="document.getElementById('kg-edit-form').style.display='none'" style="flex:0">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- Content -->
       <div style="margin-bottom:0.8rem">
         <div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem">Contenido</div>
         <div class="kg-view" style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.6rem 0.8rem;max-height:300px;overflow-y:auto;font-size:0.82rem">
@@ -465,22 +552,25 @@ function kgRenderSidePanel() {
         </div>
       </div>
 
+      <!-- Connections -->
       ${conns.length > 0 ? `
       <div style="margin-bottom:0.8rem">
         <div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem">Conexiones (${conns.length})</div>
         ${conns.map(c => {
           const ci = KG_TYPES[c.type] || KG_TYPES.concepto;
           const edge = KG.edges.find(e => (e.source===n.id&&e.target===c.id)||(e.source===c.id&&e.target===n.id));
-          return `<div class="kg-conn-item" onclick="kgFocus('${c.id}')">
-            <div style="display:flex;align-items:center;gap:0.3rem">
-              <span style="font-size:0.9rem">${ci.icon}</span>
-              <span style="font-weight:600;color:var(--text-primary)">${c.title}</span>
+          return `<div class="kg-conn-item" onclick="kgFocus('${c.id}')" style="display:flex;align-items:center;gap:0.4rem">
+            <div style="width:24px;height:24px;border-radius:50%;background:${ci.color}20;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:${ci.color};border:1px solid ${ci.color}30;flex-shrink:0">${ci.icon}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;color:var(--text-primary);font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.title}</div>
+              ${edge && edge.label ? `<div style="font-size:0.6rem;color:var(--text-muted);font-style:italic">${edge.label}</div>` : ""}
             </div>
-            ${edge && edge.label ? `<div style="font-size:0.62rem;color:var(--text-muted);margin-top:0.1rem;font-style:italic">${edge.label}</div>` : ""}
+            <button class="kg-btn" onclick="event.stopPropagation();kgRemoveEdge('${edge.id}')" title="Eliminar conexión" style="font-size:0.6rem;padding:0.15rem 0.3rem;color:#ef4444;border-color:#ef444440">✕</button>
           </div>`;
         }).join("")}
       </div>` : ""}
 
+      <!-- Incoming references -->
       ${incoming.length > 0 ? `
       <div style="margin-bottom:0.8rem">
         <div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem">← Referenciado por (${incoming.length})</div>
@@ -488,32 +578,17 @@ function kgRenderSidePanel() {
           const src = kgNode(e.source);
           if (!src) return "";
           const si = KG_TYPES[src.type] || KG_TYPES.concepto;
-          return `<div class="kg-conn-item" onclick="kgFocus('${src.id}')">
-            <span style="font-size:0.8rem">${si.icon}</span> ${src.title}
+          return `<div class="kg-conn-item" onclick="kgFocus('${src.id}')" style="display:flex;align-items:center;gap:0.4rem">
+            <div style="width:22px;height:22px;border-radius:50%;background:${si.color}20;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:${si.color};border:1px solid ${si.color}30;flex-shrink:0">${si.icon}</div>
+            <span style="font-size:0.75rem">${src.title}</span>
             ${e.label ? `<span style="font-size:0.6rem;color:var(--text-muted);font-style:italic"> — ${e.label}</span>` : ""}
           </div>`;
         }).join("")}
       </div>` : ""}
 
-      <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.5rem">
-        <button class="kg-btn" onclick="kgFocus('${n.id}')" title="Centrar en este nodo">⊙ Centrar</button>
-        <button class="kg-btn" onclick="kgExplore('${n.id}')" title="Explorar conexiones">🔍 Explorar</button>
-        <button class="kg-btn" onclick="kgToggleAddEdge('${n.id}')" id="kg-add-edge-btn" title="Crear conexión">🔗 Conectar</button>
-      </div>
-      <div id="kg-add-edge-form" style="display:none;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.5rem;margin-bottom:0.5rem">
-        <div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);margin-bottom:0.3rem">Nueva conexión desde "${n.title}"</div>
-        <select id="kg-edge-target" style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.72rem;color:var(--text-primary);margin-bottom:0.3rem;cursor:pointer">
-          <option value="">Seleccionar nodo destino...</option>
-          ${KG.nodes.filter(x => x.id !== n.id).map(x => {
-            const ti = KG_TYPES[x.type] || KG_TYPES.concepto;
-            return `<option value="${x.id}">${ti.icon} ${x.title}</option>`;
-          }).join("")}
-        </select>
-        <input id="kg-edge-label" type="text" placeholder="Relación (ej: relacionado, requiere...)" style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.72rem;color:var(--text-primary);margin-bottom:0.3rem;outline:none">
-        <div style="display:flex;gap:0.3rem">
-          <button class="kg-btn" onclick="kgAddEdge('${n.id}')" style="background:var(--accent);color:white;border:none;flex:1">Crear</button>
-          <button class="kg-btn" onclick="document.getElementById('kg-add-edge-form').style.display='none'" style="flex:0">Cancelar</button>
-        </div>
+      <!-- Delete node -->
+      <div style="border-top:1px solid var(--border-color);padding-top:0.5rem;margin-top:0.5rem">
+        <button class="kg-btn" onclick="if(confirm('¿Eliminar este nodo y todas sus conexiones?'))kgDeleteNode('${n.id}')" style="color:#ef4444;border-color:#ef444440;width:100%;font-size:0.68rem">🗑️ Eliminar nodo</button>
       </div>
     </div>`;
 }
@@ -1002,21 +1077,125 @@ function kgToggleAddEdge() {
   if (form) form.style.display = form.style.display === "none" ? "block" : "none";
 }
 
-function kgAddEdge(sourceId) {
-  const targetSel = document.getElementById("kg-edge-target");
-  const labelInput = document.getElementById("kg-edge-label");
-  if (!targetSel || !targetSel.value) { alert("Seleccioná un nodo destino"); return; }
-  if (targetSel.value === sourceId) { alert("No podés conectar un nodo consigo mismo"); return; }
-  const exists = KG.edges.some(e => (e.source === sourceId && e.target === targetSel.value) || (e.source === targetSel.value && e.target === sourceId));
-  if (exists) { alert("Ya existe una conexión entre estos nodos"); return; }
-  KG.edges.push({
-    id: "e_"+Date.now()+"_"+Math.random().toString(36).slice(2,6),
-    source: sourceId,
-    target: targetSel.value,
-    label: labelInput ? labelInput.value.trim() : ""
+// === NEW CONNECTION FORM ===
+let kgConnectTarget = null;
+function kgShowConnectForm() {
+  kgConnectTarget = null;
+  const f = document.getElementById("kg-connect-form");
+  const nf = document.getElementById("kg-newnode-form");
+  const ef = document.getElementById("kg-edit-form");
+  if (nf) nf.style.display = "none";
+  if (ef) ef.style.display = "none";
+  if (f) f.style.display = f.style.display === "none" ? "block" : "none";
+}
+
+function kgFilterConnectTargets(query) {
+  const items = document.querySelectorAll("#kg-connect-targets .kg-conn-item");
+  const q = query.toLowerCase();
+  items.forEach(item => {
+    item.style.display = item.textContent.toLowerCase().includes(q) ? "flex" : "none";
   });
+}
+
+function kgSelectConnectTarget(id, title) {
+  kgConnectTarget = id;
+  const items = document.querySelectorAll("#kg-connect-targets .kg-conn-item");
+  items.forEach(item => {
+    item.style.background = item.textContent.includes(title) ? "rgba(139,92,246,0.15)" : "";
+    item.style.borderColor = item.textContent.includes(title) ? "#8b5cf6" : "";
+  });
+}
+
+function kgConfirmConnect(sourceId) {
+  if (!kgConnectTarget) { alert("Seleccioná un nodo destino"); return; }
+  if (kgConnectTarget === sourceId) { alert("No podés conectar un nodo consigo mismo"); return; }
+  const exists = KG.edges.some(e => (e.source===sourceId&&e.target===kgConnectTarget)||(e.source===kgConnectTarget&&e.target===sourceId));
+  if (exists) { alert("Ya existe una conexión entre estos nodos"); return; }
+  const label = document.getElementById("kg-connect-label")?.value?.trim() || "";
+  KG.edges.push({ id: "e_"+Date.now()+"_"+Math.random().toString(36).slice(2,6), source: sourceId, target: kgConnectTarget, label });
+  kgSave(); kgRender();
+}
+
+function kgRemoveEdge(edgeId) {
+  if (!confirm("¿Eliminar esta conexión?")) return;
+  KG.edges = KG.edges.filter(e => e.id !== edgeId);
+  kgSave(); kgRender();
+}
+
+// === NEW NODE ===
+function kgShowNewNodeForm() {
+  const f = document.getElementById("kg-newnode-form");
+  const cf = document.getElementById("kg-connect-form");
+  const ef = document.getElementById("kg-edit-form");
+  if (cf) cf.style.display = "none";
+  if (ef) ef.style.display = "none";
+  if (f) f.style.display = f.style.display === "none" ? "block" : "none";
+}
+
+function kgCreateNode(connectToId) {
+  const title = document.getElementById("kg-newnode-title")?.value?.trim();
+  const type = document.getElementById("kg-newnode-type")?.value || "concepto";
+  const materia = document.getElementById("kg-newnode-materia")?.value || "";
+  const content = document.getElementById("kg-newnode-content")?.value || "";
+  if (!title) { alert("Escribí un título"); return; }
+  const id = "n_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
+  KG.nodes.push({ id, title, type, materia, content });
+  if (connectToId) {
+    KG.edges.push({ id: "e_"+Date.now()+"_"+Math.random().toString(36).slice(2,6), source: connectToId, target: id, label: "" });
+  }
   kgSave();
+  KG.active = id;
   kgRender();
+}
+
+// === EDIT NODE ===
+function kgEditNodeContent() {
+  const f = document.getElementById("kg-edit-form");
+  const cf = document.getElementById("kg-connect-form");
+  const nf = document.getElementById("kg-newnode-form");
+  if (cf) cf.style.display = "none";
+  if (nf) nf.style.display = "none";
+  if (f) f.style.display = f.style.display === "none" ? "block" : "none";
+}
+
+function kgSaveEdit(nodeId) {
+  const n = kgNode(nodeId);
+  if (!n) return;
+  n.title = document.getElementById("kg-edit-title")?.value?.trim() || n.title;
+  n.type = document.getElementById("kg-edit-type")?.value || n.type;
+  n.content = document.getElementById("kg-edit-content")?.value || "";
+  kgSave(); kgRender();
+}
+
+function kgDeleteNode(nodeId) {
+  KG.nodes = KG.nodes.filter(n => n.id !== nodeId);
+  KG.edges = KG.edges.filter(e => e.source !== nodeId && e.target !== nodeId);
+  KG.active = null;
+  kgSave(); kgRender();
+}
+
+// === CONTENT INSERT HELPERS ===
+function kgInsertContent(textareaId, text) {
+  const ta = document.getElementById(textareaId);
+  if (!ta) return;
+  const start = ta.selectionStart;
+  ta.value = ta.value.slice(0, start) + text + ta.value.slice(ta.selectionEnd);
+  ta.selectionStart = ta.selectionEnd = start + text.length;
+  ta.focus();
+}
+
+function kgInsertLink(textareaId) {
+  const url = prompt("URL del link:");
+  if (!url) return;
+  const text = prompt("Texto del link:", url);
+  kgInsertContent(textareaId, `[${text||url}](${url})`);
+}
+
+function kgInsertImage(textareaId) {
+  const url = prompt("URL de la imagen:");
+  if (!url) return;
+  const alt = prompt("Descripción de la imagen:", "imagen");
+  kgInsertContent(textareaId, `![${alt||"imagen"}](${url})`);
 }
 
 function kgFullscreen() {
@@ -1059,3 +1238,16 @@ window.kgResetView = kgResetView;
 window.kgToggleAddEdge = kgToggleAddEdge;
 window.kgAddEdge = kgAddEdge;
 window.kgFullscreen = kgFullscreen;
+window.kgShowConnectForm = kgShowConnectForm;
+window.kgFilterConnectTargets = kgFilterConnectTargets;
+window.kgSelectConnectTarget = kgSelectConnectTarget;
+window.kgConfirmConnect = kgConfirmConnect;
+window.kgRemoveEdge = kgRemoveEdge;
+window.kgShowNewNodeForm = kgShowNewNodeForm;
+window.kgCreateNode = kgCreateNode;
+window.kgEditNodeContent = kgEditNodeContent;
+window.kgSaveEdit = kgSaveEdit;
+window.kgDeleteNode = kgDeleteNode;
+window.kgInsertContent = kgInsertContent;
+window.kgInsertLink = kgInsertLink;
+window.kgInsertImage = kgInsertImage;
