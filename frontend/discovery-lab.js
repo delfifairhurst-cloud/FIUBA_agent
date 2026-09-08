@@ -129,6 +129,8 @@ const DL_EXPERIMENTS = [
 let dlCurrentExperiment = null;
 let dlDataPoints = [];
 let dlSolved = {};
+let dlCurrentInputValues = {};
+let dlCurrentDataPoints = [];
 
 function dlInit() {
   try { dlSolved = JSON.parse(localStorage.getItem(DL_STORAGE + '_solved') || '{}'); } catch { dlSolved = {}; }
@@ -281,10 +283,9 @@ function dlRenderExperiment(el, exp) {
 
   el.innerHTML = html;
 
-  // Store experiment reference for live updates
-  el._exp = exp;
-  el._inputValues = { ...inputValues };
-  el._dataPoints = [];
+  // Store in module-level variables (survives re-render)
+  dlCurrentInputValues = { ...inputValues };
+  dlCurrentDataPoints = [];
 
   // Initial output calculation
   dlRecalculate();
@@ -294,19 +295,14 @@ function dlUpdateInput(id, value, unit) {
   const val = parseFloat(value);
   const valEl = document.getElementById('dl-val-' + id);
   if (valEl) valEl.textContent = val + ' ' + unit;
-
-  const el = document.getElementById('discovery-lab-content');
-  if (el && el._inputValues) {
-    el._inputValues[id] = val;
-    dlRecalculate();
-  }
+  dlCurrentInputValues[id] = val;
+  dlRecalculate();
 }
 
 function dlRecalculate() {
-  const el = document.getElementById('discovery-lab-content');
-  if (!el || !el._exp) return;
-  const exp = el._exp;
-  const vals = el._inputValues;
+  if (!dlCurrentExperiment) return;
+  const exp = dlCurrentExperiment;
+  const vals = dlCurrentInputValues;
 
   exp.outputs.forEach(out => {
     const result = out.fn(vals);
@@ -322,55 +318,46 @@ function dlFormatNum(n) {
 }
 
 function dlAddDataPoint() {
-  const el = document.getElementById('discovery-lab-content');
-  if (!el || !el._exp) return;
-  const exp = el._exp;
-  const vals = el._inputValues;
+  if (!dlCurrentExperiment) return;
+  const exp = dlCurrentExperiment;
+  const vals = dlCurrentInputValues;
   const outputs = {};
   exp.outputs.forEach(out => { outputs[out.id] = out.fn(vals); });
 
-  const point = { inputs: { ...vals }, outputs };
-  if (!el._dataPoints) el._dataPoints = [];
-  el._dataPoints.push(point);
+  dlCurrentDataPoints.push({ inputs: { ...vals }, outputs });
 
   const logEl = document.getElementById('dl-data-log');
   if (logEl) {
-    if (el._dataPoints.length === 1) logEl.innerHTML = '';
+    if (dlCurrentDataPoints.length === 1) logEl.innerHTML = '';
     const inputStr = Object.entries(vals).map(([k, v]) => `${k}=${dlFormatNum(v)}`).join(', ');
     const outputStr = Object.entries(outputs).map(([k, v]) => `${k}=${dlFormatNum(v)}`).join(', ');
     const row = document.createElement('div');
-    row.style.cssText = 'padding:0.2rem 0;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between';
-    row.innerHTML = `<span style="color:var(--text-muted)">#${el._dataPoints.length}</span><span>${inputStr}</span><span style="color:var(--accent);font-weight:600">${outputStr}</span>`;
+    row.style.cssText = 'padding:0.25rem 0;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;gap:0.5rem';
+    row.innerHTML = `<span style="color:var(--text-muted);min-width:20px">#${dlCurrentDataPoints.length}</span><span style="flex:1;color:var(--text-primary)">${inputStr}</span><span style="color:var(--accent);font-weight:600;flex:1;text-align:right">${outputStr}</span>`;
     logEl.appendChild(row);
     logEl.scrollTop = logEl.scrollHeight;
   }
 }
 
 function dlCheckFormula() {
-  const el = document.getElementById('discovery-lab-content');
   const resultEl = document.getElementById('dl-formula-result');
-  if (!el || !el._exp || !resultEl) return;
-  const exp = el._exp;
+  if (!dlCurrentExperiment || !resultEl) return;
+  const exp = dlCurrentExperiment;
   const input = document.getElementById('dl-formula-input');
   if (!input) return;
-  const formula = input.value.trim().toLowerCase().replace(/\s/g, '');
+  const formula = input.value.trim();
   if (!formula) { resultEl.innerHTML = '<span style="color:#ef4444">Escribí una fórmula</span>'; return; }
 
   // Test formula against known values
-  const testCases = [];
+  let allCorrect = true;
   for (let i = 0; i < 5; i++) {
     const testVals = {};
     exp.inputs.forEach(inp => {
       testVals[inp.id] = inp.min + Math.random() * (inp.max - inp.min);
     });
-    testCases.push(testVals);
-  }
-
-  let allCorrect = true;
-  for (const testVals of testCases) {
     const expected = exp.outputs[0].fn(testVals);
     const computed = dlEvalFormula(formula, testVals, exp);
-    if (computed === null || Math.abs(expected - computed) / Math.max(Math.abs(expected), 1e-10) > 0.01) {
+    if (computed === null || Math.abs(expected - computed) / Math.max(Math.abs(expected), 1e-10) > 0.02) {
       allCorrect = false;
       break;
     }
@@ -380,37 +367,55 @@ function dlCheckFormula() {
     dlSolved[exp.id] = { formula, date: new Date().toISOString() };
     dlSaveSolved();
     resultEl.innerHTML = '<span style="color:#22c55e;font-weight:600">🧠 ¡Correcto! ¡Descubriste la ley! 🎉</span>';
-    setTimeout(() => dlRenderExperiment(el, exp), 1500);
+    // Award XP
+    if (window.ttAddXP) window.ttAddXP(100, 'discovery-lab');
+    setTimeout(() => {
+      const el = document.getElementById('discovery-lab-content');
+      dlRenderExperiment(el, exp);
+    }, 1500);
   } else {
-    resultEl.innerHTML = '<span style="color:#ef4444">✗ No coincide. Intentá con otra fórmula.</span>';
+    resultEl.innerHTML = '<span style="color:#ef4444">✗ No coincide. Revisá las variables y la fórmula.</span>';
   }
 }
 
 function dlEvalFormula(formula, vars, exp) {
   try {
-    let expr = formula;
-    // Map variable names
-    exp.inputs.forEach(inp => {
-      expr = expr.replace(new RegExp(inp.id, 'g'), '(' + vars[inp.id] + ')');
+    let expr = formula.trim();
+
+    // Step 1: Replace known variables with placeholder tokens to avoid partial matches
+    const placeholders = {};
+    exp.inputs.forEach((inp, i) => {
+      placeholders['__VAR' + i + '__'] = vars[inp.id];
+      // Use word-boundary replacement to avoid matching inside other words
+      expr = expr.replace(new RegExp('\\b' + inp.id + '\\b', 'g'), '__VAR' + i + '__');
     });
-    // Common constants
-    expr = expr.replace(/pi/gi, 'Math.PI');
-    expr = expr.replace(/(?<![a-zA-Z])e(?![a-zA-Z])/g, 'Math.E');
-    // Math functions
+
+    // Step 2: Replace Math functions BEFORE constants
+    expr = expr.replace(/\bsqrt\b/g, 'Math.sqrt');
+    expr = expr.replace(/\bsin\b/g, 'Math.sin');
+    expr = expr.replace(/\bcos\b/g, 'Math.cos');
+    expr = expr.replace(/\btan\b/g, 'Math.tan');
+    expr = expr.replace(/\blog\b/g, 'Math.log');
+    expr = expr.replace(/\babs\b/g, 'Math.abs');
+    expr = expr.replace(/\bpi\b/gi, 'Math.PI');
+
+    // Step 3: Replace ^ with **
     expr = expr.replace(/\^/g, '**');
-    expr = expr.replace(/sqrt\(/g, 'Math.sqrt(');
-    expr = expr.replace(/sin\(/g, 'Math.sin(');
-    expr = expr.replace(/cos\(/g, 'Math.cos(');
-    expr = expr.replace(/tan\(/g, 'Math.tan(');
-    expr = expr.replace(/log\(/g, 'Math.log(');
-    expr = expr.replace(/abs\(/g, 'Math.abs(');
-    // Add implicit multiplication: 2x → 2*x, )x → )*x, x( → x*(
-    expr = expr.replace(/(\d)([a-zA-Z(])/g, '$1*$2');
-    expr = expr.replace(/\)([a-zA-Z(])/g, ')*$1');
-    expr = expr.replace(/([a-zA-Z)])(\()/g, (match, p1, p2) => {
-      if (p1.endsWith('Math') || p1.endsWith('sqrt') || p1.endsWith('sin') || p1.endsWith('cos') || p1.endsWith('tan') || p1.endsWith('log') || p1.endsWith('abs')) return match;
-      return p1 + '*' + p2;
+
+    // Step 4: Replace placeholders with actual values
+    Object.entries(placeholders).forEach(([ph, val]) => {
+      expr = expr.replace(new RegExp(ph, 'g'), '(' + val + ')');
     });
+
+    // Step 5: Implicit multiplication: 2( → 2*(, )( → )*(, )( → )*(
+    expr = expr.replace(/(\d)\(/g, '$1*(');
+    expr = expr.replace(/\)\(/g, ')*(');
+    expr = expr.replace(/\)(\w)/g, ')*$1');
+    expr = expr.replace(/(\w)\(/g, (match, p1) => {
+      if (p1.endsWith('Math') || p1.endsWith('sqrt') || p1.endsWith('sin') || p1.endsWith('cos') || p1.endsWith('tan') || p1.endsWith('log') || p1.endsWith('abs')) return match;
+      return p1 + '*(';
+    });
+
     const result = new Function('return ' + expr)();
     return (typeof result === 'number' && isFinite(result)) ? result : null;
   } catch {

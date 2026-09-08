@@ -1574,7 +1574,7 @@ function switchView(view) {
   });
 
   // IDs of all view panels
-  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'discovery-lab-view'];
+  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'discovery-lab-view', 'tech-tree-view'];
   const chatEl = document.querySelector('.chat-container');
   const appLayout = document.querySelector('.app-layout');
 
@@ -1665,6 +1665,9 @@ function switchView(view) {
   } else if (view === 'discovery-lab') {
     const el = document.getElementById('discovery-lab-view');
     if (el) { el.classList.remove('hidden'); if (window.dlRender) window.dlRender(); }
+  } else if (view === 'tech-tree') {
+    const el = document.getElementById('tech-tree-view');
+    if (el) { el.classList.remove('hidden'); if (window.ttRender) window.ttRender(); }
   }
 }
 window.switchView = switchView;

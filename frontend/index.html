@@ -872,6 +872,13 @@
         </div>
       </div>
 
+      <!-- Vista Technology Tree -->
+      <div id="tech-tree-view" class="view-panel hidden">
+        <div style="max-width:900px;width:100%;margin:0 auto;padding:1rem 1.2rem">
+          <div id="tech-tree-content"></div>
+        </div>
+      </div>
+
       <!-- Vista Herramientas (hub central) -->
       <div id="herramientas-view" class="view-panel hidden">
         <div style="max-width:900px;width:100%;margin:0 auto;padding:1rem 1.2rem">
@@ -912,6 +919,14 @@
               </div>
               <span class="tool-card-name">Lab Descubrimiento</span>
               <span class="tool-card-desc">Experimentá y descubrí leyes</span>
+            </button>
+
+            <button onclick="switchView('tech-tree')" class="tool-card" style="--tool-color:#f59e0b">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(249,115,22,0.15));color:#f59e0b">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v18"/><path d="M8 7l4-4 4 4"/><path d="M4 14l4 4"/><path d="M20 14l-4 4"/></svg>
+              </div>
+              <span class="tool-card-name">Tech Tree</span>
+              <span class="tool-card-desc">Árbol de tecnologías</span>
             </button>
 
             <button onclick="switchView('gpa')" class="tool-card" style="--tool-color:#3b82f6">
@@ -1523,6 +1538,7 @@
   <script src="unit-converter.js"></script>
   <script src="subject-selector.js"></script>
   <script src="discovery-lab.js"></script>
+  <script src="tech-tree.js"></script>
   <script src="code-playground.js"></script>
   <script type="module" src="professor-ratings.js"></script>
   <script type="module" src="professor-ratings-ui.js"></script>
