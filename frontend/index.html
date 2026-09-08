@@ -1124,8 +1124,12 @@
 
         <div class="form-group">
           <label for="gemini-key-input">Tu API Key de Gemini (para gastar tus tokens):</label>
-          <input type="password" id="gemini-key-input" class="form-control" placeholder="AIza... (aistudio.google.com/app/apikey)">
-          <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;">Se guarda solo en tu navegador y en tu cuenta privada. Si no ponés nada, usa la del servidor (compartida).</div>
+          <div style="display:flex;gap:0.4rem;align-items:center">
+            <input type="password" id="gemini-key-input" class="form-control" placeholder="AIza... (aistudio.google.com/app/apikey)" style="flex:1">
+            <button onclick="testGeminiKey()" id="test-key-btn" style="background:var(--accent-cyan);color:white;border:none;border-radius:8px;padding:0.5rem 0.8rem;cursor:pointer;font-size:0.78rem;font-weight:600;white-space:nowrap">Probar</button>
+          </div>
+          <div id="test-key-result" style="font-size:0.72rem;margin-top:0.3rem;min-height:1rem"></div>
+          <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;">Se guarda solo en tu navegador. Si no ponés nada, usa la del servidor (compartida).</div>
         </div>
 
         <div style="background: var(--bg-surface); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.82rem;">

@@ -192,6 +192,31 @@ window.closeBetaBanner = function() {
   if (banner) { banner.style.opacity = '0'; banner.style.transform = 'translateY(-4px)'; setTimeout(() => banner.style.display = 'none', 250); }
 };
 
+window.testGeminiKey = async function() {
+  const keyInput = document.getElementById('gemini-key-input');
+  const resultEl = document.getElementById('test-key-result');
+  const btn = document.getElementById('test-key-btn');
+  const key = (keyInput?.value || '').trim();
+  if (!key) { resultEl.innerHTML = '<span style="color:#ef4444">Pegá una API Key primero</span>'; return; }
+  btn.disabled = true; btn.textContent = 'Probando...';
+  resultEl.innerHTML = '<span style="color:#f59e0b">Verificando con Gemini...</span>';
+  try {
+    const r = await fetch(getApiBase() + '/api/test-key', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userApiKey: key }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      resultEl.innerHTML = '<span style="color:#22c55e">✓ Key válida — modelo: ' + d.model + '</span>';
+    } else {
+      resultEl.innerHTML = '<span style="color:#ef4444">✗ ' + (d.error || 'Key inválida') + '</span>';
+    }
+  } catch (e) {
+    resultEl.innerHTML = '<span style="color:#ef4444">✗ Error: ' + e.message + '</span>';
+  }
+  btn.disabled = false; btn.textContent = 'Probar';
+};
+
 // Cargar chats desde LocalStorage o crear uno por defecto
 function loadChatsFromStorage() {
   const saved = localStorage.getItem('fiuba_agent_chats');

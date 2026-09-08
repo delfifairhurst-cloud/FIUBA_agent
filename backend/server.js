@@ -44,11 +44,9 @@ const TEMPORARY_GEMINI_REASONS = new Set([
 ]);
 
 const MODEL_FALLBACK_CHAIN = [
-  process.env.GEMINI_MODEL || 'gemini-3.6-flash',
-  'gemini-3.8-flash',
+  process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
   'gemini-3.5-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-1.5-flash'
 ];
 
 function isTemporaryError(statusCode, geminiError) {
@@ -80,7 +78,7 @@ function jitter(baseMs) {
   return baseMs + Math.random() * baseMs * 0.3;
 }
 
-async function callGeminiWithRetry(apiKey, payload, { maxRetries = 3, endpoint = 'chat' } = {}) {
+async function callGeminiWithRetry(apiKey, payload, { maxRetries = 2, endpoint = 'chat' } = {}) {
   const models = MODEL_FALLBACK_CHAIN;
   let lastError = null;
 
@@ -96,7 +94,7 @@ async function callGeminiWithRetry(apiKey, payload, { maxRetries = 3, endpoint =
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(60000)
+          signal: AbortSignal.timeout(30000)
         });
         const elapsed = Date.now() - start;
         const data = await response.json();
@@ -272,6 +270,30 @@ app.post('/api/admin-qa', async (req, res) => {
   } catch (error) {
     console.error('admin-qa error:', error);
     res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// --- Test API Key ---
+app.post('/api/test-key', async (req, res) => {
+  try {
+    const { userApiKey } = req.body;
+    const apiKey = (userApiKey && userApiKey.trim()) || process.env.GEMINI_API_KEY || '';
+    if (!apiKey) return res.json({ ok: false, error: 'No se proporcionó API Key.' });
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_FALLBACK_CHAIN[0]}:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Hola' }] }] }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await response.json();
+    if (response.ok) {
+      return res.json({ ok: true, model: MODEL_FALLBACK_CHAIN[0] });
+    }
+    const err = data.error || {};
+    return res.json({ ok: false, error: err.message || `HTTP ${response.status}`, status: response.status });
+  } catch (e) {
+    return res.json({ ok: false, error: e.message || 'Error de conexión' });
   }
 });
 
