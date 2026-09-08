@@ -329,7 +329,9 @@ function kgInjectStyles() {
     .kg-fullscreen .kg-toolbar { position: fixed !important; top: 0.6rem !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 10001 !important; }
     .kg-fullscreen .kg-side { position: fixed !important; top: 0 !important; right: 0 !important; height: 100vh !important; z-index: 10001 !important; }
     .kg-fullscreen #tech-tree-content { display: flex; height: 100vh !important; }
-    .kg-fullscreen #tech-tree-canvas { width: 100vw !important; height: 100vh !important; display: block !important; }
+    .kg-fullscreen #tech-tree-content > div { height: 100vh !important; }
+    .kg-fullscreen #kg-canvas-wrap { flex: 1 !important; min-height: 0 !important; }
+    .kg-fullscreen #kg-canvas { width: 100% !important; height: 100% !important; display: block !important; }
   `;
   document.head.appendChild(s);
 }
@@ -380,10 +382,10 @@ function kgRender() {
   const allTypes = Object.keys(KG_TYPES);
 
   el.innerHTML = `
-    <div style="display:flex;height:calc(100vh - 100px);gap:0">
+    <div style="display:flex;height:100%;gap:0">
       <!-- Main graph area -->
-      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
-        <div class="kg-bar" style="justify-content:space-between;padding:0.4rem 0.8rem;border-bottom:1px solid var(--border-color)">
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden">
+        <div class="kg-bar" style="justify-content:space-between;padding:0.4rem 0.8rem;border-bottom:1px solid var(--border-color);flex-shrink:0">
           <h2 style="font-family:var(--font-heading);font-size:1rem;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:0.4rem">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M7.5 11l7-3.5M7.5 13l7 3.5"/></svg>
             Knowledge Graph
@@ -396,7 +398,7 @@ function kgRender() {
         </div>
 
         <!-- Search -->
-        <div style="padding:0.4rem 0.8rem;border-bottom:1px solid var(--border-color);display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap">
+        <div style="padding:0.4rem 0.8rem;border-bottom:1px solid var(--border-color);display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;flex-shrink:0">
           <input id="kg-search" type="text" value="${KG.search}" placeholder="Buscar concepto..."
             style="flex:1;min-width:140px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.5rem;font-size:0.72rem;color:var(--text-primary);outline:none"
             oninput="KG.search=this.value;kgRender()">
@@ -410,8 +412,8 @@ function kgRender() {
           </select>
         </div>
 
-        <!-- Canvas -->
-        <div style="flex:1;position:relative;background:var(--bg-card);overflow:hidden">
+        <!-- Canvas container: fills remaining space -->
+        <div id="kg-canvas-wrap" style="flex:1;position:relative;overflow:hidden;min-height:0">
           <canvas id="kg-canvas" style="width:100%;height:100%;display:block;cursor:grab"></canvas>
           <div id="kg-tooltip" style="display:none;position:fixed;background:rgba(15,15,25,0.95);backdrop-filter:blur(12px);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:0.7rem 0.9rem;font-size:0.72rem;color:#e2e8f0;pointer-events:none;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,0.4),0 0 20px rgba(139,92,246,0.1);max-width:300px"></div>
           <div style="position:absolute;bottom:8px;left:10px;font-size:0.6rem;color:var(--text-muted);opacity:0.5">Hover preview · Click panel · Drag mover · Scroll zoom</div>
@@ -425,7 +427,7 @@ function kgRender() {
       </div>
 
       <!-- Side panel -->
-      <div id="kg-side" class="kg-side" style="width:${KG.active?'380px':'0px'};${KG.active?'border-left:1px solid var(--border-color)':'border:none'}">
+      <div id="kg-side" class="kg-side" style="width:${KG.active?'380px':'0px'};${KG.active?'border-left:1px solid var(--border-color)':'border:none'};flex-shrink:0">
         ${KG.active ? kgRenderSidePanel() : ""}
       </div>
     </div>`;
@@ -525,13 +527,28 @@ function kgRenderSide(el) {
 function kgSetupCanvas() {
   const canvas = document.getElementById("kg-canvas");
   if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
+  // Wait for layout to settle
+  const wrap = document.getElementById("kg-canvas-wrap");
+  let W, H;
+  if (wrap) {
+    const r = wrap.getBoundingClientRect();
+    W = r.width; H = r.height;
+  } else {
+    const r = canvas.parentElement.getBoundingClientRect();
+    W = r.width; H = r.height;
+  }
+  if (W < 10 || H < 10) {
+    // Layout not ready, retry
+    setTimeout(kgSetupCanvas, 100);
+    return;
+  }
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
   const ctx = canvas.getContext("2d");
   ctx.scale(dpr, dpr);
-  const W = rect.width, H = rect.height;
 
   const nodes = kgFiltered();
   if (!nodes.length) {
@@ -541,9 +558,10 @@ function kgSetupCanvas() {
   }
 
   // Position nodes with force simulation
+  const spread = Math.min(W, H) * 0.35;
   const positioned = nodes.map((n, i) => {
     const angle = i * 2 * Math.PI / nodes.length;
-    const radius = 150 + Math.random() * 50;
+    const radius = spread * (0.5 + Math.random() * 0.5);
     return { ...n, x: W/2 + Math.cos(angle) * radius, y: H/2 + Math.sin(angle) * radius, vx: 0, vy: 0, r: n.type === "materia" ? 22 : 14 };
   });
   const posMap = {}; positioned.forEach(p => { posMap[p.id] = p; });
