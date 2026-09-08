@@ -392,8 +392,8 @@ function kgRender() {
           </h2>
           <div style="display:flex;gap:0.3rem;align-items:center">
             <span style="font-size:0.6rem;color:var(--text-muted)">${filtered.length} nodos</span>
-            <button class="kg-btn" onclick="kgResetView()" title="Centrar vista">⊙</button>
-            <button class="kg-btn" onclick="kgFullscreen()" title="Pantalla completa">⛶</button>
+            <button class="kg-btn" onclick="kgResetView()" title="Centrar vista"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg></button>
+            <button class="kg-btn" onclick="kgFullscreen()" title="Pantalla completa"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg></button>
           </div>
         </div>
 
@@ -457,24 +457,24 @@ function kgRenderSidePanel() {
             <span class="kg-type-badge" style="background:${typeInfo.color}18;color:${typeInfo.color};border:1px solid ${typeInfo.color}40;margin-top:0.15rem">${typeInfo.label}</span>
           </div>
         </div>
-        <button class="kg-btn" onclick="KG.active=null;KG.view='graph';kgRender()" style="font-size:0.8rem">✕</button>
+        <button class="kg-btn" onclick="KG.active=null;KG.view='graph';kgRender()" style="font-size:0.8rem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
       </div>
-      ${n.materia ? `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:0.2rem">📚 ${n.materia}</div>` : ""}
+      ${n.materia ? `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:0.2rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> ${n.materia}</div>` : ""}
     </div>
     <div class="kg-side-body">
 
       <!-- Quick Actions -->
       <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.7rem">
-        <button class="kg-btn" onclick="kgFocus('${n.id}')" title="Centrar">⊙ Centrar</button>
-        <button class="kg-btn" onclick="kgExplore('${n.id}')" title="Explorar">🔍 Explorar</button>
-        <button class="kg-btn" onclick="kgShowConnectForm()" id="kg-connect-btn" title="Conectar con otro nodo">🔗 Conectar</button>
-        <button class="kg-btn" onclick="kgShowNewNodeForm()" title="Crear nodo nuevo">＋ Nuevo nodo</button>
-        <button class="kg-btn" onclick="kgEditNodeContent('${n.id}')" title="Editar contenido">✏️ Editar</button>
+        <button class="kg-btn" onclick="kgFocus('${n.id}')" title="Centrar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg> Centrar</button>
+        <button class="kg-btn" onclick="kgExplore('${n.id}')" title="Explorar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg> Explorar</button>
+        <button class="kg-btn" onclick="kgShowConnectForm()" id="kg-connect-btn" title="Conectar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> Conectar</button>
+        <button class="kg-btn" onclick="kgShowNewNodeForm()" title="Nuevo nodo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Nuevo</button>
+        <button class="kg-btn" onclick="kgEditNodeContent('${n.id}')" title="Editar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>
       </div>
 
       <!-- Connect Form -->
       <div id="kg-connect-form" style="display:none;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.6rem">
-        <div style="font-size:0.7rem;font-weight:600;color:var(--text-primary);margin-bottom:0.4rem">🔗 Conectar "${n.title}" con...</div>
+        <div style="font-size:0.7rem;font-weight:600;color:var(--text-primary);margin-bottom:0.4rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" style="vertical-align:-1px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> Conectar "${n.title}" con...</div>
         <input id="kg-connect-search" type="text" placeholder="Buscar nodo destino..." oninput="kgFilterConnectTargets(this.value)"
           style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.5rem;font-size:0.72rem;color:var(--text-primary);outline:none;margin-bottom:0.3rem">
         <div id="kg-connect-targets" style="max-height:120px;overflow-y:auto;margin-bottom:0.3rem">
@@ -495,7 +495,7 @@ function kgRenderSidePanel() {
 
       <!-- New Node Form -->
       <div id="kg-newnode-form" style="display:none;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.6rem">
-        <div style="font-size:0.7rem;font-weight:600;color:var(--text-primary);margin-bottom:0.4rem">＋ Crear nodo nuevo</div>
+        <div style="font-size:0.7rem;font-weight:600;color:var(--text-primary);margin-bottom:0.4rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" style="vertical-align:-1px"><path d="M12 5v14M5 12h14"/></svg> Crear nodo nuevo</div>
         <input id="kg-newnode-title" type="text" placeholder="Título del nodo..." style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.5rem;font-size:0.72rem;color:var(--text-primary);outline:none;margin-bottom:0.3rem">
         <div style="display:flex;gap:0.3rem;margin-bottom:0.3rem">
           <select id="kg-newnode-type" style="flex:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.68rem;color:var(--text-primary);cursor:pointer">
@@ -506,7 +506,7 @@ function kgRenderSidePanel() {
             ${allMaterias.map(m => `<option value="${m}">${m}</option>`).join("")}
           </select>
         </div>
-        <textarea id="kg-newnode-content" placeholder="Contenido (soporta Markdown, \$math\$, links, imágenes...)" rows="3" style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.5rem;font-size:0.72rem;color:var(--text-primary);outline:none;resize:vertical;font-family:inherit;margin-bottom:0.3rem"></textarea>
+        <textarea id="kg-newnode-content" placeholder="Contenido (soporta Markdown, math, links, imagenes...)" rows="3" style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.5rem;font-size:0.72rem;color:var(--text-primary);outline:none;resize:vertical;font-family:inherit;margin-bottom:0.3rem"></textarea>
         <div style="font-size:0.62rem;color:var(--text-muted);margin-bottom:0.3rem">Tips: [nodo] para link, \$math\$ para fórmulas, ![alt](url) para imágenes</div>
         <div style="display:flex;gap:0.3rem">
           <button class="kg-btn" onclick="kgCreateNode('${n.id}')" style="background:var(--accent);color:white;border:none;flex:1;font-weight:600">Crear y conectar</button>
@@ -517,22 +517,22 @@ function kgRenderSidePanel() {
 
       <!-- Edit Content Form -->
       <div id="kg-edit-form" style="display:none;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.6rem">
-        <div style="font-size:0.7rem;font-weight:600;color:var(--text-primary);margin-bottom:0.4rem">✏️ Editar contenido de "${n.title}"</div>
+        <div style="font-size:0.7rem;font-weight:600;color:var(--text-primary);margin-bottom:0.4rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" style="vertical-align:-1px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar contenido de "${n.title}"</div>
         <div style="display:flex;gap:0.3rem;margin-bottom:0.3rem">
           <input id="kg-edit-title" type="text" value="${n.title.replace(/"/g,"&quot;")}" style="flex:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.5rem;font-size:0.72rem;color:var(--text-primary);outline:none">
           <select id="kg-edit-type" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.68rem;color:var(--text-primary);cursor:pointer">
             ${allTypes.map(t => `<option value="${t}" ${n.type===t?"selected":""}>[${KG_TYPES[t].icon}] ${KG_TYPES[t].label}</option>`).join("")}
           </select>
         </div>
-        <textarea id="kg-edit-content" rows="6" style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.4rem 0.5rem;font-size:0.78rem;color:var(--text-primary);outline:none;resize:vertical;font-family:inherit;margin-bottom:0.3rem;line-height:1.6">${(n.content||"").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</textarea>
+        <textarea id="kg-edit-content" rows="6" style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.4rem 0.5rem;font-size:0.78rem;color:var(--text-primary);outline:none;resize:vertical;font-family:inherit;margin-bottom:0.3rem;line-height:1.6"></textarea>
 
         <!-- Attachment buttons -->
         <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.4rem">
-          <button class="kg-btn" onclick="kgInsertContent('kg-edit-content','\\n## Nota\\nTu nota aquí\\n')" style="font-size:0.65rem">📝 Nota</button>
-          <button class="kg-btn" onclick="kgInsertLink('kg-edit-content')" style="font-size:0.65rem">🔗 Link</button>
-          <button class="kg-btn" onclick="kgInsertImage('kg-edit-content')" style="font-size:0.65rem">🖼️ Imagen</button>
-          <button class="kg-btn" onclick="kgInsertContent('kg-edit-content','\\n## Fórmula\\n$$E=mc^2$$\\n')" style="font-size:0.65rem">∑ Fórmula</button>
-          <button class="kg-btn" onclick="kgInsertContent('kg-edit-content','\\n> [!info]\\n> Nota importante\\n')" style="font-size:0.65rem">💡 Info</button>
+          <button class="kg-btn" onclick="kgInsertContent('kg-edit-content','\\n## Nota\\nTu nota aquí\\n')" style="font-size:0.65rem"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg> Nota</button>
+          <button class="kg-btn" onclick="kgInsertLink('kg-edit-content')" style="font-size:0.65rem"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> Link</button>
+          <button class="kg-btn" onclick="kgInsertImage('kg-edit-content')" style="font-size:0.65rem"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Imagen</button>
+          <button class="kg-btn" onclick="kgInsertContent('kg-edit-content','\\n## Fórmula\\n$$E=mc^2$$\\n')" style="font-size:0.65rem"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M17 14v7M14 17.5h6"/></svg> Formula</button>
+          <button class="kg-btn" onclick="kgInsertContent('kg-edit-content','\\n> [!info]\\n> Nota importante\\n')" style="font-size:0.65rem"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg> Info</button>
         </div>
 
         <div style="font-size:0.6rem;color:var(--text-muted);margin-bottom:0.3rem">
@@ -565,7 +565,7 @@ function kgRenderSidePanel() {
               <div style="font-weight:600;color:var(--text-primary);font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.title}</div>
               ${edge && edge.label ? `<div style="font-size:0.6rem;color:var(--text-muted);font-style:italic">${edge.label}</div>` : ""}
             </div>
-            <button class="kg-btn" onclick="event.stopPropagation();kgRemoveEdge('${edge.id}')" title="Eliminar conexión" style="font-size:0.6rem;padding:0.15rem 0.3rem;color:#ef4444;border-color:#ef444440">✕</button>
+            <button class="kg-btn" onclick="event.stopPropagation();kgRemoveEdge('${edge.id}')" title="Eliminar conexion" style="font-size:0.6rem;padding:0.15rem 0.3rem;color:#ef4444;border-color:#ef444440"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
           </div>`;
         }).join("")}
       </div>` : ""}
@@ -588,7 +588,7 @@ function kgRenderSidePanel() {
 
       <!-- Delete node -->
       <div style="border-top:1px solid var(--border-color);padding-top:0.5rem;margin-top:0.5rem">
-        <button class="kg-btn" onclick="if(confirm('¿Eliminar este nodo y todas sus conexiones?'))kgDeleteNode('${n.id}')" style="color:#ef4444;border-color:#ef444440;width:100%;font-size:0.68rem">🗑️ Eliminar nodo</button>
+        <button class="kg-btn" onclick="if(confirm('¿Eliminar este nodo y todas sus conexiones?'))kgDeleteNode('${n.id}')" style="color:#ef4444;border-color:#ef444440;width:100%;font-size:0.68rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> Eliminar nodo</button>
       </div>
     </div>`;
 }
@@ -946,7 +946,7 @@ function kgSetupCanvas() {
               <span class="kg-type-badge" style="background:${typeInfo.color}20;color:${typeInfo.color};border:1px solid ${typeInfo.color}40;font-size:0.58rem;padding:0.05rem 0.35rem">${typeInfo.label}</span>
             </div>
           </div>
-          ${n.materia ? `<div style="font-size:0.65rem;color:#94a3b8;margin-bottom:0.25rem">📚 ${n.materia}</div>` : ""}
+          ${n.materia ? `<div style="font-size:0.65rem;color:#94a3b8;margin-bottom:0.25rem"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> ${n.materia}</div>` : ""}
           <div style="font-size:0.68rem;color:#94a3b8;margin-bottom:0.3rem;line-height:1.4;border-top:1px solid rgba(255,255,255,0.06);padding-top:0.3rem">${preview}...</div>
           ${conns.length > 0 ? `<div style="font-size:0.6rem;color:#8b5cf6;border-top:1px solid rgba(255,255,255,0.06);padding-top:0.25rem">→ ${conns.slice(0,3).map(c=>c.title).join(", ")}${conns.length>3?"...":""}</div>` : ""}
           <div style="font-size:0.58rem;color:#22c55e;margin-top:0.2rem;opacity:0.8">Click para ver detalle</div>`;
@@ -1155,7 +1155,15 @@ function kgEditNodeContent() {
   const nf = document.getElementById("kg-newnode-form");
   if (cf) cf.style.display = "none";
   if (nf) nf.style.display = "none";
-  if (f) f.style.display = f.style.display === "none" ? "block" : "none";
+  if (f) {
+    f.style.display = f.style.display === "none" ? "block" : "none";
+    // Populate textarea safely after DOM is ready
+    if (f.style.display === "block" && KG.active) {
+      const n = kgNode(KG.active);
+      const ta = document.getElementById("kg-edit-content");
+      if (ta && n) ta.value = n.content || "";
+    }
+  }
 }
 
 function kgSaveEdit(nodeId) {
