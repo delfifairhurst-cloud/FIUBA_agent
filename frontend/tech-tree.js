@@ -9,13 +9,116 @@ const KG = {
 };
 
 const KG_TYPES = {
-  materia: { color: "#8b5cf6", icon: "📚", label: "Materia" },
-  concepto: { color: "#3b82f6", icon: "💡", label: "Concepto" },
-  apunte: { color: "#22c55e", icon: "📝", label: "Apunte" },
-  ejercicio: { color: "#f59e0b", icon: "✏️", label: "Ejercicio" },
-  examen: { color: "#ef4444", icon: "📋", label: "Examen" },
-  recurso: { color: "#06b6d4", icon: "🔗", label: "Recurso" },
+  materia: { color: "#8b5cf6", icon: "M", label: "Materia" },
+  concepto: { color: "#3b82f6", icon: "C", label: "Concepto" },
+  apunte: { color: "#22c55e", icon: "A", label: "Apunte" },
+  ejercicio: { color: "#f59e0b", icon: "E", label: "Ejercicio" },
+  examen: { color: "#ef4444", icon: "X", label: "Examen" },
+  recurso: { color: "#06b6d4", icon: "R", label: "Recurso" },
 };
+
+// Draw custom shape icon for each type (more professional than emoji)
+function kgDrawTypeIcon(ctx, x, y, r, type, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha || 1;
+  ctx.translate(x, y);
+  const s = r * 0.45;
+  ctx.fillStyle = "#fff";
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  switch(type) {
+    case "materia": // Book shape
+      ctx.beginPath();
+      ctx.moveTo(-s*0.6, -s*0.7);
+      ctx.lineTo(-s*0.6, s*0.7);
+      ctx.lineTo(s*0.6, s*0.7);
+      ctx.lineTo(s*0.6, -s*0.7);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -s*0.7);
+      ctx.lineTo(0, s*0.7);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-s*0.6, -s*0.3);
+      ctx.lineTo(0, -s*0.1);
+      ctx.lineTo(s*0.6, -s*0.3);
+      ctx.stroke();
+      break;
+    case "concepto": // Lightbulb
+      ctx.beginPath();
+      ctx.arc(0, -s*0.15, s*0.45, Math.PI*1.2, Math.PI*1.8);
+      ctx.lineTo(s*0.25, s*0.3);
+      ctx.lineTo(-s*0.25, s*0.3);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-s*0.15, s*0.45);
+      ctx.lineTo(s*0.15, s*0.45);
+      ctx.stroke();
+      // rays
+      for (let i = 0; i < 5; i++) {
+        const a = (i - 2) * 0.35;
+        ctx.beginPath();
+        ctx.moveTo(Math.sin(a)*s*0.55, -s*0.15 + Math.cos(a)*-s*0.55);
+        ctx.lineTo(Math.sin(a)*s*0.7, -s*0.15 + Math.cos(a)*-s*0.7);
+        ctx.stroke();
+      }
+      break;
+    case "apunte": // Pen/notepad
+      ctx.beginPath();
+      ctx.moveTo(-s*0.4, -s*0.6);
+      ctx.lineTo(s*0.3, -s*0.6);
+      ctx.lineTo(s*0.5, -s*0.4);
+      ctx.lineTo(s*0.5, s*0.6);
+      ctx.lineTo(-s*0.4, s*0.6);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-s*0.15, -s*0.2);
+      ctx.lineTo(s*0.2, -s*0.2);
+      ctx.moveTo(-s*0.15, s*0.1);
+      ctx.lineTo(s*0.2, s*0.1);
+      ctx.moveTo(-s*0.15, s*0.4);
+      ctx.lineTo(s*0.1, s*0.4);
+      ctx.stroke();
+      break;
+    case "ejercicio": // Checkmark in circle
+      ctx.beginPath();
+      ctx.arc(0, 0, s*0.6, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-s*0.25, s*0.05);
+      ctx.lineTo(-s*0.05, s*0.25);
+      ctx.lineTo(s*0.3, -s*0.2);
+      ctx.stroke();
+      break;
+    case "examen": // Star
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a1 = (i * 72 - 90) * Math.PI / 180;
+        const a2 = ((i * 72 + 36) - 90) * Math.PI / 180;
+        const r1 = s * 0.6, r2 = s * 0.25;
+        if (i === 0) ctx.moveTo(Math.cos(a1)*r1, Math.sin(a1)*r1);
+        else ctx.lineTo(Math.cos(a1)*r1, Math.sin(a1)*r1);
+        ctx.lineTo(Math.cos(a2)*r2, Math.sin(a2)*r2);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      break;
+    case "recurso": // Chain link
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-s*0.5, -s*0.25, s*0.55, s*0.5, s*0.15);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.roundRect(-s*0.05, -s*0.25, s*0.55, s*0.5, s*0.15);
+      ctx.stroke();
+      break;
+  }
+  ctx.restore();
+}
 
 function kgInit() {
   try { KG.nodes = JSON.parse(localStorage.getItem("kg_nodes") || "[]"); } catch { KG.nodes = []; }
@@ -216,6 +319,17 @@ function kgInjectStyles() {
     .kg-side-body { padding:0.8rem; }
     .kg-conn-item { padding:0.4rem 0.6rem; border:1px solid var(--border-color); border-radius:8px; margin-bottom:0.3rem; cursor:pointer; transition:all 0.15s; font-size:0.78rem; }
     .kg-conn-item:hover { border-color:#8b5cf6; background:rgba(139,92,246,0.05); }
+    .kg-fullscreen {
+      position: fixed !important; top: 0 !important; left: 0 !important;
+      width: 100vw !important; height: 100vh !important;
+      max-width: none !important; margin: 0 !important; padding: 0 !important;
+      z-index: 10000 !important; border-radius: 0 !important;
+      background: #0a0a14 !important;
+    }
+    .kg-fullscreen .kg-toolbar { position: fixed !important; top: 0.6rem !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 10001 !important; }
+    .kg-fullscreen .kg-side { position: fixed !important; top: 0 !important; right: 0 !important; height: 100vh !important; z-index: 10001 !important; }
+    .kg-fullscreen #tech-tree-content { display: flex; height: 100vh !important; }
+    .kg-fullscreen #tech-tree-canvas { width: 100vw !important; height: 100vh !important; display: block !important; }
   `;
   document.head.appendChild(s);
 }
@@ -288,7 +402,7 @@ function kgRender() {
             oninput="KG.search=this.value;kgRender()">
           <select id="kg-type-filter" onchange="KG.filterType=this.value;kgRender()" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.68rem;color:var(--text-primary);cursor:pointer">
             <option value="">Todos los tipos</option>
-            ${allTypes.map(t => `<option value="${t}" ${KG.filterType===t?"selected":""}>${KG_TYPES[t].icon} ${KG_TYPES[t].label}</option>`).join("")}
+            ${allTypes.map(t => `<option value="${t}" ${KG.filterType===t?"selected":""}>[${KG_TYPES[t].icon}] ${KG_TYPES[t].label}</option>`).join("")}
           </select>
           <select id="kg-materia-filter" onchange="KG.filterMateria=this.value;kgRender()" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.68rem;color:var(--text-primary);cursor:pointer">
             <option value="">Todas las materias</option>
@@ -304,7 +418,7 @@ function kgRender() {
           <div style="position:absolute;top:8px;right:10px;display:flex;gap:0.4rem">
             ${allTypes.map(t => {
               const count = KG.nodes.filter(n => n.type === t).length;
-              return count > 0 ? `<span class="kg-type-badge" style="background:${KG_TYPES[t].color}18;color:${KG_TYPES[t].color};border:1px solid ${KG_TYPES[t].color}40">${KG_TYPES[t].icon} ${count}</span>` : "";
+              return count > 0 ? `<span class="kg-type-badge" style="background:${KG_TYPES[t].color}18;color:${KG_TYPES[t].color};border:1px solid ${KG_TYPES[t].color}40">[${KG_TYPES[t].icon}] ${count}</span>` : "";
             }).join("")}
           </div>
         </div>
@@ -684,10 +798,8 @@ function kgSetupCanvas() {
       ctx.lineWidth = isActive ? 2.5 : (isH ? 2 : 1);
       ctx.stroke();
 
-      // Icon
-      ctx.font = `${(isH ? 20 : 14) * Math.min(scale, 1.2)}px system-ui`;
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(typeInfo.icon, s.x, s.y);
+      // Icon (custom shape)
+      kgDrawTypeIcon(ctx, s.x, s.y, r, n.type, 0.9);
 
       // Label with pill
       if (scale > 0.3) {
@@ -735,7 +847,7 @@ function kgSetupCanvas() {
         tt.style.top = (e.clientY - 12) + "px";
         tt.innerHTML = `
           <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem">
-            <div style="width:28px;height:28px;border-radius:50%;background:${typeInfo.color}30;display:flex;align-items:center;justify-content:center;font-size:1rem;border:1px solid ${typeInfo.color}50">${typeInfo.icon}</div>
+            <div style="width:28px;height:28px;border-radius:50%;background:${typeInfo.color}30;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:${typeInfo.color};border:1px solid ${typeInfo.color}50">${typeInfo.icon}</div>
             <div>
               <div style="font-weight:700;font-size:0.85rem;color:#f1f5f9">${n.title}</div>
               <span class="kg-type-badge" style="background:${typeInfo.color}20;color:${typeInfo.color};border:1px solid ${typeInfo.color}40;font-size:0.58rem;padding:0.05rem 0.35rem">${typeInfo.label}</span>
@@ -786,6 +898,66 @@ function kgSetupCanvas() {
     scale = Math.max(0.2, Math.min(4, scale * delta));
     KG.camZoom = scale;
   };
+
+  // === TOUCH EVENTS ===
+  let touchStart = null, touchDist = null, touchMoved = false;
+  canvas.addEventListener("touchstart", e => {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const tx = t.clientX - rect.left, ty = t.clientY - rect.top;
+      const w = tw(tx, ty);
+      const node = positioned.find(n => Math.sqrt((n.x-w.x)**2 + (n.y-w.y)**2) < n.r + 10);
+      if (node) { drag = node; dragMoved = false; }
+      else { panning = true; }
+      touchStart = { x: tx, y: ty };
+      touchMoved = false;
+    } else if (e.touches.length === 2) {
+      // Pinch zoom start
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchDist = Math.sqrt(dx*dx + dy*dy);
+    }
+  }, { passive: false });
+
+  canvas.addEventListener("touchmove", e => {
+    e.preventDefault();
+    if (e.touches.length === 1 && touchStart) {
+      const t = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const tx = t.clientX - rect.left, ty = t.clientY - rect.top;
+      const dx = tx - touchStart.x, dy = ty - touchStart.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) touchMoved = true;
+      if (drag) {
+        const w = tw(tx, ty);
+        drag.x = w.x; drag.y = w.y;
+        dragMoved = true;
+      } else if (panning) {
+        panX += dx / scale;
+        panY += dy / scale;
+        KG.camX = panX; KG.camY = panY;
+      }
+      touchStart = { x: tx, y: ty };
+    } else if (e.touches.length === 2 && touchDist) {
+      // Pinch zoom
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const newDist = Math.sqrt(dx*dx + dy*dy);
+      const ratio = newDist / touchDist;
+      scale = Math.max(0.2, Math.min(4, scale * ratio));
+      KG.camZoom = scale;
+      touchDist = newDist;
+    }
+  }, { passive: false });
+
+  canvas.addEventListener("touchend", e => {
+    if (drag && !touchMoved) {
+      KG.active = drag.id;
+      kgRender();
+    }
+    drag = null; panning = false; touchStart = null; touchDist = null; touchMoved = false;
+  });
 }
 
 // ─── ACTIONS ───
@@ -831,15 +1003,23 @@ function kgAddEdge(sourceId) {
 
 function kgFullscreen() {
   const el = document.getElementById("tech-tree-view");
+  const header = document.querySelector("header");
+  const app = document.getElementById("app");
   if (!el) return;
-  if (document.fullscreenElement) {
-    document.exitFullscreen();
+  if (el.classList.contains("kg-fullscreen")) {
+    // Exit
+    el.classList.remove("kg-fullscreen");
+    el.style.cssText = "padding:0!important";
+    if (header) header.style.display = "";
+    if (app) app.style.display = "";
+    document.body.style.overflow = "";
   } else {
-    el.requestFullscreen().then(() => {
-      // Re-render after fullscreen transition
-      setTimeout(() => kgRender(), 300);
-    }).catch(() => {});
+    // Enter
+    el.classList.add("kg-fullscreen");
+    if (header) header.style.display = "none";
+    document.body.style.overflow = "hidden";
   }
+  setTimeout(() => kgRender(), 50);
 }
 
 // Re-render on fullscreen change
