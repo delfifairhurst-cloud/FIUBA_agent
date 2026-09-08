@@ -153,6 +153,22 @@ function kgConnectedNodes(nodeId) {
 
 function kgInjectStyles() {
   if (document.getElementById("kg-css")) return;
+  // roundRect polyfill
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+      if (typeof r === "number") r = [r,r,r,r];
+      this.moveTo(x+r[0],y);
+      this.lineTo(x+w-r[1],y);
+      this.arcTo(x+w,y,x+w,y+r[1],r[1]);
+      this.lineTo(x+w,y+h-r[2]);
+      this.arcTo(x+w,y+h,x+w-r[2],y+h,r[2]);
+      this.lineTo(x+r[3],y+h);
+      this.arcTo(x,y+h,x,y+h-r[3],r[3]);
+      this.lineTo(x,y+r[0]);
+      this.arcTo(x,y,x+r[0],y,r[0]);
+      this.closePath();
+    };
+  }
   const s = document.createElement("style");
   s.id = "kg-css";
   s.textContent = `
@@ -503,11 +519,11 @@ function kgSetupCanvas() {
       ctx.moveTo(ss.x, ss.y);
       ctx.quadraticCurveTo(cx, cy, tt.x, tt.y);
       const edgeGrad = ctx.createLinearGradient(ss.x, ss.y, tt.x, tt.y);
-      edgeGrad.addColorStop(0, isH ? srcType.color : "#555");
-      edgeGrad.addColorStop(1, isH ? tgtType.color : "#555");
+      edgeGrad.addColorStop(0, isH ? srcType.color : "#888");
+      edgeGrad.addColorStop(1, isH ? tgtType.color : "#888");
       ctx.strokeStyle = edgeGrad;
-      ctx.lineWidth = isH ? 2.5 : 1;
-      ctx.globalAlpha = isH ? 0.85 : 0.12;
+      ctx.lineWidth = isH ? 2.5 : 1.5;
+      ctx.globalAlpha = isH ? 0.85 : 0.3;
       ctx.stroke();
       ctx.globalAlpha = 1;
 
@@ -527,21 +543,22 @@ function kgSetupCanvas() {
       }
 
       // Edge label with pill background
-      if (e.label && scale > 0.5) {
+      if (e.label && scale > 0.4) {
         const lt = 0.5;
         const lx = (1-lt)*(1-lt)*ss.x + 2*(1-lt)*lt*cx + lt*lt*tt.x;
         const ly = (1-lt)*(1-lt)*ss.y + 2*(1-lt)*lt*cy + lt*lt*tt.y;
-        ctx.font = "500 8px system-ui";
+        ctx.font = "600 9px system-ui";
         const tw2 = ctx.measureText(e.label).width;
-        ctx.fillStyle = isH ? "rgba(139,92,246,0.15)" : "rgba(0,0,0,0.4)";
+        ctx.fillStyle = isH ? "rgba(139,92,246,0.25)" : "rgba(30,30,50,0.7)";
         ctx.beginPath();
-        ctx.roundRect(lx - tw2/2 - 4, ly - 7, tw2 + 8, 14, 7);
+        ctx.roundRect(lx - tw2/2 - 5, ly - 8, tw2 + 10, 16, 8);
         ctx.fill();
+        ctx.strokeStyle = isH ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.08)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillStyle = isH ? "#c4b5fd" : "#888";
-        ctx.globalAlpha = isH ? 1 : 0.5;
+        ctx.fillStyle = isH ? "#e0d4fc" : "#aaa";
         ctx.fillText(e.label, lx, ly);
-        ctx.globalAlpha = 1;
       }
     });
 
@@ -615,21 +632,24 @@ function kgSetupCanvas() {
       ctx.fillText(typeInfo.icon, s.x, s.y);
 
       // Label with background pill
-      if (scale > 0.35) {
-        const fontSize = Math.max(8, (isH ? 10 : 9) * Math.min(scale, 1.2));
-        ctx.font = `${isH ? "600" : "500"} ${fontSize}px system-ui,sans-serif`;
+      if (scale > 0.3) {
+        const fontSize = Math.max(9, (isH ? 11 : 10) * Math.min(scale, 1.2));
+        ctx.font = `${isH ? "700" : "600"} ${fontSize}px system-ui,sans-serif`;
         const labelW = ctx.measureText(n.title).width;
-        const labelY = s.y + r + 6;
+        const labelY = s.y + r + 7;
 
         // Label background
-        ctx.fillStyle = isActive ? typeInfo.color + "30" : (isH ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.35)");
+        ctx.fillStyle = isActive ? typeInfo.color + "40" : (isH ? "rgba(20,20,40,0.75)" : "rgba(20,20,40,0.6)");
         ctx.beginPath();
-        ctx.roundRect(s.x - labelW/2 - 5, labelY - 2, labelW + 10, fontSize + 6, (fontSize + 6)/2);
+        ctx.roundRect(s.x - labelW/2 - 6, labelY - 3, labelW + 12, fontSize + 8, (fontSize + 8)/2);
         ctx.fill();
+        ctx.strokeStyle = isActive ? typeInfo.color + "50" : "rgba(255,255,255,0.08)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
 
         // Label text
         ctx.textAlign = "center"; ctx.textBaseline = "top";
-        ctx.fillStyle = isActive ? "#fff" : (isH ? "#fff" : typeInfo.color);
+        ctx.fillStyle = isActive ? "#fff" : (isH ? "#fff" : "#e2e8f0");
         ctx.fillText(n.title, s.x, labelY);
       }
     });
@@ -761,9 +781,17 @@ function kgFullscreen() {
   if (document.fullscreenElement) {
     document.exitFullscreen();
   } else {
-    el.requestFullscreen().catch(() => {});
+    el.requestFullscreen().then(() => {
+      // Re-render after fullscreen transition
+      setTimeout(() => kgRender(), 300);
+    }).catch(() => {});
   }
 }
+
+// Re-render on fullscreen change
+document.addEventListener("fullscreenchange", () => {
+  setTimeout(() => kgRender(), 300);
+});
 
 function kgResetView() {
   KG.camX = 0; KG.camY = 0; KG.camZoom = 1;
