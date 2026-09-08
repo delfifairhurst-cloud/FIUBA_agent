@@ -248,6 +248,7 @@ function kgRender() {
           <div style="display:flex;gap:0.3rem;align-items:center">
             <span style="font-size:0.6rem;color:var(--text-muted)">${filtered.length} nodos</span>
             <button class="kg-btn" onclick="kgResetView()" title="Centrar vista">⊙</button>
+            <button class="kg-btn" onclick="kgFullscreen()" title="Pantalla completa">⛶</button>
           </div>
         </div>
 
@@ -349,9 +350,25 @@ function kgRenderSidePanel() {
         }).join("")}
       </div>` : ""}
 
-      <div style="display:flex;gap:0.3rem;flex-wrap:wrap">
+      <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.5rem">
         <button class="kg-btn" onclick="kgFocus('${n.id}')" title="Centrar en este nodo">⊙ Centrar</button>
         <button class="kg-btn" onclick="kgExplore('${n.id}')" title="Explorar conexiones">🔍 Explorar</button>
+        <button class="kg-btn" onclick="kgToggleAddEdge('${n.id}')" id="kg-add-edge-btn" title="Crear conexión">🔗 Conectar</button>
+      </div>
+      <div id="kg-add-edge-form" style="display:none;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.5rem;margin-bottom:0.5rem">
+        <div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);margin-bottom:0.3rem">Nueva conexión desde "${n.title}"</div>
+        <select id="kg-edge-target" style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.72rem;color:var(--text-primary);margin-bottom:0.3rem;cursor:pointer">
+          <option value="">Seleccionar nodo destino...</option>
+          ${KG.nodes.filter(x => x.id !== n.id).map(x => {
+            const ti = KG_TYPES[x.type] || KG_TYPES.concepto;
+            return `<option value="${x.id}">${ti.icon} ${x.title}</option>`;
+          }).join("")}
+        </select>
+        <input id="kg-edge-label" type="text" placeholder="Relación (ej: relacionado, requiere...)" style="width:100%;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.72rem;color:var(--text-primary);margin-bottom:0.3rem;outline:none">
+        <div style="display:flex;gap:0.3rem">
+          <button class="kg-btn" onclick="kgAddEdge('${n.id}')" style="background:var(--accent);color:white;border:none;flex:1">Crear</button>
+          <button class="kg-btn" onclick="document.getElementById('kg-add-edge-form').style.display='none'" style="flex:0">Cancelar</button>
+        </div>
       </div>
     </div>`;
 }
@@ -614,6 +631,38 @@ function kgExplore(id) {
   kgRender();
 }
 
+function kgToggleAddEdge() {
+  const form = document.getElementById("kg-add-edge-form");
+  if (form) form.style.display = form.style.display === "none" ? "block" : "none";
+}
+
+function kgAddEdge(sourceId) {
+  const targetSel = document.getElementById("kg-edge-target");
+  const labelInput = document.getElementById("kg-edge-label");
+  if (!targetSel || !targetSel.value) { alert("Seleccioná un nodo destino"); return; }
+  if (targetSel.value === sourceId) { alert("No podés conectar un nodo consigo mismo"); return; }
+  const exists = KG.edges.some(e => (e.source === sourceId && e.target === targetSel.value) || (e.source === targetSel.value && e.target === sourceId));
+  if (exists) { alert("Ya existe una conexión entre estos nodos"); return; }
+  KG.edges.push({
+    id: "e_"+Date.now()+"_"+Math.random().toString(36).slice(2,6),
+    source: sourceId,
+    target: targetSel.value,
+    label: labelInput ? labelInput.value.trim() : ""
+  });
+  kgSave();
+  kgRender();
+}
+
+function kgFullscreen() {
+  const el = document.getElementById("tech-tree-view");
+  if (!el) return;
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  } else {
+    el.requestFullscreen().catch(() => {});
+  }
+}
+
 function kgResetView() {
   KG.camX = 0; KG.camY = 0; KG.camZoom = 1;
   KG.active = null;
@@ -625,3 +674,6 @@ window.kgFocus = kgFocus;
 window.kgFocusByTitle = kgFocusByTitle;
 window.kgExplore = kgExplore;
 window.kgResetView = kgResetView;
+window.kgToggleAddEdge = kgToggleAddEdge;
+window.kgAddEdge = kgAddEdge;
+window.kgFullscreen = kgFullscreen;
