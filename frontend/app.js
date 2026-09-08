@@ -860,6 +860,7 @@ async function handleSend(event) {
             window.Gamification.trackMessage();
             const r = window.Gamification.addXp('chat_message');
             if (window.processGamificationResult) window.processGamificationResult(r);
+            if (window.kgOnChatMessage) window.kgOnChatMessage();
           }
         }
         checkBackendStatus();

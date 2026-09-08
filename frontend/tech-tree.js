@@ -1,252 +1,490 @@
-// tech-tree.js - Technology Tree: desbloqueá tecnologías con XP
-const TT_STORAGE = 'fiuba_tech_tree';
-const TT_XP_STORAGE = 'fiuba_tech_xp';
+// knowledge-graph.js - Knowledge Graph: red neuronal visual que crece cuando aprendés
+const KG_STORAGE = 'fiuba_knowledge_graph';
 
-const TT_TREE = [
-  // TIER 0 - Start
-  { id: 'fuego', name: 'Fuego', icon: '🔥', desc: 'Control del fuego. El inicio de todo.', tier: 0, cost: 0, deps: [], category: 'primitive' },
-  { id: 'piedra', name: 'Piedra', icon: '🪨', desc: 'Trabajo de piedra. Herramientas básicas.', tier: 0, cost: 0, deps: [], category: 'primitive' },
-  { id: 'madera', name: 'Madera', icon: '🪵', desc: 'Tallado y uso de madera.', tier: 0, cost: 0, deps: [], category: 'primitive' },
+// Knowledge nodes — cada uno es un concepto que podés desbloquear
+const KG_NODES = [
+  // PHYSICS
+  { id: 'newton_laws', name: 'Leyes de Newton', cat: 'physics', tier: 1, desc: 'F=ma, acción-reacción, inercia', source: 'lab' },
+  { id: 'energy', name: 'Energía', cat: 'physics', tier: 1, desc: 'Cinética, potencial, conservación', source: 'lab' },
+  { id: 'thermo', name: 'Termodinámica', cat: 'physics', tier: 2, desc: 'Calor, entropía, máquinas térmicas', source: 'lab' },
+  { id: 'electro', name: 'Electricidad', cat: 'physics', tier: 2, desc: 'Voltaje, corriente, resistencia', source: 'lab' },
+  { id: 'magnetism', name: 'Electromagnetismo', cat: 'physics', tier: 3, desc: 'Campos magnéticos, inducción', source: 'lab' },
+  { id: 'waves', name: 'Ondas', cat: 'physics', tier: 2, desc: 'Sonido, luz, interferencia', source: 'chat' },
+  { id: 'optics', name: 'Óptica', cat: 'physics', tier: 3, desc: 'Reflexión, refracción, lentes', source: 'chat' },
+  { id: 'quantum', name: 'Mecánica Cuántica', cat: 'physics', tier: 4, desc: 'Partículas, dualidad onda-partícula', source: 'chat' },
+  { id: 'relativity', name: 'Relatividad', cat: 'physics', tier: 4, desc: 'Espacio-tiempo, E=mc²', source: 'chat' },
+  { id: 'fluid_mech', name: 'Mecánica de Fluidos', cat: 'physics', tier: 3, desc: 'Presión, caudal, Bernoulli', source: 'lab' },
 
-  // TIER 1 - Simple Machines
-  { id: 'palanca', name: 'Palanca', icon: '⚖️', desc: 'Máquina simple: multiplicá fuerza.', tier: 1, cost: 50, deps: ['piedra'], category: 'mechanical' },
-  { id: 'rueda', name: 'Rueda', icon: '☸️', desc: 'El rodamiento. Transporte y máquinas.', tier: 1, cost: 50, deps: ['madera'], category: 'mechanical' },
-  { id: 'tornillo', name: 'Tornillo', icon: '🔩', desc: 'Máquina simple: conversión de movimiento.', tier: 1, cost: 50, deps: ['palanca'], category: 'mechanical' },
-  { id: 'combustion', name: 'Combustión', icon: '🔥', desc: 'Quemar combustible. Energía térmica.', tier: 1, cost: 30, deps: ['fuego'], category: 'energy' },
+  // MATH
+  { id: 'algebra', name: 'Álgebra', cat: 'math', tier: 1, desc: 'Ecuaciones, polinomios, sistemas', source: 'quiz' },
+  { id: 'calc_1', name: 'Cálculo I', cat: 'math', tier: 1, desc: 'Límites, derivadas', source: 'quiz' },
+  { id: 'calc_2', name: 'Cálculo II', cat: 'math', tier: 2, desc: 'Integrales, series', source: 'quiz' },
+  { id: 'la', name: 'Álgebra Lineal', cat: 'math', tier: 2, desc: 'Matrices, vectores, autovalores', source: 'quiz' },
+  { id: 'ode', name: 'EDOs', cat: 'math', tier: 3, desc: 'Ecuaciones diferenciales ordinarias', source: 'chat' },
+  { id: 'probability', name: 'Probabilidad', cat: 'math', tier: 2, desc: 'Distribuciones, estadística', source: 'quiz' },
+  { id: 'complex', name: 'Números Complejos', cat: 'math', tier: 3, desc: 'Plano complejo, raíces', source: 'chat' },
+  { id: 'num_methods', name: 'Métodos Numéricos', cat: 'math', tier: 3, desc: 'Aproximación, interpolación', source: 'chat' },
 
-  // TIER 2 - Classical
-  { id: 'hidraulica', name: 'Hidráulica', icon: '💧', desc: 'Presión y movimiento de fluidos.', tier: 2, cost: 100, deps: ['tornillo'], category: 'mechanical' },
-  { id: 'construccion', name: 'Construcción', icon: '🏗️', desc: 'Estructuras y edificios.', tier: 2, cost: 100, deps: ['madera', 'piedra'], category: 'civil' },
-  { id: 'navegacion', name: 'Navegación', icon: '⛵', desc: 'Moverse por el agua y el cielo.', tier: 2, cost: 80, deps: ['rueda', 'madera'], category: 'transport' },
-  { id: 'termodinamica', name: 'Termodinámica', icon: '🌡️', desc: 'Calor, trabajo y energía.', tier: 2, cost: 120, deps: ['combustion'], category: 'science' },
+  // ENGINEERING
+  { id: 'circuits', name: 'Circuitos', cat: 'engineering', tier: 2, desc: 'Análisis de circuitos RLC', source: 'lab' },
+  { id: 'structures', name: 'Estructuras', cat: 'engineering', tier: 2, desc: 'Resistencia de materiales', source: 'chat' },
+  { id: 'control', name: 'Control Automático', cat: 'engineering', tier: 3, desc: 'Retroalimentación, estabilidad', source: 'chat' },
+  { id: 'signals', name: 'Señales', cat: 'engineering', tier: 3, desc: 'Transformada de Fourier, filtrado', source: 'chat' },
+  { id: 'materials', name: 'Materiales', cat: 'engineering', tier: 2, desc: 'Propiedades mecánicas, deformación', source: 'chat' },
+  { id: 'thermo_eng', name: 'Termodinámica Appl.', cat: 'engineering', tier: 3, desc: 'Ciclos de potencia, refrigeración', source: 'lab' },
+  { id: 'manufacture', name: 'Manufactura', cat: 'engineering', tier: 3, desc: 'Procesos de fabricación', source: 'chat' },
 
-  // TIER 3 - Industrial
-  { id: 'vapor', name: 'Motor de Vapor', icon: '🚂', desc: 'Máquinas de vapor. Revolución industrial.', tier: 3, cost: 200, deps: ['termodinamica', 'hidraulica'], category: 'energy' },
-  { id: 'fabrica', name: 'Fábrica', icon: '🏭', desc: 'Producción en masa.', tier: 3, cost: 200, deps: ['vapor', 'construccion'], category: 'industrial' },
-  { id: 'quimica', name: 'Química', icon: '⚗️', desc: 'Reacciones químicas y materiales.', tier: 3, cost: 150, deps: ['combustion', 'termodinamica'], category: 'science' },
-  { id: 'telegrafo', name: 'Telégrafo', icon: '📡', desc: 'Comunicación a distancia.', tier: 3, cost: 120, deps: ['navegacion'], category: 'communication' },
+  // COMPUTING
+  { id: 'prog', name: 'Programación', cat: 'computing', tier: 1, desc: 'Lógica, algoritmos, código', source: 'playground' },
+  { id: 'data_struct', name: 'Estructuras de Datos', cat: 'computing', tier: 2, desc: 'Listas, árboles, grafos', source: 'playground' },
+  { id: 'algorithms', name: 'Algoritmos', cat: 'computing', tier: 2, desc: 'Complejidad, ordenamiento, búsqueda', source: 'playground' },
+  { id: 'os', name: 'Sistemas Operativos', cat: 'computing', tier: 3, desc: 'Procesos, memoria, concurrencia', source: 'chat' },
+  { id: 'networks', name: 'Redes', cat: 'computing', tier: 3, desc: 'TCP/IP, HTTP, routing', source: 'chat' },
+  { id: 'ai', name: 'Inteligencia Artificial', cat: 'computing', tier: 4, desc: 'ML, redes neuronales, LLMs', source: 'chat' },
+  { id: 'db', name: 'Bases de Datos', cat: 'computing', tier: 2, desc: 'SQL, modelado, normalización', source: 'chat' },
 
-  // TIER 4 - Electrical
-  { id: 'electricidad', name: 'Electricidad', icon: '⚡', desc: 'Corriente, voltaje, resistencia.', tier: 4, cost: 300, deps: ['fabrica'], category: 'energy' },
-  { id: 'electromagnetismo', name: 'Electromagnetismo', icon: '🧲', desc: ' Campos magnéticos y corriente.', tier: 4, cost: 250, deps: ['electricidad'], category: 'science' },
-  { id: 'iluminacion', name: 'Iluminación', icon: '💡', desc: 'Luz eléctrica. Fin de la oscuridad.', tier: 4, cost: 100, deps: ['electricidad'], category: 'industrial' },
-  { id: 'refrigeracion', name: 'Refrigeración', icon: '❄️', desc: 'Ciclo de refrigeración. Alimentos y confort.', tier: 4, cost: 200, deps: ['electricidad', 'termodinamica'], category: 'industrial' },
-
-  // TIER 5 - Modern
-  { id: 'automovil', name: 'Automóvil', icon: '🚗', desc: 'Motor de combustión interna.', tier: 5, cost: 250, deps: ['electricidad', 'quimica'], category: 'transport' },
-  { id: 'avion', name: 'Aviación', icon: '✈️', desc: 'Vuelo motorizado.', tier: 5, cost: 350, deps: ['automovil', 'electromagnetismo'], category: 'transport' },
-  { id: 'computacion', name: 'Computación', icon: '💻', desc: 'Procesamiento de información.', tier: 5, cost: 400, deps: ['electricidad', 'electromagnetismo'], category: 'digital' },
-  { id: 'telecomunicaciones', name: 'Telecomunicaciones', icon: '📶', desc: 'Redes y comunicaciones globales.', tier: 5, cost: 300, deps: ['electricidad', 'telegrafo'], category: 'communication' },
-
-  // TIER 6 - Advanced
-  { id: 'automatizacion', name: 'Automatización', icon: '🤖', desc: 'Robots y control automático.', tier: 6, cost: 500, deps: ['computacion', 'fabrica'], category: 'digital' },
-  { id: 'nuclear', name: 'Energía Nuclear', icon: '☢️', desc: 'Fisión nuclear. Energía masiva.', tier: 6, cost: 600, deps: ['electricidad', 'quimica'], category: 'energy' },
-  { id: 'biotecnologia', name: 'Biotecnología', icon: '🧬', desc: 'Ingeniería genética y biología sintética.', tier: 6, cost: 500, deps: ['computacion', 'quimica'], category: 'science' },
-  { id: 'materiales', name: 'Materiales Avanzados', icon: '🔬', desc: 'Nanotecnología y materiales sintéticos.', tier: 6, cost: 400, deps: ['quimica', 'computacion'], category: 'science' },
-
-  // TIER 7 - Space
-  { id: 'coheteria', name: 'Cohetería', icon: '🚀', desc: 'Propulsión de cohetes. Escapar de la gravedad.', tier: 7, cost: 700, deps: ['materiales', 'nuclear'], category: 'space' },
-  { id: 'satelites', name: 'Satélites', icon: '🛰️', desc: 'Órbita terrestre. GPS, telecomunicaciones.', tier: 7, cost: 500, deps: ['coheteria', 'telecomunicaciones'], category: 'space' },
-  { id: 'energias_renovable', name: 'Energías Renovables', icon: '🌱', desc: 'Solar, eólica, geotérmica.', tier: 7, cost: 400, deps: ['nuclear', 'materiales'], category: 'energy' },
-
-  // TIER 8 - Future
-  { id: 'luna', name: 'Colonias Lunares', icon: '🌙', desc: 'Base permanente en la Luna.', tier: 8, cost: 1000, deps: ['coheteria', 'automatizacion'], category: 'space' },
-  { id: 'ia', name: 'Inteligencia Artificial', icon: '🧠', desc: 'Máquinas que piensan.', tier: 8, cost: 800, deps: ['automatizacion', 'biotecnologia'], category: 'digital' },
-  { id: 'fision_avanzada', name: 'Fusión Nuclear', icon: '☀️', desc: 'Energía de fusión. Practicamente infinita.', tier: 8, cost: 1200, deps: ['nuclear', 'materiales'], category: 'energy' },
-
-  // TIER 9 - Cosmic
-  { id: 'marte', name: 'Marte', icon: '🔴', desc: 'Primera colonia en otro planeta.', tier: 9, cost: 2000, deps: ['luna', 'fision_avanzada'], category: 'space' },
-  { id: 'dyson', name: 'Dyson Swarm', icon: '🌐', desc: 'Captura total de energía estelar.', tier: 9, cost: 5000, deps: ['fision_avanzada', 'ia'], category: 'space' },
-  { id: 'viaje_interstellar', name: 'Viaje Interestelar', icon: '🌌', desc: 'Más allá del sistema solar.', tier: 9, cost: 10000, deps: ['dyson', 'marte'], category: 'space' },
+  // CROSS-DISCIPLINARY
+  { id: 'robotics', name: 'Robótica', cat: 'cross', tier: 4, desc: 'Mecatrónica, sensores, actuadores', source: 'lab', deps: ['control', 'prog', 'circuits'] },
+  { id: 'aerospace', name: 'Aeroespacial', cat: 'cross', tier: 4, desc: 'Propulsión, órbitas, aerodinámica', source: 'lab', deps: ['fluid_mech', 'newton_laws', 'materials'] },
+  { id: 'biotech', name: 'Biotecnología', cat: 'cross', tier: 4, desc: 'Bioinformática, genómica', source: 'chat', deps: ['prog', 'probability'] },
+  { id: 'fintech', name: 'Fintech', cat: 'cross', tier: 3, desc: 'Modelado financiero, riesgo', source: 'chat', deps: ['probability', 'prog'] },
+  { id: 'energy_sys', name: 'Sistemas Energéticos', cat: 'cross', tier: 3, desc: 'Redes eléctricas, renovables', source: 'lab', deps: ['electro', 'thermo'] },
+  { id: 'telecom', name: 'Telecomunicaciones', cat: 'cross', tier: 3, desc: 'Modulación, antenas, espectro', source: 'chat', deps: ['waves', 'signals'] },
 ];
 
-const TT_CATEGORIES = {
-  primitive: { name: 'Primitive', color: '#78716c' },
-  mechanical: { name: 'Mechanical', color: '#a16207' },
-  energy: { name: 'Energy', color: '#f59e0b' },
-  science: { name: 'Science', color: '#8b5cf6' },
-  civil: { name: 'Civil', color: '#6366f1' },
-  transport: { name: 'Transport', color: '#3b82f6' },
-  industrial: { name: 'Industrial', color: '#ec4899' },
-  communication: { name: 'Comms', color: '#06b6d4' },
-  digital: { name: 'Digital', color: '#22c55e' },
-  space: { name: 'Space', color: '#f97316' },
+const KG_EDGES = [
+  // Physics internal
+  ['newton_laws', 'energy'], ['newton_laws', 'fluid_mech'], ['energy', 'thermo'],
+  ['electro', 'magnetism'], ['electro', 'circuits'], ['magnetism', 'waves'],
+  ['waves', 'optics'], ['quantum', 'relativity'], ['thermo', 'thermo_eng'],
+  // Math internal
+  ['algebra', 'calc_1'], ['calc_1', 'calc_2'], ['calc_2', 'ode'],
+  ['algebra', 'la'], ['la', 'ode'], ['probability', 'num_methods'],
+  ['calc_1', 'complex'], ['complex', 'signals'],
+  // Engineering internal
+  ['circuits', 'signals'], ['circuits', 'control'], ['structures', 'materials'],
+  ['control', 'signals'], ['thermo_eng', 'energy_sys'],
+  // Computing internal
+  ['prog', 'data_struct'], ['data_struct', 'algorithms'], ['prog', 'db'],
+  ['os', 'networks'], ['algorithms', 'ai'], ['db', 'ai'],
+  // Cross connections
+  ['newton_laws', 'algebra'], ['calc_1', 'energy'], ['la', 'circuits'],
+  ['electro', 'prog'], ['control', 'ai'], ['signals', 'networks'],
+  ['materials', 'structures'], ['thermo', 'thermo_eng'],
+  ['prog', 'algorithms'], ['probability', 'ai'],
+  ['waves', 'telecom'], ['magnetism', 'energy_sys'],
+];
+
+const KG_CATEGORIES = {
+  physics: { name: 'Física', color: '#8b5cf6', glow: '#8b5cf640' },
+  math: { name: 'Matemática', color: '#3b82f6', glow: '#3b82f640' },
+  engineering: { name: 'Ingeniería', color: '#f59e0b', glow: '#f59e0b40' },
+  computing: { name: 'Computación', color: '#22c55e', glow: '#22c55e40' },
+  cross: { name: 'Interdisciplinario', color: '#ec4899', glow: '#ec489940' },
 };
 
-let ttState = {};
-let ttXP = 0;
+let kgNodes = []; // Runtime nodes with positions
+let kgUnlocked = {};
+let kgDragging = null;
+let kgOffset = { x: 0, y: 0 };
+let kgHovered = null;
+let kgAnimFrame = null;
 
-function ttInit() {
-  try { ttState = JSON.parse(localStorage.getItem(TT_STORAGE) || '{}'); } catch { ttState = {}; }
-  ttXP = parseInt(localStorage.getItem(TT_XP_STORAGE) || '0');
-  // Fuego, piedra, madera start unlocked
-  ['fuego', 'piedra', 'madera'].forEach(id => {
-    if (!ttState[id]) ttState[id] = { status: 'unlocked', date: new Date().toISOString() };
+function kgInit() {
+  try { kgUnlocked = JSON.parse(localStorage.getItem(KG_STORAGE) || '{}'); } catch { kgUnlocked = {}; }
+  // Always unlock basics
+  ['newton_laws', 'algebra', 'prog'].forEach(id => {
+    if (!kgUnlocked[id]) kgUnlocked[id] = { date: new Date().toISOString(), source: 'start' };
   });
-  ttSave();
+  kgSave();
 }
 
-function ttSave() {
-  localStorage.setItem(TT_STORAGE, JSON.stringify(ttState));
-  localStorage.setItem(TT_XP_STORAGE, String(ttXP));
+function kgSave() {
+  localStorage.setItem(KG_STORAGE, JSON.stringify(kgUnlocked));
 }
 
-function ttAddXP(amount, source) {
-  ttXP += amount;
-  ttSave();
-  // Dispatch event for other modules
-  window.dispatchEvent(new CustomEvent('tech-xp-gained', { detail: { amount, source, total: ttXP } }));
-}
-
-function ttCanUnlock(tech) {
-  if (ttState[tech.id]?.status === 'unlocked') return false;
-  return tech.deps.every(depId => ttState[depId]?.status === 'unlocked');
-}
-
-function ttUnlock(techId) {
-  const tech = TT_TREE.find(t => t.id === techId);
-  if (!tech || !ttCanUnlock(tech)) return false;
-  if (ttXP < tech.cost) return false;
-  ttXP -= tech.cost;
-  ttState[techId] = { status: 'unlocked', date: new Date().toISOString() };
-  ttSave();
+function kgUnlockNode(id, source) {
+  if (kgUnlocked[id]) return false;
+  const node = KG_NODES.find(n => n.id === id);
+  if (!node) return false;
+  // Check deps if any
+  if (node.deps && node.deps.length > 0) {
+    if (!node.deps.every(d => kgUnlocked[d])) return false;
+  }
+  kgUnlocked[id] = { date: new Date().toISOString(), source: source || 'unknown' };
+  kgSave();
   return true;
 }
 
-function ttGetStatus(tech) {
-  if (ttState[tech.id]?.status === 'unlocked') return 'unlocked';
-  if (ttCanUnlock(tech)) return 'available';
-  return 'locked';
-}
+function kgGetUnlockedCount() { return Object.keys(kgUnlocked).length; }
 
-function ttRender() {
-  const el = document.getElementById('tech-tree-content');
-  if (!el) return;
-  ttInit();
+// Build graph layout
+function kgBuildGraph() {
+  const W = 800, H = 500;
+  const cx = W / 2, cy = H / 2;
+  kgNodes = [];
 
-  const tiers = {};
-  TT_TREE.forEach(tech => {
-    if (!tiers[tech.tier]) tiers[tech.tier] = [];
-    tiers[tech.tier].push(tech);
+  // Group by category
+  const cats = {};
+  KG_NODES.forEach(n => {
+    if (!cats[n.cat]) cats[n.cat] = [];
+    cats[n.cat].push(n);
   });
 
-  const tierNames = ['Primitive', 'Simple Machines', 'Classical', 'Industrial', 'Electrical', 'Modern', 'Advanced', 'Space', 'Future', 'Cosmic'];
-  const unlocked = TT_TREE.filter(t => ttState[t.id]?.status === 'unlocked').length;
-  const available = TT_TREE.filter(t => ttCanUnlock(t)).length;
+  const catKeys = Object.keys(cats);
+  const catAngleStep = (Math.PI * 2) / catKeys.length;
 
-  let html = `
-    <div style="text-align:center;margin-bottom:1rem">
-      <div style="font-size:2.5rem;margin-bottom:0.3rem">🌳</div>
-      <h2 style="font-family:var(--font-heading);font-size:1.3rem;color:var(--text-primary);margin:0">Technology Tree</h2>
-      <p style="font-size:0.82rem;color:var(--text-muted);margin:0.3rem 0 0">Desbloqueá tecnologías con XP ganada en el Lab y otras herramientas</p>
-      <div style="margin-top:0.5rem;display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap">
-        <span style="font-size:0.75rem;color:var(--accent);font-weight:700">⚡ ${ttXP} XP disponible</span>
-        <span style="font-size:0.75rem;color:var(--text-muted)">🔓 ${unlocked}/${TT_TREE.length} descubiertas</span>
-        <span style="font-size:0.75rem;color:#22c55e">✨ ${available} disponibles</span>
+  catKeys.forEach((cat, ci) => {
+    const baseAngle = catAngleStep * ci - Math.PI / 2;
+    const nodes = cats[cat];
+    const radius = 140 + ci * 20;
+    nodes.forEach((node, ni) => {
+      const spread = 0.6;
+      const angle = baseAngle + (ni - (nodes.length - 1) / 2) * spread * 0.4;
+      const r = radius + (ni % 2) * 30;
+      kgNodes.push({
+        ...node,
+        x: cx + Math.cos(angle) * r + (Math.random() - 0.5) * 20,
+        y: cy + Math.sin(angle) * r + (Math.random() - 0.5) * 20,
+        vx: 0, vy: 0,
+        targetX: cx + Math.cos(angle) * r,
+        targetY: cy + Math.sin(angle) * r,
+      });
+    });
+  });
+}
+
+function kgRender() {
+  const el = document.getElementById('tech-tree-content');
+  if (!el) return;
+  kgInit();
+  kgBuildGraph();
+
+  const unlocked = kgGetUnlockedCount();
+  const total = KG_NODES.length;
+  const recentUnlocks = Object.entries(kgUnlocked)
+    .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
+    .slice(0, 5);
+
+  el.innerHTML = `
+    <div style="text-align:center;margin-bottom:0.8rem">
+      <h2 style="font-family:var(--font-heading);font-size:1.3rem;color:var(--text-primary);margin:0">🧠 Knowledge Graph</h2>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin:0.2rem 0 0">Tu red de conocimiento crece cuando aprendés</p>
+      <div style="margin-top:0.4rem;display:flex;justify-content:center;gap:1.2rem;flex-wrap:wrap">
+        <span style="font-size:0.72rem;color:var(--accent);font-weight:700">🧠 ${unlocked}/${total} conceptos</span>
+        <span style="font-size:0.72rem;color:var(--text-muted)">🔬 Lab → Física · 📝 Quiz → Matemática · 💻 Playground → Computación · 💬 Chat → Ingeniería</span>
       </div>
-    </div>`;
+    </div>
 
-  // XP sources info
-  html += `
-    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:0.7rem;margin-bottom:1rem;display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
-      <span style="font-size:0.7rem;color:var(--text-muted)">Ganá XP:</span>
-      <span style="font-size:0.7rem;color:var(--text-muted)">🔬 Lab Descubrimiento: <strong style="color:var(--accent)">+100 XP</strong> por ley</span>
-      <span style="font-size:0.7rem;color:var(--text-muted)">💬 Chat: <strong style="color:var(--accent)">+10 XP</strong> por mensaje</span>
-      <span style="font-size:0.7rem;color:var(--text-muted)">📝 Quiz: <strong style="color:var(--accent)">+50 XP</strong> por quiz</span>
-    </div>`;
+    <div style="position:relative;background:var(--bg-card);border:1.5px solid var(--border-color);border-radius:12px;overflow:hidden;margin-bottom:0.8rem">
+      <canvas id="kg-canvas" style="width:100%;height:450px;display:block;cursor:grab"></canvas>
+      <div id="kg-tooltip" style="display:none;position:fixed;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:0.5rem 0.7rem;font-size:0.72rem;color:var(--text-primary);pointer-events:none;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.15);max-width:220px"></div>
+      <div style="position:absolute;bottom:8px;left:10px;font-size:0.6rem;color:var(--text-muted);opacity:0.5">Arrastrá para mover · Scroll para zoom · Hover para info</div>
+    </div>
 
-  // Render tree by tiers
-  for (let tier = 0; tier <= 9; tier++) {
-    const techs = tiers[tier];
-    if (!techs || techs.length === 0) continue;
-
-    html += `
-      <div style="margin-bottom:0.8rem">
-        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
-          <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap">Tier ${tier}</div>
-          <div style="flex:1;height:1px;background:var(--border-color)"></div>
-          <div style="font-size:0.6rem;color:var(--text-muted)">${tierNames[tier] || ''}</div>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:0.5rem">`;
-
-    techs.forEach(tech => {
-      const status = ttGetStatus(tech);
-      const cat = TT_CATEGORIES[tech.category] || { color: '#6b7280' };
-
-      let borderColor = 'var(--border-color)';
-      let bgColor = 'var(--bg-card)';
-      let opacity = '1';
-      let cursor = 'default';
-      let badge = '';
-
-      if (status === 'unlocked') {
-        borderColor = '#22c55e60';
-        bgColor = '#22c55e08';
-        badge = '<div style="position:absolute;top:4px;right:4px;width:14px;height:14px;background:#22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:white">✓</div>';
-      } else if (status === 'available') {
-        borderColor = cat.color + '80';
-        cursor = 'pointer';
-      } else {
-        opacity = '0.4';
-      }
-
-      const depNames = tech.deps.map(d => TT_TREE.find(t => t.id === d)?.icon || '').join(' ');
-
-      html += `
-        <div onclick="${status === 'available' ? `ttTryUnlock('${tech.id}')` : status === 'locked' ? '' : `ttShowInfo('${tech.id}')`}"
-          style="position:relative;background:${bgColor};border:1.5px solid ${borderColor};border-radius:10px;padding:0.6rem;min-width:120px;max-width:160px;flex:1;cursor:${cursor};opacity:${opacity};transition:all 0.2s"
-          onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-          ${badge}
-          <div style="font-size:1.3rem;margin-bottom:0.2rem">${tech.icon}</div>
-          <div style="font-size:0.72rem;font-weight:700;color:var(--text-primary);margin-bottom:0.15rem;line-height:1.2">${tech.name}</div>
-          <div style="font-size:0.6rem;color:var(--text-muted);line-height:1.3;margin-bottom:0.3rem">${tech.desc.slice(0, 60)}${tech.desc.length > 60 ? '...' : ''}</div>
-          ${status === 'available' ? `<div style="font-size:0.6rem;color:${cat.color};font-weight:700">⚡ ${tech.cost} XP para desbloquear</div>` : ''}
-          ${status === 'locked' && tech.deps.length > 0 ? `<div style="font-size:0.6rem;color:var(--text-muted)">Requiere: ${depNames}</div>` : ''}
-          ${status === 'unlocked' ? `<div style="font-size:0.6rem;color:#22c55e;font-weight:600">✓ Desbloqueada</div>` : ''}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.5rem;margin-bottom:0.8rem">
+      ${Object.entries(KG_CATEGORIES).map(([k, v]) => {
+        const count = KG_NODES.filter(n => n.cat === k && kgUnlocked[n.id]).length;
+        const total = KG_NODES.filter(n => n.cat === k).length;
+        return `<div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:0.5rem;text-align:center">
+          <div style="width:10px;height:10px;border-radius:50%;background:${v.color};margin:0 auto 0.3rem"></div>
+          <div style="font-size:0.7rem;font-weight:700;color:var(--text-primary)">${v.name}</div>
+          <div style="font-size:0.62rem;color:var(--text-muted)">${count}/${total}</div>
         </div>`;
+      }).join('')}
+    </div>
+
+    ${recentUnlocks.length > 0 ? `
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:0.7rem">
+      <h3 style="font-size:0.78rem;font-weight:700;color:var(--text-primary);margin:0 0 0.4rem">📅 Últimos descubrimientos</h3>
+      ${recentUnlocks.map(([id, data]) => {
+        const node = KG_NODES.find(n => n.id === id);
+        if (!node) return '';
+        const cat = KG_CATEGORIES[node.cat];
+        const ago = kgTimeAgo(new Date(data.date));
+        return `<div style="display:flex;align-items:center;gap:0.4rem;padding:0.2rem 0;font-size:0.7rem">
+          <span style="width:8px;height:8px;border-radius:50%;background:${cat.color};flex-shrink:0"></span>
+          <span style="color:var(--text-primary);font-weight:600">${node.name}</span>
+          <span style="color:var(--text-muted);font-size:0.62rem">· ${cat.name} · ${ago}</span>
+        </div>`;
+      }).join('')}
+    </div>` : ''}`;
+
+  setTimeout(() => kgSetupCanvas(), 50);
+}
+
+function kgTimeAgo(date) {
+  const mins = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (mins < 1) return 'ahora';
+  if (mins < 60) return mins + 'min';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h';
+  return Math.floor(hrs / 24) + 'd';
+}
+
+function kgSetupCanvas() {
+  const canvas = document.getElementById('kg-canvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  let scale = 1, panX = 0, panY = 0;
+  let dragging = false, dragNode = null, lastMouse = null;
+
+  function toScreen(x, y) { return { x: (x + panX) * scale + W / 2, y: (y + panY) * scale + H / 2 }; }
+  function toWorld(sx, sy) { return { x: (sx - W / 2) / scale - panX, y: (sy - H / 2) / scale - panY }; }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const cs = getComputedStyle(document.documentElement);
+    const bg = cs.getPropertyValue('--bg-card').trim() || '#fff';
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Draw edges
+    KG_EDGES.forEach(([a, b]) => {
+      const na = kgNodes.find(n => n.id === a);
+      const nb = kgNodes.find(n => n.id === b);
+      if (!na || !nb) return;
+      const sa = toScreen(na.x, na.y);
+      const sb = toScreen(nb.x, nb.y);
+      const bothUnlocked = kgUnlocked[a] && kgUnlocked[b];
+      const oneUnlocked = kgUnlocked[a] || kgUnlocked[b];
+
+      ctx.beginPath();
+      ctx.moveTo(sa.x, sa.y);
+      ctx.lineTo(sb.x, sb.y);
+      if (bothUnlocked) {
+        ctx.strokeStyle = KG_CATEGORIES[na.cat]?.color || '#666';
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.6;
+      } else if (oneUnlocked) {
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.15;
+        ctx.setLineDash([4, 4]);
+      } else {
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.08;
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
     });
 
-    html += '</div></div>';
+    // Draw nodes
+    kgNodes.forEach(node => {
+      const s = toScreen(node.x, node.y);
+      const isUnlocked = !!kgUnlocked[node.id];
+      const cat = KG_CATEGORIES[node.cat];
+      const isHovered = kgHovered === node.id;
+      const r = isUnlocked ? (isHovered ? 18 : 14) : (isHovered ? 10 : 7);
+
+      if (isUnlocked) {
+        // Glow
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, r + 6, 0, Math.PI * 2);
+        ctx.fillStyle = cat.glow;
+        ctx.fill();
+      }
+
+      // Node circle
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      if (isUnlocked) {
+        ctx.fillStyle = cat.color;
+        ctx.globalAlpha = isHovered ? 1 : 0.85;
+      } else {
+        ctx.fillStyle = '#374151';
+        ctx.globalAlpha = isHovered ? 0.5 : 0.25;
+      }
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Border
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = isUnlocked ? cat.color : '#555';
+      ctx.lineWidth = isHovered ? 2.5 : 1.5;
+      ctx.stroke();
+
+      // Label
+      if (isUnlocked || isHovered) {
+        ctx.font = `${isUnlocked ? '600' : '500'} ${isHovered ? '11' : '9'}px system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = isUnlocked ? cat.color : '#888';
+        ctx.globalAlpha = isUnlocked ? 1 : 0.6;
+        ctx.fillText(node.name, s.x, s.y + r + 13);
+        ctx.globalAlpha = 1;
+      }
+    });
+
+    kgAnimFrame = requestAnimationFrame(draw);
   }
 
-  el.innerHTML = html;
+  draw();
+
+  // Mouse interactions
+  canvas.addEventListener('mousedown', e => {
+    const world = toWorld(e.offsetX, e.offsetY);
+    const node = kgNodes.find(n => {
+      const dx = n.x - world.x, dy = n.y - world.y;
+      return Math.sqrt(dx * dx + dy * dy) < 20;
+    });
+    if (node) {
+      dragNode = node;
+      canvas.style.cursor = 'grabbing';
+    } else {
+      dragging = true;
+      canvas.style.cursor = 'grabbing';
+    }
+    lastMouse = { x: e.offsetX, y: e.offsetY };
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    if (dragNode) {
+      const world = toWorld(e.offsetX, e.offsetY);
+      dragNode.x = world.x;
+      dragNode.y = world.y;
+    } else if (dragging && lastMouse) {
+      panX += (e.offsetX - lastMouse.x) / scale;
+      panY += (e.offsetY - lastMouse.y) / scale;
+      lastMouse = { x: e.offsetX, y: e.offsetY };
+    } else {
+      // Hover detection
+      const world = toWorld(e.offsetX, e.offsetY);
+      let found = null;
+      kgNodes.forEach(n => {
+        const dx = n.x - world.x, dy = n.y - world.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 20) found = n.id;
+      });
+      kgHovered = found;
+      canvas.style.cursor = found ? 'pointer' : 'grab';
+
+      // Tooltip
+      const tooltip = document.getElementById('kg-tooltip');
+      if (tooltip && found) {
+        const node = KG_NODES.find(n => n.id === found);
+        const cat = KG_CATEGORIES[node.cat];
+        const isUnlocked = !!kgUnlocked[found];
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top = (e.clientY - 10) + 'px';
+        tooltip.innerHTML = `
+          <div style="display:flex;align-items:center;gap:0.3rem;margin-bottom:0.2rem">
+            <span style="width:8px;height:8px;border-radius:50%;background:${cat.color}"></span>
+            <strong style="color:${cat.color}">${node.name}</strong>
+          </div>
+          <div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:0.2rem">${node.desc}</div>
+          <div style="font-size:0.62rem;color:${isUnlocked ? '#22c55e' : 'var(--text-muted)'}">${isUnlocked ? '✓ Desbloqueado' : '🔒 Para desbloquear: ' + kgGetUnlockHint(node)}</div>`;
+      } else if (tooltip) {
+        tooltip.style.display = 'none';
+      }
+    }
+  });
+
+  canvas.addEventListener('mouseup', () => { dragNode = null; dragging = false; lastMouse = null; canvas.style.cursor = 'grab'; });
+  canvas.addEventListener('mouseleave', () => { dragNode = null; dragging = false; lastMouse = null; kgHovered = null; const t = document.getElementById('kg-tooltip'); if (t) t.style.display = 'none'; });
+
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.08 : 0.92;
+    scale = Math.max(0.3, Math.min(3, scale * factor));
+  }, { passive: false });
+
+  // Touch support
+  let lastTouch = null;
+  canvas.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }, { passive: true });
+  canvas.addEventListener('touchmove', e => {
+    if (e.touches.length === 1 && lastTouch) {
+      panX += (e.touches[0].clientX - lastTouch.x) / scale;
+      panY += (e.touches[0].clientY - lastTouch.y) / scale;
+      lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }, { passive: true });
+  canvas.addEventListener('touchend', () => { lastTouch = null; });
 }
 
-function ttTryUnlock(techId) {
-  const tech = TT_TREE.find(t => t.id === techId);
-  if (!tech) return;
-  if (ttXP < tech.cost) {
-    alert(`Necesitás ${tech.cost} XP. Tenés ${ttXP}. ¡Hacé más experimentos en el Lab de Descubrimiento!`);
-    return;
-  }
-  if (confirm(`¿Desbloquear "${tech.name}" por ${tech.cost} XP?`)) {
-    if (ttUnlock(techId)) {
-      ttRender();
+function kgGetUnlockHint(node) {
+  const hints = {
+    lab: 'Completá experimentos en el Lab de Descubrimiento',
+    quiz: 'Respondé quizzes en Evaluciones',
+    chat: 'Hacé preguntas en el Chat IA',
+    playground: 'Escribí código en el Code Playground',
+    start: 'Se desbloquea automáticamente',
+  };
+  if (node.deps && node.deps.length > 0) {
+    const missing = node.deps.filter(d => !kgUnlocked[d]);
+    if (missing.length > 0) {
+      const names = missing.map(d => KG_NODES.find(n => n.id === d)?.name || d).join(', ');
+      return `Primero desbloqueá: ${names}`;
     }
   }
+  return hints[node.source] || 'Aprendé sobre este tema';
 }
 
-function ttShowInfo(techId) {
-  const tech = TT_TREE.find(t => t.id === techId);
-  if (!tech) return;
-  const cat = TT_CATEGORIES[tech.category] || { name: 'Unknown', color: '#6b7280' };
-  alert(`${tech.icon} ${tech.name}\n\n${tech.desc}\n\nCategoría: ${cat.name}\nTier: ${tech.tier}\nCosto: ${tech.cost} XP\n\nEstado: ✓ Desbloqueada`);
-}
+// Auto-unlock based on activity
+window.kgOnLabDiscovery = function(lawId) {
+  const mapping = {
+    newton2: 'newton_laws', ohm: 'electro', kinetic: 'energy',
+    hooke: 'structures', gravity: 'newton_laws', coulomb: 'magnetism',
+  };
+  const nodeId = mapping[lawId];
+  if (nodeId && kgUnlockNode(nodeId, 'lab')) {
+    window.dispatchEvent(new CustomEvent('kg-node-unlocked', { detail: { id: nodeId } }));
+  }
+};
 
-// Connect to Discovery Lab XP events
-window.addEventListener('tech-xp-gained', () => {
-  if (document.getElementById('tech-tree-view') && !document.getElementById('tech-tree-view').classList.contains('hidden')) {
-    ttRender();
+window.kgOnQuizComplete = function() {
+  const mathNodes = ['algebra', 'calc_1', 'calc_2', 'la', 'probability'];
+  const locked = mathNodes.filter(id => !kgUnlocked[id]);
+  if (locked.length > 0) {
+    const id = locked[0];
+    if (kgUnlockNode(id, 'quiz')) {
+      window.dispatchEvent(new CustomEvent('kg-node-unlocked', { detail: { id } }));
+    }
+  }
+};
+
+window.kgOnChatMessage = function() {
+  const engNodes = ['circuits', 'structures', 'materials', 'waves', 'optics', 'control'];
+  const locked = engNodes.filter(id => !kgUnlocked[id]);
+  if (locked.length > 0 && Math.random() < 0.3) {
+    const id = locked[Math.floor(Math.random() * locked.length)];
+    if (kgUnlockNode(id, 'chat')) {
+      window.dispatchEvent(new CustomEvent('kg-node-unlocked', { detail: { id } }));
+    }
+  }
+};
+
+window.kgOnCodeRun = function() {
+  const csNodes = ['data_struct', 'algorithms', 'os', 'networks', 'db'];
+  const locked = csNodes.filter(id => !kgUnlocked[id]);
+  if (locked.length > 0 && Math.random() < 0.4) {
+    const id = locked[0];
+    if (kgUnlockNode(id, 'playground')) {
+      window.dispatchEvent(new CustomEvent('kg-node-unlocked', { detail: { id } }));
+    }
+  }
+};
+
+// Listen for unlocks to re-render if visible
+window.addEventListener('kg-node-unlocked', () => {
+  const view = document.getElementById('tech-tree-view');
+  if (view && !view.classList.contains('hidden')) {
+    kgRender();
   }
 });
 
-// Auto-add XP from Discovery Lab
-window.ttLabDiscovered = function() {
-  ttAddXP(100, 'discovery-lab');
-};
-
-// Exports
-window.ttRender = ttRender;
-window.ttTryUnlock = ttTryUnlock;
-window.ttShowInfo = ttShowInfo;
-window.ttAddXP = ttAddXP;
+window.kgRender = kgRender;
+window.kgUnlockNode = kgUnlockNode;

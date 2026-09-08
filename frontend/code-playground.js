@@ -269,6 +269,7 @@ async function runCell(cellId) {
   cell.output = result.output;
   cell.status = result.error ? 'error' : 'done';
   pgRunning = false;
+  if (!result.error && window.kgOnCodeRun) window.kgOnCodeRun();
   renderPlayground();
 }
 

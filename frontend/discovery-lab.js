@@ -369,6 +369,8 @@ function dlCheckFormula() {
     resultEl.innerHTML = '<span style="color:#22c55e;font-weight:600">🧠 ¡Correcto! ¡Descubriste la ley! 🎉</span>';
     // Award XP
     if (window.ttAddXP) window.ttAddXP(100, 'discovery-lab');
+    // Unlock knowledge graph node
+    if (window.kgOnLabDiscovery) window.kgOnLabDiscovery(exp.id);
     setTimeout(() => {
       const el = document.getElementById('discovery-lab-content');
       dlRenderExperiment(el, exp);

@@ -69,6 +69,7 @@ export function endExam() {
   if (window.Gamification) {
     window.Gamification.trackQuiz(pct === 100);
     const r = window.Gamification.addXp('quiz_completed');
+    if (window.kgOnQuizComplete) window.kgOnQuizComplete();
     if (window.processGamificationResult) window.processGamificationResult(r);
   }
   save();
