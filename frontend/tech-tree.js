@@ -270,7 +270,7 @@ function kgRender() {
         <!-- Canvas -->
         <div style="flex:1;position:relative;background:var(--bg-card);overflow:hidden">
           <canvas id="kg-canvas" style="width:100%;height:100%;display:block;cursor:grab"></canvas>
-          <div id="kg-tooltip" style="display:none;position:fixed;background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:0.6rem 0.8rem;font-size:0.72rem;color:var(--text-primary);pointer-events:none;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.2);max-width:280px"></div>
+          <div id="kg-tooltip" style="display:none;position:fixed;background:rgba(15,15,25,0.95);backdrop-filter:blur(12px);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:0.7rem 0.9rem;font-size:0.72rem;color:#e2e8f0;pointer-events:none;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,0.4),0 0 20px rgba(139,92,246,0.1);max-width:300px"></div>
           <div style="position:absolute;bottom:8px;left:10px;font-size:0.6rem;color:var(--text-muted);opacity:0.5">Hover preview · Click panel · Drag mover · Scroll zoom</div>
           <div style="position:absolute;top:8px;right:10px;display:flex;gap:0.4rem">
             ${allTypes.map(t => {
@@ -447,42 +447,100 @@ function kgSetupCanvas() {
     const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg-card").trim() || "#0d1117";
     ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
 
-    // Subtle grid
-    ctx.globalAlpha = 0.03;
+    // Animated subtle grid with pulse
     const gridSize = 30 * scale;
     const offsetX = (panX * scale + W/2) % gridSize;
     const offsetY = (panY * scale + H/2) % gridSize;
-    ctx.fillStyle = "#8b5cf6";
-    for (let x = offsetX; x < W; x += gridSize) for (let y = offsetY; y < H; y += gridSize) ctx.fillRect(x,y,1.5,1.5);
+    for (let x = offsetX; x < W; x += gridSize) for (let y = offsetY; y < H; y += gridSize) {
+      const dist = Math.sqrt((x-W/2)**2 + (y-H/2)**2);
+      const pulse = Math.sin(KG.time * 0.5 + dist * 0.005) * 0.5 + 0.5;
+      ctx.globalAlpha = 0.02 + pulse * 0.02;
+      ctx.fillStyle = "#8b5cf6";
+      ctx.fillRect(x, y, 1.5, 1.5);
+    }
     ctx.globalAlpha = 1;
 
-    // Edges
+    // Radial vignette
+    const vig = ctx.createRadialGradient(W/2, H/2, W*0.2, W/2, H/2, W*0.7);
+    vig.addColorStop(0, "rgba(0,0,0,0)");
+    vig.addColorStop(1, "rgba(0,0,0,0.15)");
+    ctx.fillStyle = vig; ctx.fillRect(0,0,W,H);
+
+    // Edges with curves, glow, and animated particles
     visibleEdges.forEach(e => {
       const s = posMap[e.source], t = posMap[e.target];
       if (!s || !t) return;
       const ss = ts(s.x,s.y), tt = ts(t.x,t.y);
       const isH = hoverNode === s.id || hoverNode === t.id || KG.active === s.id || KG.active === t.id;
+      const srcType = KG_TYPES[s.type] || KG_TYPES.concepto;
+      const tgtType = KG_TYPES[t.type] || KG_TYPES.concepto;
 
-      // Edge line
+      // Curved edge with bezier
+      const dx = tt.x - ss.x, dy = tt.y - ss.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const curvature = Math.min(dist * 0.15, 40);
+      const nx = -dy / dist, ny = dx / dist;
+      const cx = (ss.x + tt.x) / 2 + nx * curvature;
+      const cy = (ss.y + tt.y) / 2 + ny * curvature;
+
+      // Glow on hover
+      if (isH) {
+        ctx.beginPath();
+        ctx.moveTo(ss.x, ss.y);
+        ctx.quadraticCurveTo(cx, cy, tt.x, tt.y);
+        const glowGrad = ctx.createLinearGradient(ss.x, ss.y, tt.x, tt.y);
+        glowGrad.addColorStop(0, srcType.color + "50");
+        glowGrad.addColorStop(1, tgtType.color + "50");
+        ctx.strokeStyle = glowGrad;
+        ctx.lineWidth = 6;
+        ctx.globalAlpha = 0.4;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // Main edge
       ctx.beginPath();
       ctx.moveTo(ss.x, ss.y);
-      const mx = (ss.x+tt.x)/2, my = (ss.y+tt.y)/2;
-      ctx.lineTo(tt.x, tt.y);
-      ctx.strokeStyle = isH ? "#8b5cf6" : "#555";
-      ctx.lineWidth = isH ? 2 : 1;
-      ctx.globalAlpha = isH ? 0.8 : 0.15;
+      ctx.quadraticCurveTo(cx, cy, tt.x, tt.y);
+      const edgeGrad = ctx.createLinearGradient(ss.x, ss.y, tt.x, tt.y);
+      edgeGrad.addColorStop(0, isH ? srcType.color : "#555");
+      edgeGrad.addColorStop(1, isH ? tgtType.color : "#555");
+      ctx.strokeStyle = edgeGrad;
+      ctx.lineWidth = isH ? 2.5 : 1;
+      ctx.globalAlpha = isH ? 0.85 : 0.12;
       ctx.stroke();
       ctx.globalAlpha = 1;
 
-      // Edge label
+      // Animated particle along edge
+      if (isH) {
+        const pt = (KG.time * 1.5) % 1;
+        const t2 = pt;
+        const px = (1-t2)*(1-t2)*ss.x + 2*(1-t2)*t2*cx + t2*t2*tt.x;
+        const py = (1-t2)*(1-t2)*ss.y + 2*(1-t2)*t2*cy + t2*t2*tt.y;
+        ctx.beginPath();
+        ctx.arc(px, py, 3.5, 0, Math.PI*2);
+        const partGrad = ctx.createRadialGradient(px, py, 0, px, py, 3.5);
+        partGrad.addColorStop(0, "#fff");
+        partGrad.addColorStop(1, srcType.color);
+        ctx.fillStyle = partGrad;
+        ctx.fill();
+      }
+
+      // Edge label with pill background
       if (e.label && scale > 0.5) {
-        const lx = (ss.x+tt.x)/2, ly = (ss.y+tt.y)/2;
+        const lt = 0.5;
+        const lx = (1-lt)*(1-lt)*ss.x + 2*(1-lt)*lt*cx + lt*lt*tt.x;
+        const ly = (1-lt)*(1-lt)*ss.y + 2*(1-lt)*lt*cy + lt*lt*tt.y;
         ctx.font = "500 8px system-ui";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillStyle = isH ? "#8b5cf6" : "#666";
-        ctx.globalAlpha = isH ? 0.9 : 0.4;
-        ctx.fillText(e.label, lx, ly - 6);
+        const tw2 = ctx.measureText(e.label).width;
+        ctx.fillStyle = isH ? "rgba(139,92,246,0.15)" : "rgba(0,0,0,0.4)";
+        ctx.beginPath();
+        ctx.roundRect(lx - tw2/2 - 4, ly - 7, tw2 + 8, 14, 7);
+        ctx.fill();
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = isH ? "#c4b5fd" : "#888";
+        ctx.globalAlpha = isH ? 1 : 0.5;
+        ctx.fillText(e.label, lx, ly);
         ctx.globalAlpha = 1;
       }
     });
@@ -493,44 +551,86 @@ function kgSetupCanvas() {
       const typeInfo = KG_TYPES[n.type] || KG_TYPES.concepto;
       const isH = hoverNode === n.id;
       const isActive = KG.active === n.id;
-      const r = n.r * scale;
-      const pulse = Math.sin(KG.time + n.x * 0.01) * 1.5 * scale;
+      const baseR = n.r * scale;
+      const pulse = Math.sin(KG.time + n.x * 0.02) * 2 * scale;
+      const r = isH ? baseR + 5 : baseR + pulse;
 
-      // Outer glow
-      if (isH || isActive) {
-        ctx.beginPath(); ctx.arc(s.x, s.y, r + 14, 0, Math.PI*2);
-        ctx.fillStyle = typeInfo.color + (isActive ? "20" : "12");
-        ctx.fill();
+      // Deep outer glow (large, faint)
+      ctx.beginPath(); ctx.arc(s.x, s.y, r + 20, 0, Math.PI*2);
+      const deepGlow = ctx.createRadialGradient(s.x, s.y, r, s.x, s.y, r + 20);
+      deepGlow.addColorStop(0, typeInfo.color + (isActive ? "25" : isH ? "18" : "08"));
+      deepGlow.addColorStop(1, typeInfo.color + "00");
+      ctx.fillStyle = deepGlow; ctx.fill();
+
+      // Rotating ring for active node
+      if (isActive) {
+        ctx.save();
+        ctx.translate(s.x, s.y);
+        ctx.rotate(KG.time * 0.5);
+        ctx.beginPath();
+        ctx.arc(0, 0, r + 10, 0, Math.PI * 0.8);
+        ctx.strokeStyle = typeInfo.color + "60";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, r + 10, Math.PI, Math.PI * 1.8);
+        ctx.stroke();
+        ctx.restore();
       }
 
-      // Shadow
-      ctx.beginPath(); ctx.arc(s.x, s.y + 2, r, 0, Math.PI*2);
-      ctx.fillStyle = "rgba(0,0,0,0.1)"; ctx.fill();
+      // Drop shadow
+      ctx.beginPath(); ctx.arc(s.x + 1, s.y + 3, r, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(0,0,0,0.15)"; ctx.fill();
 
-      // Main circle
-      ctx.beginPath(); ctx.arc(s.x, s.y, r + (isH ? 3 : pulse), 0, Math.PI*2);
+      // Main circle with gradient
+      ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI*2);
       const grad = ctx.createRadialGradient(s.x - r*0.3, s.y - r*0.3, 0, s.x, s.y, r);
       grad.addColorStop(0, typeInfo.color);
-      grad.addColorStop(1, typeInfo.color + "bb");
+      grad.addColorStop(0.7, typeInfo.color + "dd");
+      grad.addColorStop(1, typeInfo.color + "99");
       ctx.fillStyle = grad; ctx.fill();
 
-      // Border
-      ctx.beginPath(); ctx.arc(s.x, s.y, r + (isH ? 3 : pulse), 0, Math.PI*2);
-      ctx.strokeStyle = isActive ? "#fff" : (isH ? "#fff" : "rgba(255,255,255,0.2)");
-      ctx.lineWidth = isActive ? 2.5 : (isH ? 2 : 1.5);
+      // Inner highlight ring
+      ctx.beginPath(); ctx.arc(s.x, s.y, r - 1.5, 0, Math.PI*2);
+      ctx.strokeStyle = "rgba(255,255,255,0.12)";
+      ctx.lineWidth = 1;
       ctx.stroke();
 
+      // Outer border
+      ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI*2);
+      ctx.strokeStyle = isActive ? "#fff" : (isH ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.15)");
+      ctx.lineWidth = isActive ? 2.5 : (isH ? 2 : 1);
+      ctx.stroke();
+
+      // Specular highlight (top-left)
+      ctx.beginPath(); ctx.arc(s.x - r*0.25, s.y - r*0.25, r*0.35, 0, Math.PI*2);
+      const spec = ctx.createRadialGradient(s.x - r*0.25, s.y - r*0.25, 0, s.x - r*0.25, s.y - r*0.25, r*0.35);
+      spec.addColorStop(0, "rgba(255,255,255,0.25)");
+      spec.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = spec; ctx.fill();
+
       // Icon
-      ctx.font = `${(isH ? 16 : 12) * Math.min(scale, 1.2)}px system-ui`;
+      ctx.font = `${(isH ? 18 : 13) * Math.min(scale, 1.2)}px system-ui`;
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText(typeInfo.icon, s.x, s.y);
 
-      // Label
-      if (scale > 0.4) {
-        ctx.font = `${isH ? "600" : "500"} ${Math.max(8, 9 * Math.min(scale, 1.2))}px system-ui,sans-serif`;
+      // Label with background pill
+      if (scale > 0.35) {
+        const fontSize = Math.max(8, (isH ? 10 : 9) * Math.min(scale, 1.2));
+        ctx.font = `${isH ? "600" : "500"} ${fontSize}px system-ui,sans-serif`;
+        const labelW = ctx.measureText(n.title).width;
+        const labelY = s.y + r + 6;
+
+        // Label background
+        ctx.fillStyle = isActive ? typeInfo.color + "30" : (isH ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.35)");
+        ctx.beginPath();
+        ctx.roundRect(s.x - labelW/2 - 5, labelY - 2, labelW + 10, fontSize + 6, (fontSize + 6)/2);
+        ctx.fill();
+
+        // Label text
         ctx.textAlign = "center"; ctx.textBaseline = "top";
-        ctx.fillStyle = isH ? "#fff" : typeInfo.color;
-        ctx.fillText(n.title, s.x, s.y + r + 5);
+        ctx.fillStyle = isActive ? "#fff" : (isH ? "#fff" : typeInfo.color);
+        ctx.fillText(n.title, s.x, labelY);
       }
     });
 
@@ -560,15 +660,17 @@ function kgSetupCanvas() {
         tt.style.left = (e.clientX + 16) + "px";
         tt.style.top = (e.clientY - 12) + "px";
         tt.innerHTML = `
-          <div style="display:flex;align-items:center;gap:0.3rem;margin-bottom:0.25rem">
-            <span style="font-size:1rem">${typeInfo.icon}</span>
-            <span style="font-weight:700;font-size:0.82rem">${n.title}</span>
+          <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem">
+            <div style="width:28px;height:28px;border-radius:50%;background:${typeInfo.color}30;display:flex;align-items:center;justify-content:center;font-size:1rem;border:1px solid ${typeInfo.color}50">${typeInfo.icon}</div>
+            <div>
+              <div style="font-weight:700;font-size:0.85rem;color:#f1f5f9">${n.title}</div>
+              <span class="kg-type-badge" style="background:${typeInfo.color}20;color:${typeInfo.color};border:1px solid ${typeInfo.color}40;font-size:0.58rem;padding:0.05rem 0.35rem">${typeInfo.label}</span>
+            </div>
           </div>
-          <span class="kg-type-badge" style="background:${typeInfo.color}18;color:${typeInfo.color};border:1px solid ${typeInfo.color}40;margin-bottom:0.3rem;display:inline-flex">${typeInfo.label}</span>
-          ${n.materia ? `<div style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.2rem">📚 ${n.materia}</div>` : ""}
-          <div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:0.3rem;line-height:1.4">${preview}...</div>
-          <div style="font-size:0.6rem;color:#8b5cf6">${conns.length > 0 ? "→ " + conns.slice(0,3).map(c=>c.title).join(", ") + (conns.length > 3 ? "..." : "") : ""}</div>
-          <div style="font-size:0.58rem;color:#22c55e;margin-top:0.2rem">Click para ver detalle</div>`;
+          ${n.materia ? `<div style="font-size:0.65rem;color:#94a3b8;margin-bottom:0.25rem">📚 ${n.materia}</div>` : ""}
+          <div style="font-size:0.68rem;color:#94a3b8;margin-bottom:0.3rem;line-height:1.4;border-top:1px solid rgba(255,255,255,0.06);padding-top:0.3rem">${preview}...</div>
+          ${conns.length > 0 ? `<div style="font-size:0.6rem;color:#8b5cf6;border-top:1px solid rgba(255,255,255,0.06);padding-top:0.25rem">→ ${conns.slice(0,3).map(c=>c.title).join(", ")}${conns.length>3?"...":""}</div>` : ""}
+          <div style="font-size:0.58rem;color:#22c55e;margin-top:0.2rem;opacity:0.8">Click para ver detalle</div>`;
       }
     } else if (tt) tt.style.display = "none";
 
