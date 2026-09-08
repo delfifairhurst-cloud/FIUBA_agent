@@ -5,7 +5,9 @@ const KG = {
   search: "", filterType: "", filterMateria: "",
   camX: 0, camY: 0, camZoom: 1,
   dragging: null, panning: false, lastMouse: null, dragMoved: false,
-  anim: null, time: 0
+  anim: null, time: 0,
+  focus: null, // focus mode: nodeId or null
+  focusLevels: new Map() // nodeId -> level (0=center, 1=direct, 2=indirect, 99=dimmed)
 };
 
 const KG_TYPES = {
@@ -475,6 +477,8 @@ function kgRender() {
           </h2>
           <div style="display:flex;gap:0.3rem;align-items:center">
             <span style="font-size:0.6rem;color:var(--text-muted)">${filtered.length} nodos</span>
+            ${KG.focus ? `<button class="kg-btn" onclick="kgClearFocus()" title="Salir del modo enfoque" style="background:rgba(139,92,246,0.15);color:#8b5cf6;border-color:rgba(139,92,246,0.3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg> Enfoque</button>` : ""}
+            <button class="kg-btn" onclick="kgRandomExplore()" title="Explorar algo random" style="font-size:0.75rem">🧠</button>
             <button class="kg-btn" onclick="kgResetView()" title="Centrar vista"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg></button>
             <button class="kg-btn" onclick="kgFullscreen()" title="Pantalla completa"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg></button>
           </div>
@@ -543,6 +547,63 @@ function kgRenderSidePanel() {
         <button class="kg-btn" onclick="KG.active=null;KG.view='graph';kgRender()" style="font-size:0.8rem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
       </div>
       ${n.materia ? `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:0.2rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> ${n.materia}</div>` : ""}
+
+      <!-- Enhanced Stats Card -->
+      ${(() => {
+        const mat = n.materia;
+        const conceptos = mat ? KG.nodes.filter(x => x.type==="concepto" && x.materia===mat).length : 0;
+        const apuntes = mat ? KG.nodes.filter(x => x.type==="apunte" && x.materia===mat).length : 0;
+        const ejercicios = mat ? KG.nodes.filter(x => x.type==="ejercicio" && x.materia===mat).length : 0;
+        const examenes = mat ? KG.nodes.filter(x => x.type==="examen" && x.materia===mat).length : 0;
+        const conceptRel = conns.filter(x => x.type==="concepto").map(x => x.title);
+        if (conceptos + apuntes + ejercicios + examenes === 0) return "";
+        return `<div style="background:linear-gradient(135deg,${typeInfo.color}10,${typeInfo.color}05);border:1px solid ${typeInfo.color}25;border-radius:10px;padding:0.6rem;margin-bottom:0.7rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;margin-bottom:0.4rem">
+            ${conceptos > 0 ? `<div style="display:flex;align-items:center;gap:0.3rem"><span style="font-size:0.65rem">📚</span><span style="font-size:0.72rem;font-weight:600;color:var(--text-primary)">${conceptos}</span><span style="font-size:0.6rem;color:var(--text-muted)">conceptos</span></div>` : ""}
+            ${apuntes > 0 ? `<div style="display:flex;align-items:center;gap:0.3rem"><span style="font-size:0.65rem">📝</span><span style="font-size:0.72rem;font-weight:600;color:var(--text-primary)">${apuntes}</span><span style="font-size:0.6rem;color:var(--text-muted)">apuntes</span></div>` : ""}
+            ${ejercicios > 0 ? `<div style="display:flex;align-items:center;gap:0.3rem"><span style="font-size:0.65rem">🧩</span><span style="font-size:0.72rem;font-weight:600;color:var(--text-primary)">${ejercicios}</span><span style="font-size:0.6rem;color:var(--text-muted)">ejercicios</span></div>` : ""}
+            ${examenes > 0 ? `<div style="display:flex;align-items:center;gap:0.3rem"><span style="font-size:0.65rem">📄</span><span style="font-size:0.72rem;font-weight:600;color:var(--text-primary)">${examenes}</span><span style="font-size:0.6rem;color:var(--text-muted)">parciales</span></div>` : ""}
+          </div>
+          ${conceptRel.length > 0 ? `<div style="font-size:0.62rem;color:var(--text-muted);margin-bottom:0.4rem"><b>Conceptos:</b> ${conceptRel.slice(0,5).join(" · ")}${conceptRel.length > 5 ? ` +${conceptRel.length-5} mas` : ""}</div>` : ""}
+          <button onclick="switchView('chat');const ci=document.getElementById('chatInput');ci.value='Explica el tema: ${n.title.replace(/'/g,"\\'")}';ci.focus()" style="width:100%;padding:0.45rem;background:linear-gradient(135deg,${typeInfo.color}30,${typeInfo.color}15);color:${typeInfo.color};border:1px solid ${typeInfo.color}40;border-radius:8px;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.15s" onmouseover="this.style.background='${typeInfo.color}40'" onmouseout="this.style.background='${typeInfo.color}30'">
+            🧠 Aprender esto
+          </button>
+        </div>`;
+      })()}
+
+      <!-- Knowledge Path (AI reasoning) -->
+      ${(() => {
+        if (n.type !== "concepto" && n.type !== "materia") return "";
+        const path = kgRecommendPath(n.id);
+        if (!path || path.length <= 2) return "";
+        const pathNodes = path.map(id => kgNode(id)).filter(Boolean);
+        return `<div style="background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(99,102,241,0.05));border:1px solid rgba(139,92,246,0.25);border-radius:10px;padding:0.6rem;margin-bottom:0.7rem">
+          <div style="font-size:0.7rem;font-weight:700;color:#8b5cf6;margin-bottom:0.4rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" style="vertical-align:-1px"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> Ruta de conocimiento</div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.2rem;margin-bottom:0.3rem">
+            ${pathNodes.map((pn, i) => {
+              const pi = KG_TYPES[pn.type] || KG_TYPES.concepto;
+              const isTarget = pn.id === n.id;
+              return `${i > 0 ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>` : ""}
+              <button onclick="kgFocus('${pn.id}')" style="padding:0.2rem 0.4rem;background:${isTarget ? pi.color+'30' : 'var(--bg-card)'};border:1px solid ${isTarget ? pi.color+'50' : 'var(--border-color)'};border-radius:6px;font-size:0.62rem;color:${isTarget ? pi.color : 'var(--text-primary)'};cursor:pointer;font-weight:${isTarget?'700':'400'};white-space:nowrap">${pn.title}</button>`;
+            }).join("")}
+          </div>
+          <div style="font-size:0.6rem;color:var(--text-muted)">${path.length} pasos desde ${pathNodes[0]?.title || "?"}</div>
+        </div>`;
+      })()}
+
+      <!-- Knowledge Gap Detection -->
+      ${(() => {
+        if (n.type !== "concepto") return "";
+        const gaps = kgFindGaps().filter(g => g.from.id === n.id || g.to.id === n.id || g.through?.id === n.id);
+        if (gaps.length === 0) return "";
+        return `<div style="background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.05));border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:0.6rem;margin-bottom:0.7rem">
+          <div style="font-size:0.7rem;font-weight:700;color:#f59e0b;margin-bottom:0.4rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="vertical-align:-1px"><path d="M12 9v2m0 4h.01M10.29 3.86l-8.6 14.86A2 2 0 003.4 21h17.2a2 2 0 001.71-2.98l-8.6-14.86a2 2 0 00-3.42 0z"/></svg> Posible vacio de conocimiento</div>
+          ${gaps.map(g => `<div style="font-size:0.65rem;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;padding-left:0.5rem;border-left:2px solid #f59e0b40">
+            Para conectar "<b>${g.from.title}</b>" con "<b>${g.to.title}</b>", revisá "<b>${g.through?.title || "?"}</b>".
+            <button onclick="switchView('chat');const ci=document.getElementById('chatInput');ci.value='Explica: ${(g.through?.title||'').replace(/'/g,"\\'")}';ci.focus()" style="margin-top:0.2rem;padding:0.15rem 0.3rem;background:#f59e0b20;color:#f59e0b;border:1px solid #f59e0b40;border-radius:4px;font-size:0.6rem;cursor:pointer">Crear material</button>
+          </div>`).join("")}
+        </div>`;
+      })()}
     </div>
     <div class="kg-side-body">
 
@@ -836,6 +897,12 @@ function kgSetupCanvas() {
     visibleEdges.forEach(e => {
       const s = posMap[e.source], t = posMap[e.target];
       if (!s || !t) return;
+      // Focus mode: dim edges not connected to focus node
+      if (KG.focus) {
+        const sl = KG.focusLevels.get(e.source) ?? 99;
+        const tl = KG.focusLevels.get(e.target) ?? 99;
+        if (sl > 2 && tl > 2) return; // skip completely
+      }
       const ss = ts(s.x,s.y), tt = ts(t.x,t.y);
       const isH = hoverNode === s.id || hoverNode === t.id || KG.active === s.id || KG.active === t.id;
       const srcType = KG_TYPES[s.type] || KG_TYPES.concepto;
@@ -914,11 +981,17 @@ function kgSetupCanvas() {
       const typeInfo = KG_TYPES[n.type] || KG_TYPES.concepto;
       const isH = hoverNode === n.id;
       const isActive = KG.active === n.id;
+      // Focus mode: dim nodes that aren't connected
+      const focusLevel = KG.focus ? (KG.focusLevels.get(n.id) ?? 99) : 0;
+      const isDimmed = KG.focus && focusLevel > 2;
+      const isFocused = KG.focus && focusLevel <= 2;
+      const focusAlpha = KG.focus ? (focusLevel === 0 ? 1 : focusLevel === 1 ? 0.85 : focusLevel === 2 ? 0.55 : 0.08) : 1;
       const baseR = n.r * scale;
       const pulse = Math.sin(KG.time * 1.5 + n.x * 0.02) * 2 * scale;
       const r = isH ? baseR + 6 : baseR + pulse;
 
       // Deep multi-layer glow
+      ctx.globalAlpha = focusAlpha;
       for (let gl = 0; gl < 3; gl++) {
         const gr2 = r + 15 + gl * 10;
         ctx.beginPath(); ctx.arc(s.x, s.y, gr2, 0, Math.PI*2);
@@ -988,6 +1061,7 @@ function kgSetupCanvas() {
         ctx.fillStyle = isActive ? "#fff" : (isH ? "#fff" : "#d0d8e8");
         ctx.fillText(n.title, s.x, ly);
       }
+      ctx.globalAlpha = 1; // reset after focus mode
     });
 
     KG.anim = requestAnimationFrame(draw);
@@ -1143,10 +1217,146 @@ function kgFocusByTitle(title) {
 }
 
 function kgExplore(id) {
-  // Focus and zoom to show connected nodes
+  // Focus mode: center node, dim everything else, show connections
+  KG.focus = id;
   KG.active = id;
-  KG.view = "graph";
+  KG.focusLevels.clear();
+  // BFS to compute levels (0=center, 1=direct, 2=indirect)
+  KG.focusLevels.set(id, 0);
+  const q = [id];
+  for (let depth = 0; depth < 2 && q.length > 0; depth++) {
+    const next = [];
+    for (const nid of q) {
+      KG.edges.forEach(e => {
+        const other = e.source === nid ? e.target : (e.target === nid ? e.source : null);
+        if (other && !KG.focusLevels.has(other)) {
+          KG.focusLevels.set(other, depth + 1);
+          next.push(other);
+        }
+      });
+    }
+    q.length = 0;
+    q.push(...next);
+  }
+  // Center camera on the focus node
+  const fn = kgNode(id);
+  if (fn) { KG.camX = -fn.x; KG.camY = -fn.y; KG.camZoom = 1.2; }
   kgRender();
+}
+
+function kgClearFocus() {
+  KG.focus = null;
+  KG.focusLevels.clear();
+  KG.camX = 0; KG.camY = 0; KG.camZoom = 1;
+  kgRender();
+}
+
+function kgRandomExplore() {
+  if (KG.nodes.length === 0) return;
+  const node = KG.nodes[Math.floor(Math.random() * KG.nodes.length)];
+  const conns = kgConnectedNodes(node.id);
+  const ti = KG_TYPES[node.type] || KG_TYPES.concepto;
+  // Find a random connected node for the "did you know" fact
+  let fact = "";
+  if (conns.length > 0) {
+    const rc = conns[Math.floor(Math.random() * conns.length)];
+    const ri = KG_TYPES[rc.type] || KG_TYPES.concepto;
+    fact = `<div style="margin-top:0.6rem;padding:0.7rem;background:linear-gradient(135deg,${ti.color}15,${ri.color}15);border:1px solid ${ti.color}30;border-radius:10px">
+      <div style="font-size:0.75rem;font-weight:700;color:${ti.color};margin-bottom:0.4rem">🧠 ¿Sabias que...?</div>
+      <div style="font-size:0.75rem;color:var(--text-primary);line-height:1.5">
+        <b>${node.title}</b> esta conectado con <b>${rc.title}</b>.
+        ${edge = KG.edges.find(e => (e.source===node.id&&e.target===rc.id)||(e.source===rc.id&&e.target===node.id)),
+        edge ? `<br><i style="color:var(--text-muted)">Relacion: ${edge.label}</i>` : ""}
+      </div>
+      <button onclick="kgExplore('${node.id}')" class="kg-btn" style="margin-top:0.4rem;font-size:0.68rem;background:${ti.color}20;color:${ti.color};border-color:${ti.color}40">
+        Explorar conexión
+      </button>
+    </div>`;
+  }
+  // Show in a toast-like overlay
+  const toast = document.createElement("div");
+  toast.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:10001;max-width:400px;width:90%;background:rgba(15,15,25,0.97);backdrop-filter:blur(16px);border:1px solid rgba(139,92,246,0.3);border-radius:14px;padding:1rem;box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 30px rgba(139,92,246,0.15);animation:kgFadeIn 0.3s ease";
+  toast.innerHTML = `
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+      <div style="width:32px;height:32px;border-radius:50%;background:${ti.color}25;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:${ti.color};border:1px solid ${ti.color}40">${ti.icon}</div>
+      <div>
+        <div style="font-size:0.8rem;font-weight:700;color:#f1f5f9">${node.title}</div>
+        <div style="font-size:0.62rem;color:var(--text-muted)">${ti.label} · ${node.materia || ""}</div>
+      </div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="margin-left:auto;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem">✕</button>
+    </div>
+    ${fact}
+    <div style="display:flex;gap:0.3rem;margin-top:0.5rem">
+      <button onclick="kgExplore('${node.id}');this.closest('div[style*=fixed]').remove()" class="kg-btn" style="flex:1;background:var(--accent);color:white;border:none;font-weight:600">Explorar</button>
+      <button onclick="KG.active='${node.id}';KG.view='graph';kgRender();this.closest('div[style*=fixed]').remove()" class="kg-btn" style="flex:1">Ver detalle</button>
+      <button onclick="kgRandomExplore();this.closest('div[style*=fixed]').remove()" class="kg-btn" style="flex:0;font-size:0.8rem">↻</button>
+    </div>
+  `;
+  document.body.appendChild(toast);
+  // Auto-remove after 12 seconds
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 12000);
+}
+
+// Knowledge path: BFS shortest path between two nodes
+function kgFindPath(fromId, toId) {
+  const visited = new Set([fromId]);
+  const queue = [[fromId]];
+  while (queue.length > 0) {
+    const path = queue.shift();
+    const current = path[path.length - 1];
+    if (current === toId) return path;
+    KG.edges.forEach(e => {
+      const next = e.source === current ? e.target : (e.target === current ? e.source : null);
+      if (next && !visited.has(next)) {
+        visited.add(next);
+        queue.push([...path, next]);
+      }
+    });
+  }
+  return null; // no path found
+}
+
+// Knowledge gap detection: find concepts that are "missing links"
+function kgFindGaps() {
+  const gaps = [];
+  // For each concept chain: if A→B and B→C exist but A→C doesn't, it's a potential gap
+  for (const e1 of KG.edges) {
+    for (const e2 of KG.edges) {
+      if (e1.target === e2.source && e1.source !== e2.target) {
+        const directExists = KG.edges.some(e =>
+          (e.source === e1.source && e.target === e2.target) ||
+          (e.source === e2.target && e.target === e1.source));
+        if (!directExists) {
+          const a = kgNode(e1.source), b = kgNode(e2.target);
+          if (a && b && a.type === "concepto" && b.type === "concepto") {
+            const mid = kgNode(e1.target);
+            gaps.push({ from: a, through: mid, to: b, label: `Para conectar "${a.title}" con "${b.title}", revisá "${mid?.title || e1.target}"` });
+          }
+        }
+      }
+    }
+  }
+  // Deduplicate
+  const seen = new Set();
+  return gaps.filter(g => {
+    const key = g.from.id + g.to.id;
+    if (seen.has(key)) return false;
+    seen.add(key); return true;
+  }).slice(0, 5);
+}
+
+// AI-style: recommend learning path for a topic
+function kgRecommendPath(nodeId) {
+  const target = kgNode(nodeId);
+  if (!target) return null;
+  // BFS from all "materia" nodes to this concept
+  const materias = KG.nodes.filter(n => n.type === "materia");
+  let bestPath = null;
+  for (const m of materias) {
+    const path = kgFindPath(m.id, nodeId);
+    if (path && (!bestPath || path.length < bestPath.length)) bestPath = path;
+  }
+  return bestPath;
 }
 
 function kgToggleAddEdge() {
