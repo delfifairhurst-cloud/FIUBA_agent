@@ -470,7 +470,7 @@ async function checkBackendStatus() {
   const statusText = document.getElementById('status-text');
 
   try {
-    const res = await fetch(getHealthUrl());
+    const res = await fetch(getHealthUrl(), { signal: AbortSignal.timeout(10000) });
     if (res.ok) {
       statusDot.style.backgroundColor = 'var(--success)';
       statusDot.style.boxShadow = '0 0 8px var(--success)';
@@ -481,7 +481,8 @@ async function checkBackendStatus() {
   } catch (err) {
     statusDot.style.backgroundColor = 'var(--warning)';
     statusDot.style.boxShadow = '0 0 8px var(--warning)';
-    statusText.innerText = 'Servidor desconectado';
+    const isTimeout = err.name === 'TimeoutError';
+    statusText.innerText = isTimeout ? 'Servidor despertando...' : 'Servidor desconectado';
   }
 }
 
@@ -869,7 +870,11 @@ async function handleSend(event) {
     console.error('Error enviando mensaje:', error);
     showAgentStatus(null);
     lastFailedRequest = { message, body: { message, mode: chat.mode }, chatId: chat.id };
-    appendMessageDOM('agent', `🟡 **No se pudo conectar con el servidor.**\n\nVerificá tu conexión y intentá nuevamente.`, null, { retryable: true });
+    const isFailedFetch = error.message && error.message.includes('Failed to fetch');
+    const errorMsg = isFailedFetch
+      ? `🟡 **El servidor está despertando** (puede tardar 30-60s en free tier).\n\nIntentá nuevamente en unos segundos. Si sigue fallando, verificá la URL del backend en ⚙️ Servidor IA.`
+      : `🟡 **No se pudo conectar con el servidor.**\n\nVerificá tu conexión y intentá nuevamente.`;
+    appendMessageDOM('agent', errorMsg, null, { retryable: true });
     checkBackendStatus();
   } finally {
     showTypingIndicator(false);

@@ -564,4 +564,14 @@ app.post('/api/execute-c', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor FIUBA Agent corriendo en http://localhost:${PORT}`);
   console.log(`Endpoint de Chat: http://localhost:${PORT}/api/chat`);
+
+  // Keep-alive: ping every 10 minutes to prevent Render free tier from sleeping
+  const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+  setInterval(() => {
+    fetch(SELF_URL + '/api/health').then(r => {
+      console.log(`[KEEP-ALIVE] ping OK (${r.status})`);
+    }).catch(e => {
+      console.error(`[KEEP-ALIVE] ping failed: ${e.message}`);
+    });
+  }, 10 * 60 * 1000);
 });
