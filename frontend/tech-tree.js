@@ -134,6 +134,19 @@ function kgCreateMock() {
 
 function kgNode(id) { return KG.nodes.find(n => n.id === id); }
 
+// Color helpers
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+function rgbToHex(r,g,b) { return "#"+[r,g,b].map(x=>Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,"0")).join(""); }
+function lightenColor(hex, amt) { const [r,g,b]=hexToRgb(hex); return rgbToHex(r+amt,g+amt,b+amt); }
+function darkenColor(hex, amt) { const [r,g,b]=hexToRgb(hex); return rgbToHex(r-amt,g-amt,b-amt); }
+function blendColor(c1, c2, t) {
+  const [r1,g1,b1]=hexToRgb(c1), [r2,g2,b2]=hexToRgb(c2);
+  return rgbToHex(r1+(r2-r1)*t, g1+(g2-g1)*t, b1+(b2-b1)*t);
+}
+
 function kgFiltered() {
   let nodes = [...KG.nodes];
   if (KG.filterType) nodes = nodes.filter(n => n.type === KG.filterType);
@@ -457,32 +470,85 @@ function kgSetupCanvas() {
   function ts(x,y) { return { x:(x+panX)*scale+W/2, y:(y+panY)*scale+H/2 }; }
   function tw(sx,sy) { return { x:(sx-W/2)/scale-panX, y:(sy-H/2)/scale-panY }; }
 
-  function draw() {
-    KG.time += 0.015;
-    ctx.clearRect(0,0,W,H);
-    const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg-card").trim() || "#0d1117";
-    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+  // Pre-generate stars for background
+  const stars = [];
+  for (let i = 0; i < 120; i++) {
+    stars.push({ x: Math.random() * 2000, y: Math.random() * 1200, s: Math.random() * 1.5 + 0.5, p: Math.random() * Math.PI * 2, sp: Math.random() * 0.02 + 0.005 });
+  }
 
-    // Animated subtle grid with pulse
-    const gridSize = 30 * scale;
-    const offsetX = (panX * scale + W/2) % gridSize;
-    const offsetY = (panY * scale + H/2) % gridSize;
-    for (let x = offsetX; x < W; x += gridSize) for (let y = offsetY; y < H; y += gridSize) {
-      const dist = Math.sqrt((x-W/2)**2 + (y-H/2)**2);
-      const pulse = Math.sin(KG.time * 0.5 + dist * 0.005) * 0.5 + 0.5;
-      ctx.globalAlpha = 0.02 + pulse * 0.02;
-      ctx.fillStyle = "#8b5cf6";
-      ctx.fillRect(x, y, 1.5, 1.5);
+  // Pre-generate ambient particles
+  const particles = [];
+  for (let i = 0; i < 30; i++) {
+    particles.push({ x: Math.random() * 2000, y: Math.random() * 1200, vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3, r: Math.random()*2+1, a: Math.random(), color: ["#8b5cf6","#3b82f6","#ec4899","#22c55e"][Math.floor(Math.random()*4)] });
+  }
+
+  function draw() {
+    KG.time += 0.012;
+    ctx.clearRect(0,0,W,H);
+
+    // === BACKGROUND: deep space ===
+    const bgGrad = ctx.createRadialGradient(W*0.3, H*0.3, 0, W/2, H/2, W*0.8);
+    bgGrad.addColorStop(0, "#0f0a1a");
+    bgGrad.addColorStop(0.5, "#0a0a14");
+    bgGrad.addColorStop(1, "#050510");
+    ctx.fillStyle = bgGrad; ctx.fillRect(0,0,W,H);
+
+    // === NEBULA clouds ===
+    const nebulaTime = KG.time * 0.1;
+    for (let i = 0; i < 3; i++) {
+      const nx = W * (0.3 + 0.4 * Math.sin(nebulaTime + i * 2.1));
+      const ny = H * (0.3 + 0.4 * Math.cos(nebulaTime * 0.7 + i * 1.5));
+      const nr = 150 + Math.sin(nebulaTime + i) * 30;
+      const nebGrad = ctx.createRadialGradient(nx, ny, 0, nx, ny, nr);
+      const colors = ["rgba(139,92,246,0.04)", "rgba(59,130,246,0.03)", "rgba(236,72,153,0.025)"];
+      nebGrad.addColorStop(0, colors[i]);
+      nebGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = nebGrad; ctx.fillRect(0,0,W,H);
+    }
+
+    // === STARS ===
+    stars.forEach(st => {
+      const sx = (st.x + panX * scale * 0.1) % W;
+      const sy = (st.y + panY * scale * 0.1) % H;
+      const twinkle = Math.sin(KG.time * st.sp * 10 + st.p) * 0.5 + 0.5;
+      ctx.globalAlpha = 0.3 + twinkle * 0.5;
+      ctx.fillStyle = "#c8d0e0";
+      ctx.beginPath(); ctx.arc(sx < 0 ? sx + W : sx, sy < 0 ? sy + H : sy, st.s, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // === FLOATING PARTICLES ===
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      const pAlpha = 0.15 + Math.sin(KG.time * 2 + p.a * 10) * 0.1;
+      ctx.globalAlpha = pAlpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // === GRID (subtle hexagonal feel) ===
+    const gridSize = 40 * scale;
+    const oX = (panX * scale + W/2) % gridSize;
+    const oY = (panY * scale + H/2) % gridSize;
+    ctx.fillStyle = "#8b5cf6";
+    for (let x = oX; x < W; x += gridSize) for (let y = oY; y < H; y += gridSize) {
+      const d = Math.sqrt((x-W/2)**2 + (y-H/2)**2);
+      const pulse = Math.sin(KG.time * 0.3 + d * 0.003) * 0.5 + 0.5;
+      ctx.globalAlpha = 0.015 + pulse * 0.015;
+      ctx.fillRect(x, y, 1, 1);
     }
     ctx.globalAlpha = 1;
 
-    // Radial vignette
-    const vig = ctx.createRadialGradient(W/2, H/2, W*0.2, W/2, H/2, W*0.7);
+    // === VIGNETTE ===
+    const vig = ctx.createRadialGradient(W/2, H/2, W*0.15, W/2, H/2, W*0.75);
     vig.addColorStop(0, "rgba(0,0,0,0)");
-    vig.addColorStop(1, "rgba(0,0,0,0.15)");
+    vig.addColorStop(1, "rgba(0,0,0,0.35)");
     ctx.fillStyle = vig; ctx.fillRect(0,0,W,H);
 
-    // Edges with curves, glow, and animated particles
+    // === EDGES ===
     visibleEdges.forEach(e => {
       const s = posMap[e.source], t = posMap[e.target];
       if (!s || !t) return;
@@ -491,166 +557,154 @@ function kgSetupCanvas() {
       const srcType = KG_TYPES[s.type] || KG_TYPES.concepto;
       const tgtType = KG_TYPES[t.type] || KG_TYPES.concepto;
 
-      // Curved edge with bezier
       const dx = tt.x - ss.x, dy = tt.y - ss.y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      const curvature = Math.min(dist * 0.15, 40);
+      const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+      const curvature = Math.min(dist * 0.12, 35);
       const nx = -dy / dist, ny = dx / dist;
       const cx = (ss.x + tt.x) / 2 + nx * curvature;
       const cy = (ss.y + tt.y) / 2 + ny * curvature;
 
-      // Glow on hover
+      // Energy glow on hover
       if (isH) {
-        ctx.beginPath();
-        ctx.moveTo(ss.x, ss.y);
-        ctx.quadraticCurveTo(cx, cy, tt.x, tt.y);
-        const glowGrad = ctx.createLinearGradient(ss.x, ss.y, tt.x, tt.y);
-        glowGrad.addColorStop(0, srcType.color + "50");
-        glowGrad.addColorStop(1, tgtType.color + "50");
-        ctx.strokeStyle = glowGrad;
-        ctx.lineWidth = 6;
-        ctx.globalAlpha = 0.4;
-        ctx.stroke();
+        for (let g = 0; g < 3; g++) {
+          ctx.beginPath();
+          ctx.moveTo(ss.x, ss.y);
+          ctx.quadraticCurveTo(cx, cy, tt.x, tt.y);
+          ctx.strokeStyle = srcType.color + "30";
+          ctx.lineWidth = 8 - g * 2;
+          ctx.globalAlpha = 0.15 - g * 0.04;
+          ctx.stroke();
+        }
         ctx.globalAlpha = 1;
       }
 
-      // Main edge
+      // Main edge with gradient
       ctx.beginPath();
       ctx.moveTo(ss.x, ss.y);
       ctx.quadraticCurveTo(cx, cy, tt.x, tt.y);
       const edgeGrad = ctx.createLinearGradient(ss.x, ss.y, tt.x, tt.y);
-      edgeGrad.addColorStop(0, isH ? srcType.color : "#888");
-      edgeGrad.addColorStop(1, isH ? tgtType.color : "#888");
+      edgeGrad.addColorStop(0, isH ? srcType.color : "#667");
+      edgeGrad.addColorStop(0.5, isH ? blendColor(srcType.color, tgtType.color, 0.5) : "#556");
+      edgeGrad.addColorStop(1, isH ? tgtType.color : "#667");
       ctx.strokeStyle = edgeGrad;
-      ctx.lineWidth = isH ? 2.5 : 1.5;
-      ctx.globalAlpha = isH ? 0.85 : 0.3;
+      ctx.lineWidth = isH ? 2 : 1.2;
+      ctx.globalAlpha = isH ? 0.8 : 0.2;
       ctx.stroke();
       ctx.globalAlpha = 1;
 
-      // Animated particle along edge
+      // Animated energy particles along edge
       if (isH) {
-        const pt = (KG.time * 1.5) % 1;
-        const t2 = pt;
-        const px = (1-t2)*(1-t2)*ss.x + 2*(1-t2)*t2*cx + t2*t2*tt.x;
-        const py = (1-t2)*(1-t2)*ss.y + 2*(1-t2)*t2*cy + t2*t2*tt.y;
-        ctx.beginPath();
-        ctx.arc(px, py, 3.5, 0, Math.PI*2);
-        const partGrad = ctx.createRadialGradient(px, py, 0, px, py, 3.5);
-        partGrad.addColorStop(0, "#fff");
-        partGrad.addColorStop(1, srcType.color);
-        ctx.fillStyle = partGrad;
-        ctx.fill();
+        for (let pi = 0; pi < 3; pi++) {
+          const pt = ((KG.time * 1.2 + pi * 0.33) % 1);
+          const ppx = (1-pt)*(1-pt)*ss.x + 2*(1-pt)*pt*cx + pt*pt*tt.x;
+          const ppy = (1-pt)*(1-pt)*ss.y + 2*(1-pt)*pt*cy + pt*pt*tt.y;
+          const pSize = 2.5 - pi * 0.5;
+          const pAlpha2 = 0.8 - pi * 0.2;
+          ctx.beginPath(); ctx.arc(ppx, ppy, pSize, 0, Math.PI*2);
+          const pGrad = ctx.createRadialGradient(ppx, ppy, 0, ppx, ppy, pSize);
+          pGrad.addColorStop(0, "rgba(255,255,255," + pAlpha2 + ")");
+          pGrad.addColorStop(1, srcType.color + "00");
+          ctx.fillStyle = pGrad; ctx.fill();
+        }
       }
 
-      // Edge label with pill background
+      // Edge label
       if (e.label && scale > 0.4) {
         const lt = 0.5;
         const lx = (1-lt)*(1-lt)*ss.x + 2*(1-lt)*lt*cx + lt*lt*tt.x;
         const ly = (1-lt)*(1-lt)*ss.y + 2*(1-lt)*lt*cy + lt*lt*tt.y;
         ctx.font = "600 9px system-ui";
         const tw2 = ctx.measureText(e.label).width;
-        ctx.fillStyle = isH ? "rgba(139,92,246,0.25)" : "rgba(30,30,50,0.7)";
-        ctx.beginPath();
-        ctx.roundRect(lx - tw2/2 - 5, ly - 8, tw2 + 10, 16, 8);
-        ctx.fill();
-        ctx.strokeStyle = isH ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.08)";
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        ctx.fillStyle = isH ? "rgba(139,92,246,0.3)" : "rgba(10,10,25,0.8)";
+        ctx.beginPath(); ctx.roundRect(lx-tw2/2-6, ly-8, tw2+12, 16, 8); ctx.fill();
+        if (isH) { ctx.strokeStyle = "rgba(139,92,246,0.5)"; ctx.lineWidth = 1; ctx.stroke(); }
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillStyle = isH ? "#e0d4fc" : "#aaa";
+        ctx.fillStyle = isH ? "#e0d4fc" : "#999";
         ctx.fillText(e.label, lx, ly);
       }
     });
 
-    // Nodes
+    // === NODES ===
     positioned.forEach(n => {
       const s = ts(n.x, n.y);
       const typeInfo = KG_TYPES[n.type] || KG_TYPES.concepto;
       const isH = hoverNode === n.id;
       const isActive = KG.active === n.id;
       const baseR = n.r * scale;
-      const pulse = Math.sin(KG.time + n.x * 0.02) * 2 * scale;
-      const r = isH ? baseR + 5 : baseR + pulse;
+      const pulse = Math.sin(KG.time * 1.5 + n.x * 0.02) * 2 * scale;
+      const r = isH ? baseR + 6 : baseR + pulse;
 
-      // Deep outer glow (large, faint)
-      ctx.beginPath(); ctx.arc(s.x, s.y, r + 20, 0, Math.PI*2);
-      const deepGlow = ctx.createRadialGradient(s.x, s.y, r, s.x, s.y, r + 20);
-      deepGlow.addColorStop(0, typeInfo.color + (isActive ? "25" : isH ? "18" : "08"));
-      deepGlow.addColorStop(1, typeInfo.color + "00");
-      ctx.fillStyle = deepGlow; ctx.fill();
+      // Deep multi-layer glow
+      for (let gl = 0; gl < 3; gl++) {
+        const gr2 = r + 15 + gl * 10;
+        ctx.beginPath(); ctx.arc(s.x, s.y, gr2, 0, Math.PI*2);
+        const glGrad = ctx.createRadialGradient(s.x, s.y, r, s.x, s.y, gr2);
+        const a = (isActive ? 0.18 : isH ? 0.12 : 0.04) * (1 - gl * 0.3);
+        glGrad.addColorStop(0, typeInfo.color + Math.round(a * 255).toString(16).padStart(2,"0"));
+        glGrad.addColorStop(1, typeInfo.color + "00");
+        ctx.fillStyle = glGrad; ctx.fill();
+      }
 
-      // Rotating ring for active node
+      // Rotating rings for active
       if (isActive) {
-        ctx.save();
-        ctx.translate(s.x, s.y);
-        ctx.rotate(KG.time * 0.5);
-        ctx.beginPath();
-        ctx.arc(0, 0, r + 10, 0, Math.PI * 0.8);
-        ctx.strokeStyle = typeInfo.color + "60";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(0, 0, r + 10, Math.PI, Math.PI * 1.8);
-        ctx.stroke();
+        ctx.save(); ctx.translate(s.x, s.y);
+        for (let ring = 0; ring < 2; ring++) {
+          ctx.rotate(KG.time * (0.4 + ring * 0.3) * (ring === 0 ? 1 : -1));
+          ctx.beginPath(); ctx.arc(0, 0, r + 10 + ring * 5, 0, Math.PI * 0.7);
+          ctx.strokeStyle = typeInfo.color + "50";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
         ctx.restore();
       }
 
-      // Drop shadow
-      ctx.beginPath(); ctx.arc(s.x + 1, s.y + 3, r, 0, Math.PI*2);
-      ctx.fillStyle = "rgba(0,0,0,0.15)"; ctx.fill();
+      // Shadow
+      ctx.beginPath(); ctx.arc(s.x + 1, s.y + 4, r, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.fill();
 
-      // Main circle with gradient
+      // Main circle
       ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI*2);
       const grad = ctx.createRadialGradient(s.x - r*0.3, s.y - r*0.3, 0, s.x, s.y, r);
-      grad.addColorStop(0, typeInfo.color);
-      grad.addColorStop(0.7, typeInfo.color + "dd");
-      grad.addColorStop(1, typeInfo.color + "99");
+      grad.addColorStop(0, lightenColor(typeInfo.color, 30));
+      grad.addColorStop(0.5, typeInfo.color);
+      grad.addColorStop(1, darkenColor(typeInfo.color, 30));
       ctx.fillStyle = grad; ctx.fill();
 
-      // Inner highlight ring
-      ctx.beginPath(); ctx.arc(s.x, s.y, r - 1.5, 0, Math.PI*2);
-      ctx.strokeStyle = "rgba(255,255,255,0.12)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      // Glass highlight
+      ctx.beginPath();
+      ctx.ellipse(s.x, s.y - r * 0.2, r * 0.6, r * 0.35, 0, 0, Math.PI * 2);
+      const glass = ctx.createRadialGradient(s.x, s.y - r*0.2, 0, s.x, s.y - r*0.2, r*0.6);
+      glass.addColorStop(0, "rgba(255,255,255,0.2)");
+      glass.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = glass; ctx.fill();
 
-      // Outer border
+      // Border with glow
       ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI*2);
-      ctx.strokeStyle = isActive ? "#fff" : (isH ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.15)");
+      ctx.strokeStyle = isActive ? "#fff" : (isH ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.12)");
       ctx.lineWidth = isActive ? 2.5 : (isH ? 2 : 1);
       ctx.stroke();
 
-      // Specular highlight (top-left)
-      ctx.beginPath(); ctx.arc(s.x - r*0.25, s.y - r*0.25, r*0.35, 0, Math.PI*2);
-      const spec = ctx.createRadialGradient(s.x - r*0.25, s.y - r*0.25, 0, s.x - r*0.25, s.y - r*0.25, r*0.35);
-      spec.addColorStop(0, "rgba(255,255,255,0.25)");
-      spec.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = spec; ctx.fill();
-
       // Icon
-      ctx.font = `${(isH ? 18 : 13) * Math.min(scale, 1.2)}px system-ui`;
+      ctx.font = `${(isH ? 20 : 14) * Math.min(scale, 1.2)}px system-ui`;
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText(typeInfo.icon, s.x, s.y);
 
-      // Label with background pill
+      // Label with pill
       if (scale > 0.3) {
-        const fontSize = Math.max(9, (isH ? 11 : 10) * Math.min(scale, 1.2));
+        const fontSize = Math.max(10, (isH ? 12 : 10) * Math.min(scale, 1.2));
         ctx.font = `${isH ? "700" : "600"} ${fontSize}px system-ui,sans-serif`;
-        const labelW = ctx.measureText(n.title).width;
-        const labelY = s.y + r + 7;
+        const lw = ctx.measureText(n.title).width;
+        const ly = s.y + r + 8;
 
-        // Label background
-        ctx.fillStyle = isActive ? typeInfo.color + "40" : (isH ? "rgba(20,20,40,0.75)" : "rgba(20,20,40,0.6)");
-        ctx.beginPath();
-        ctx.roundRect(s.x - labelW/2 - 6, labelY - 3, labelW + 12, fontSize + 8, (fontSize + 8)/2);
-        ctx.fill();
-        ctx.strokeStyle = isActive ? typeInfo.color + "50" : "rgba(255,255,255,0.08)";
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        ctx.fillStyle = isActive ? typeInfo.color + "50" : "rgba(8,8,20,0.8)";
+        ctx.beginPath(); ctx.roundRect(s.x - lw/2 - 7, ly - 3, lw + 14, fontSize + 8, (fontSize+8)/2); ctx.fill();
+        if (isH || isActive) {
+          ctx.strokeStyle = typeInfo.color + "60"; ctx.lineWidth = 1; ctx.stroke();
+        }
 
-        // Label text
         ctx.textAlign = "center"; ctx.textBaseline = "top";
-        ctx.fillStyle = isActive ? "#fff" : (isH ? "#fff" : "#e2e8f0");
-        ctx.fillText(n.title, s.x, labelY);
+        ctx.fillStyle = isActive ? "#fff" : (isH ? "#fff" : "#d0d8e8");
+        ctx.fillText(n.title, s.x, ly);
       }
     });
 
