@@ -1574,7 +1574,7 @@ function switchView(view) {
   });
 
   // IDs of all view panels
-  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view'];
+  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'discovery-lab-view'];
   const chatEl = document.querySelector('.chat-container');
   const appLayout = document.querySelector('.app-layout');
 
@@ -1662,6 +1662,9 @@ function switchView(view) {
   } else if (view === 'materias-ai') {
     const el = document.getElementById('materias-ai-view');
     if (el) { el.classList.remove('hidden'); if (window.ssRender) window.ssRender(); }
+  } else if (view === 'discovery-lab') {
+    const el = document.getElementById('discovery-lab-view');
+    if (el) { el.classList.remove('hidden'); if (window.dlRender) window.dlRender(); }
   }
 }
 window.switchView = switchView;

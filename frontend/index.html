@@ -865,6 +865,13 @@
         </div>
       </div>
 
+      <!-- Vista Discovery Lab -->
+      <div id="discovery-lab-view" class="view-panel hidden">
+        <div style="max-width:800px;width:100%;margin:0 auto;padding:1rem 1.2rem">
+          <div id="discovery-lab-content"></div>
+        </div>
+      </div>
+
       <!-- Vista Herramientas (hub central) -->
       <div id="herramientas-view" class="view-panel hidden">
         <div style="max-width:900px;width:100%;margin:0 auto;padding:1rem 1.2rem">
@@ -897,6 +904,14 @@
               </div>
               <span class="tool-card-name">Materias IA</span>
               <span class="tool-card-desc">Tips por materia</span>
+            </button>
+
+            <button onclick="switchView('discovery-lab')" class="tool-card" style="--tool-color:#8b5cf6">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(168,85,247,0.15));color:#8b5cf6">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3h6v4H9z"/><path d="M10 7v6.5L8 17h8l-2-3.5V7"/><path d="M6 21h12"/></svg>
+              </div>
+              <span class="tool-card-name">Lab Descubrimiento</span>
+              <span class="tool-card-desc">Experimentá y descubrí leyes</span>
             </button>
 
             <button onclick="switchView('gpa')" class="tool-card" style="--tool-color:#3b82f6">
@@ -1507,6 +1522,7 @@
   <script src="graphing-calculator.js"></script>
   <script src="unit-converter.js"></script>
   <script src="subject-selector.js"></script>
+  <script src="discovery-lab.js"></script>
   <script src="code-playground.js"></script>
   <script type="module" src="professor-ratings.js"></script>
   <script type="module" src="professor-ratings-ui.js"></script>
