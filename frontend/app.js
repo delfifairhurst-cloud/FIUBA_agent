@@ -199,20 +199,33 @@ window.testGeminiKey = async function() {
   const key = (keyInput?.value || '').trim();
   if (!key) { resultEl.innerHTML = '<span style="color:#ef4444">Pegá una API Key primero</span>'; return; }
   btn.disabled = true; btn.textContent = 'Probando...';
-  resultEl.innerHTML = '<span style="color:#f59e0b">Verificando con Gemini...</span>';
-  try {
-    const r = await fetch(getApiBase() + '/api/test-key', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userApiKey: key }),
-    });
-    const d = await r.json();
-    if (d.ok) {
-      resultEl.innerHTML = '<span style="color:#22c55e">✓ Key válida — modelo: ' + d.model + '</span>';
-    } else {
-      resultEl.innerHTML = '<span style="color:#ef4444">✗ ' + (d.error || 'Key inválida') + '</span>';
+  resultEl.innerHTML = '<span style="color:#f59e0b">Despertando servidor... (puede tardar ~30s)</span>';
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+      const r = await fetch(getApiBase() + '/api/test-key', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userApiKey: key }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      const d = await r.json();
+      if (d.ok) {
+        resultEl.innerHTML = '<span style="color:#22c55e">✓ Key válida — modelo: ' + d.model + '</span>';
+      } else {
+        resultEl.innerHTML = '<span style="color:#ef4444">✗ ' + (d.error || 'Key inválida') + '</span>';
+      }
+      btn.disabled = false; btn.textContent = 'Probar';
+      return;
+    } catch (e) {
+      if (attempt < 3) {
+        resultEl.innerHTML = '<span style="color:#f59e0b">Reintentando... (' + attempt + '/3) Servidor despertando...</span>';
+        await new Promise(r => setTimeout(r, 5000));
+      } else {
+        resultEl.innerHTML = '<span style="color:#ef4444">✗ No se pudo conectar. Verificá la URL del backend o esperá 1 min y reintentá.</span>';
+      }
     }
-  } catch (e) {
-    resultEl.innerHTML = '<span style="color:#ef4444">✗ Error: ' + e.message + '</span>';
   }
   btn.disabled = false; btn.textContent = 'Probar';
 };
