@@ -165,6 +165,13 @@ function initFiuble() {
     gameOver = false;
     gameActive = true;
     currentGuess = '';
+    // Clear stale localStorage so old game state doesn't interfere
+    const state = loadFiubleState();
+    if (state.lastPlayed && state.lastPlayed !== today) {
+      state.lastPlayed = today;
+      state.history = state.history.filter(h => h.date === today);
+      saveFiubleState(state);
+    }
     return;
   }
 

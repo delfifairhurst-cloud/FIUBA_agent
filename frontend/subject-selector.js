@@ -4,6 +4,9 @@ const CAREERS = [
   { id: 'informatica', name: 'Ingeniería en Informática', subjects: [
     'Introducción a la Programación','Algoritmos y Estructuras de Datos','Base de Datos','Sistemas Operativos','Redes de Computadoras','Ingeniería de Software','Inteligencia Artificial','Compiladores','Organización del Computador','Matemática Discreta',
   ]},
+  { id: 'industrial', name: 'Ingeniería Industrial', subjects: [
+    'Investigación Operativa','Gestión de Producción','Logística y Cadena de Suministro','Control de Gestión','Seguridad e Higiene','Ingeniería de Métodos','Ergonomía','Planeamiento Industrial',
+  ]},
   { id: 'electrica', name: 'Ingeniería Eléctrica', subjects: [
     'Circuitos Eléctricos','Electromagnetismo','Electrónica General','Máquinas Eléctricas','Control Automático','Potencia','Señales y Sistemas',
   ]},
@@ -39,6 +42,24 @@ const CAREERS = [
   ]},
   { id: 'biomedica', name: 'Ingeniería Biomédica', subjects: [
     'Señales y Sistemas','Electrónica','Instrumentación','Biomecánica','Imagenología','Fisiología',
+  ]},
+  { id: 'nuclear', name: 'Ingeniería Nuclear', subjects: [
+    'Física Nuclear','Termodinámica','Radiología','Protección Radiológica','Reactores Nucleares','Seguridad Nuclear',
+  ]},
+  { id: 'aeronautica', name: 'Ingeniería Aeronáutica', subjects: [
+    'Mecánica de Fluidos','Aerodinámica','Propulsión','Estructuras Aeronáuticas','Materiales Compuestos','Sistemas Aviónicos',
+  ]},
+  { id: 'electronica', name: 'Ingeniería Electrónica', subjects: [
+    'Circuitos Eléctricos','Electrónica Analógica','Electrónica Digital','Microcontroladores','Señales y Sistemas','Telecomunicaciones',
+  ]},
+  { id: 'agro', name: 'Ingeniería en Agronomía', subjects: [
+    'Química General','Biología','Botánica','Edafología','Fitopatología','Agrometeorología',
+  ]},
+  { id: 'exactas', name: 'Lic. en Ciencias Exactas', subjects: [
+    'Análisis Matemático I','Análisis Matemático II','Álgebra','Física I','Física II','Química General',
+  ]},
+  { id: 'actuario', name: 'Actuario', subjects: [
+    'Probabilidad y Estadística','Matemática Financiera','Cálculo Actuarial','Riesgo','Modelos Estocásticos','Economía',
   ]},
 ];
 
