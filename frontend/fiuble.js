@@ -466,7 +466,7 @@ function renderFiuble() {
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/><rect x="16" y="9" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="16" width="6" height="6" rx="1"/></svg>
         </div>
         <h2 class="fiuble-title">FIUBLE</h2>
-        <span class="fiuble-subtitle">Resolvé la ecuación · Nuevo todos los días</span>
+        <span class="fiuble-subtitle">${puzzle.isWord ? 'Adiviná la palabra · Pista + letras' : 'Resolvé la ecuación'} · Nuevo todos los días</span>
       </div>
       <div class="fiuble-stats-row">
         <div class="fiuble-stat-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>${state.streak}</span></div>
@@ -480,10 +480,18 @@ function renderFiuble() {
       <div class="fiuble-topic-row">
         <div class="fiuble-topic-badge">${puzzle.topic}</div>
         <div class="fiuble-diff-badge" style="background:${getDiffColor(puzzle.difficulty)}">${getDiffLabel(puzzle.difficulty)}</div>
-        ${puzzle.isWord ? `<div class="fiuble-topic-badge" style="background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">${puzzle.wordLen} letras</div>` : ''}
+        ${puzzle.isWord ? `<div class="fiuble-topic-badge" style="background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3);font-weight:700">${puzzle.wordLen} letras</div>` : ''}
       </div>
-      <div class="fiuble-equation">${puzzle.eq}</div>
-      <div class="fiuble-hint"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>${puzzle.hint}${puzzle.isWord ? ` · <em style="opacity:0.7">${puzzle.wordLen} letras</em>` : ''}</div>
+      <div class="fiuble-equation" style="${puzzle.isWord ? 'font-size:0.95rem;color:var(--text-primary)' : ''}">${puzzle.eq}</div>
+      <div class="fiuble-hint" style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.15);border-radius:8px;padding:0.5rem 0.7rem;margin-top:0.5rem;font-size:0.85rem;line-height:1.4"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" style="vertical-align:-1px;margin-right:4px"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Pista:</strong> ${puzzle.hint}${puzzle.isWord ? ` · <strong>${puzzle.wordLen} letras</strong>` : ''}</div>
+      ${puzzle.isWord && !gameOver ? (() => {
+        let extra = '';
+        if (attempts.length >= 2) extra += `<div style="margin-top:0.4rem;font-size:0.75rem;color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:6px;padding:0.35rem 0.6rem">💡 Empieza con <strong>${puzzle.answer[0]}</strong></div>`;
+        if (attempts.length >= 4) extra += `<div style="margin-top:0.3rem;font-size:0.75rem;color:#8b5cf6;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.15);border-radius:6px;padding:0.35rem 0.6rem">🔤 Patrón: ${puzzle.answer.split('').map((c,i)=> i===0||i===puzzle.answer.length-1?c:'_').join(' ')}</div>`;
+        // Show slots with underscores
+        const slots = puzzle.answer.split('').map(()=>'<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:32px;border-bottom:2px solid var(--border-color);margin:0 2px;font-weight:700;color:var(--text-muted)">_</span>').join('');
+        return `<div style="margin-top:0.5rem;text-align:center">${slots}</div>` + extra;
+      })() : ''}
     </div>
 
     <div class="fiuble-grid">`;
