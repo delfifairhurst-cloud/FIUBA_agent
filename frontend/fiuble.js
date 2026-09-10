@@ -490,11 +490,25 @@ function renderFiuble() {
 
   for (let i=0;i<maxAttempts;i++) {
     if (i < attempts.length) {
-      const a = attempts[i]; const color = getHintColor(a.result);
+      const a = attempts[i];
       const isC = a.result==='correct'||(Array.isArray(a.result)&&a.result.every(r=>r==='correct'));
-      html += `<div class="fiuble-row fiuble-row-done fiuble-flip" style="border-color:${color}">
-        <span class="fiuble-guess" style="color:${color}">${a.guess}</span>
-        <span class="fiuble-check" style="color:${color}">${isC?getAttemptEmoji(i,attempts.length):'✗'}</span>
+      const guess = String(a.guess).toUpperCase();
+      let tiles = '';
+      if (a.result === 'correct') {
+        tiles = guess.split('').map(ch => `<span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:6px;background:#22c55e;color:white;font-weight:800;font-size:0.85rem;border:1px solid #16a34a">${ch}</span>`).join('');
+      } else if (Array.isArray(a.result)) {
+        tiles = guess.split('').map((ch, idx) => {
+          const r = a.result[idx] || 'absent';
+          const bg = r === 'correct' ? '#22c55e' : r === 'present' ? '#f59e0b' : '#52525b';
+          const border = r === 'correct' ? '#16a34a' : r === 'present' ? '#d97706' : '#3f3f46';
+          return `<span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:6px;background:${bg};color:white;font-weight:800;font-size:0.85rem;border:1px solid ${border}">${ch}</span>`;
+        }).join('');
+      } else {
+        tiles = `<span style="color:#ef4444;font-weight:700">${a.guess}</span>`;
+      }
+      html += `<div class="fiuble-row fiuble-row-done fiuble-flip" style="border-color:${isC ? '#22c55e' : '#3f3f46'}">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;flex:1">${tiles}</div>
+        <span class="fiuble-check" style="color:${isC ? '#22c55e' : '#ef4444'};font-size:1rem;flex-shrink:0">${isC?getAttemptEmoji(i,attempts.length):'✗'}</span>
       </div>`;
     } else if (i===attempts.length && gameActive) {
       const inputMode = puzzle.isWord ? 'text' : 'numeric';
