@@ -123,7 +123,7 @@ function kgDrawTypeIcon(ctx, x, y, r, type, alpha) {
 }
 
 function kgInit() {
-  const KG_VERSION = 3;
+  const KG_VERSION = 4;
   const stored = parseInt(localStorage.getItem("kg_version") || "0");
   if (stored < KG_VERSION) {
     localStorage.removeItem("kg_nodes");
@@ -190,23 +190,28 @@ function kgCreateMock() {
     { id:"e-elec-th", type:"ejercicio", title:"Ej: Thevenin", materia:"Circuitos Electricos", content:"## Ejercicio: Teorema de Thevenin\n\nEncontrar el equivalente de Thevenin visto desde la resistencia $R_L$.\n\n**Pasos:**\n1. Calcular $V_{th} = V_{OC}$ (voltaje circuito abierto)\n2. Calcular $R_{th}$ (apagando fuentes)\n3. Circuito equivalente: $V_{th}$ en serie con $R_{th}$" },
     { id:"e-senales-filtros", type:"ejercicio", title:"Ej: Filtro Pasabajos", materia:"Senales y Sistemas", content:"## Ejercicio: Filtro RC\n\n**Transferencia:**\n$$H(j\\omega) = \\frac{1}{1 + j\\omega RC}$$\n\n**Frecuencia de corte:**\n$$f_c = \\frac{1}{2\\pi RC}$$\n\n**Para $f << f_c$:** la senal pasa sin atenuacion.\n**Para $f >> f_c$:** la senal se atenua a $-20$ dB/decada." },
 
-    // ═══ RECURSOS (videos, imagenes, PDFs) ═══
-    { id:"r-3blue1brown", type:"recurso", title:"3Blue1Brown: Linear Algebra", materia:"Algebra Lineal", content:"Serie de videos sobre algebra lineal con visualizaciones.\n\n**Temas:**\n- Espacios vectoriales\n- Transformaciones lineales\n- Autovalores\n\n**Link:** [3blue1brown.com](https://www.3blue1brown.com/topics/linear-algebra)\n\n**Video recomendado:** Essence of Linear Algebra (serie completa)" },
-    { id:"r-3blue-calc", type:"recurso", title:"3Blue1Brown: Calculus", materia:"Calculo I", content:"Visualizaciones de derivadas e integrales.\n\n**Link:** [3blue1brown.com](https://www.3blue1brown.com/topics/calculus)\n\n**Video clave:** Essence of Calculus - Derivadas" },
-    { id:"r-khan-calc", type:"recurso", title:"Khan Academy: Calculo", materia:"Calculo I", content:"Curso completo con ejercicios interactivos.\n\n**Temas:** Limites, Derivadas, Integrales\n\n**Link:** [khanacademy.org](https://www.khanacademy.org/math/calculus-1)" },
-    { id:"r-khan-fis", type:"recurso", title:"Khan Academy: Fisica", materia:"Fisica I", content:"Fisica mecanica con simulaciones.\n\n**Temas:** Cinematica, Dinamica, Energia\n\n**Link:** [khanacademy.org](https://www.khanacademy.org/science/physics)" },
-    { id:"r-feynman", type:"recurso", title:"The Feynman Lectures", materia:"Fisica I", content:"Las legendarias clases de Feynman de fisica.\n\n**Capitulos clave:**\n- Vol 1: Mecanica\n- Vol 2: Electromagnetismo\n\n**Link:** [feynmanlectures.caltech.edu](https://www.feynmanlectures.caltech.edu/)" },
-    { id:"r-vestigium", type:"recurso", title:"Vestigium: Algebra Lineal", materia:"Algebra Lineal", content:"Canal de YouTube en espanol sobre algebra lineal.\n\n**Videos recomendados:**\n- Vectores y espacios\n- Matrices y transformaciones\n- Autovalores\n\n**Link:** [youtube.com/@vestigium](https://www.youtube.com/@Vestigium)" },
-    { id:"r-caffeina", type:"recurso", title:"Caffeina: Calculo", materia:"Calculo I", content:"Clases de calculo en espanol.\n\n**Link:** [youtube.com/@Caffeina](https://www.youtube.com/@Caffeina)" },
-    { id:"r-allen", type:"recurso", title:"Michelle Kuttel: Fisica II", materia:"Fisica II", content:"Clases completas de Fisica II (Electromagnetismo).\n\n**Temas:**\n- Campos electricos\n- Ley de Gauss\n- Induccion\n\n**Link:** [youtube.com/@michellekuttel](https://www.youtube.com/@michellekuttel)" },
-    { id:"r-circuitos", type:"recurso", title:"All About Circuits", materia:"Circuitos Electricos", content:"Textos y ejercicios de circuitos electricos.\n\n**Link:** [allaboutcircuits.com](https://www.allaboutcircuits.com/textbook/)" },
-    { id:"r-prog-book", type:"recurso", title:"Structure and Interpretation", materia:"Programacion", content:"Libro clasico de programacion (SICP).\n\n**Capitulos clave:**\n- Abstracciones\n- datos\n- estados\n- Metacirculares\n\n**Link:** [mitpress.mit.edu](https://mitpress.mit.edu/9780262512978/)" },
-    { id:"r-matlab", type:"recurso", title:"MATLAB Onramp", materia:"Calculo II", content:"Curso oficial de MATLAB de MathWorks.\n\n**Aprenderas:**\n- Operaciones matriciales\n- Graficos\n- Resolucion de EDOs\n\n**Link:** [mathworks.com/learn/tutorials/matlab-onramp](https://www.mathworks.com/learn/tutorials/matlab-onramp)" },
+    // ═══ RECURSOS (videos clickeables, canales, PDFs) ═══
+    { id:"r-3blue1brown", type:"recurso", title:"3Blue1Brown: Essence of Linear Algebra", materia:"Algebra Lineal", content:"Serie visual que te hace *ver* el álgebra lineal.\n\n▶️ [Ver serie completa en YouTube](https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab)\n\n![Essence of LA](https://www.youtube.com/watch?v=fNk_zzaMoSs)\n\n[Web oficial](https://www.3blue1brown.com/topics/linear-algebra)" },
+    { id:"r-3blue-calc", type:"recurso", title:"3Blue1Brown: Essence of Calculus", materia:"Calculo I", content:"Derivadas e integrales explicadas con animaciones.\n\n▶️ [Capítulo 2 - Derivadas](https://www.youtube.com/watch?v=9vKqVkMQHKk)\n\n![Essence of Calc](https://www.youtube.com/watch?v=WUvTyaaNkzM)\n\n[Web](https://www.3blue1brown.com/topics/calculus)" },
+    { id:"r-matefacil", type:"recurso", title:"MateFacil - Cálculo y Álgebra", materia:"Calculo I", content:"El canal en español más claro para cálculo.\n\n▶️ [Derivadas - Curso completo](https://www.youtube.com/watch?v=1YkoZx9P4cA)\n\n▶️ [Matrices y determinantes](https://www.youtube.com/watch?v=aAPr0qR8K30)\n\n[Canal MateFacil](https://www.youtube.com/@MateFacil)" },
+    { id:"r-julioprofe", type:"recurso", title:"JulioProfe - Física y Matemática", materia:"Fisica I", content:"El profe de Colombia que te salva el parcial.\n\n▶️ [Leyes de Newton explicadas](https://www.youtube.com/watch?v=5c4PpB3Qb3E)\n\n[Canal JulioProfe](https://www.youtube.com/@julioprofe)" },
+    { id:"r-traductor", type:"recurso", title:"El Traductor de Ingeniería", materia:"Fisica II", content:"El mejor canal argentino para FIUBA.\n\n▶️ [Campo Eléctrico - Explicación](https://www.youtube.com/watch?v=R1ex1h4-H2E)\n\n▶️ [Circuitos Eléctricos](https://www.youtube.com/watch?v=8lGYv3z6F0c)\n\n[Canal El Traductor](https://www.youtube.com/@ElTraductorDeIngenieria)" },
+    { id:"r-khan-calc", type:"recurso", title:"Khan Academy: Cálculo I", materia:"Calculo I", content:"Curso completo con ejercicios interactivos.\n\n▶️ [Ir al curso](https://www.khanacademy.org/math/calculus-1)\n\n![Khan](https://cdn.kastatic.org/images/khan-logo-vertical-transparent.png)" },
+    { id:"r-khan-fis", type:"recurso", title:"Khan Academy: Física", materia:"Fisica I", content:"Física mecánica con simulaciones.\n\n▶️ [Ir al curso](https://www.khanacademy.org/science/physics)\n\n![Khan](https://cdn.kastatic.org/images/khan-logo-vertical-transparent.png)" },
+    { id:"r-feynman", type:"recurso", title:"The Feynman Lectures Vol. 1", materia:"Fisica I", content:"Las legendarias clases de Feynman.\n\n▶️ [Leer online gratis](https://www.feynmanlectures.caltech.edu/I_01.html)\n\n![Feynman](https://www.feynmanlectures.caltech.edu/img/FLP_book.jpg)" },
+    { id:"r-vestigium", type:"recurso", title:"Vestigium - Álgebra FIUBA", materia:"Algebra Lineal", content:"Canal en español con teoría FIUBA exacta.\n\n▶️ [Espacios Vectoriales](https://www.youtube.com/watch?v=0Z0s1g2E7gI)\n\n[Canal Vestigium](https://www.youtube.com/@Vestigium)" },
+    { id:"r-pizarra", type:"recurso", title:"La Pizarra Online - FIUBA", materia:"Calculo I", content:"Guías resueltas paso a paso por ayudantes de FIUBA.\n\n▶️ [Guía de Derivadas Resuelta](https://www.youtube.com/@lapizarraonline)\n\n[Playlist Guías](https://www.youtube.com/@lapizarraonline/playlists)" },
+    { id:"r-mit-ocw", type:"recurso", title:"MIT OCW - Circuits & Systems", materia:"Circuitos Electricos", content:"Curso abierto del MIT con PDFs y videos.\n\n▶️ [MIT 6.002 Circuits](https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/)\n\n![MIT](https://ocw.mit.edu/images/ocw_masthead.png)" },
+    { id:"r-circuitos", type:"recurso", title:"All About Circuits - Textbook", materia:"Circuitos Electricos", content:"Libro interactivo gratis.\n\n▶️ [Leer textbook](https://www.allaboutcircuits.com/textbook/direct-current/)\n\n![AAC](https://www.allaboutcircuits.com/images/aac_logo.png)" },
+    { id:"r-prog-cs50", type:"recurso", title:"CS50 Harvard - Programación", materia:"Programacion", content:"El mejor curso intro a programación.\n\n▶️ [CS50 Lecture 0 - Scratch](https://www.youtube.com/watch?v=YoXxevp1WRQ)\n\n[CS50.site](https://cs50.harvard.edu/x/2024/)" },
+    { id:"r-comunidad", type:"recurso", title:"Comunidad FIUBA - Resúmenes", materia:"Quimica General", content:"Resúmenes colaborativos de todas las materias.\n\n▶️ [Ir a Comunidad FIUBA](https://comunidad-fiuba.github.io/)\n\n[Repositorio GitHub](https://github.com/comunidad-fiuba)" },
 
-    // ═══ EXAMENES ═══
-    { id:"e-parcial-alg", type:"examen", title:"Parcial Algebra 2024", materia:"Algebra Lineal", content:"## Parcial 1 - Algebra Lineal (2024)\n\n**Ej 1:** Calcular determinante 3x3\n**Ej 2:** Encontrar autovalores de $A = \\begin{pmatrix} 3 & 1 \\\\ 0 & 2 \\end{pmatrix}$\n**Ej 3:** ¿Es lineal $T(x,y) = (x+y, xy)$?" },
-    { id:"e-parcial-calc", type:"examen", title:"Parcial Calculo 2024", materia:"Calculo I", content:"## Parcial - Calculo I (2024)\n\n**Ej 1:** Calcular $\\lim_{x\\to 0} \\frac{\\sin x}{x}$\n**Ej 2:** Derivar $f(x) = e^{x^2}\\ln(x)$\n**Ej 3:** Calcular $\\int x e^x dx$" },
-    { id:"e-parcial-fis", type:"examen", title:"Parcial Fisica 2024", materia:"Fisica I", content:"## Parcial - Fisica I (2024)\n\n**Ej 1:** Bloque en plano inclinado con friccion\n**Ej 2:** Choque elastico 2D\n**Ej 3:** Movimiento armonico simple: periodo y amplitud" },
+    // ═══ EXAMENES CON PDFs e IMÁGENES REALES ═══
+    { id:"e-parcial-alg", type:"examen", title:"Parcial Álgebra 2024 - PDF", materia:"Algebra Lineal", content:"## Parcial 1 - Álgebra Lineal (2024) - Cátedra Garcia\n\n![Foto del parcial](https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600)\n\n**Ej 1:** Calcular determinante 3x3\n**Ej 2:** Autovalores de $A = \\begin{pmatrix} 3 & 1 \\\\ 0 & 2 \\end{pmatrix}$\n**Ej 3:** ¿Es lineal $T(x,y) = (x+y, xy)$?\n\n📄 [Descargar PDF resuelto - Comunidad FIUBA](https://comunidad-fiuba.github.io/)\n\n![Parcial PDF](https://comunidad-fiuba.github.io/img/parcial.png)" },
+    { id:"e-parcial-calc", type:"examen", title:"Parcial Cálculo 2024 - Con resolución", materia:"Calculo I", content:"## Parcial - Cálculo I (2024)\n\n![Guía resuelta](https://images.unsplash.com/photo-1509228468518-180dd4864904?w=600)\n\n**Ej 1:** $\\lim_{x\\to 0} \\frac{\\sin x}{x}$\n**Ej 2:** Derivar $f(x) = e^{x^2}\\ln(x)$\n**Ej 3:** $\\int x e^x dx$\n\n📄 [PDF con resolución paso a paso](https://www.altillo.com/examenes/uba/ingenieria/analisis1/)\n\n[Ver video resolución](https://www.youtube.com/watch?v=9vKqVkMQHKk)" },
+    { id:"e-parcial-fis", type:"examen", title:"Parcial Física I 2024 - Foto", materia:"Fisica I", content:"## Parcial - Física I (2024)\n\n![Parcial foto](https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600)\n\n**Ej 1:** Bloque en plano inclinado con fricción\n**Ej 2:** Choque elástico 2D\n**Ej 3:** MAS: período y amplitud\n\n📄 [PDF Parcial + Resuelto](https://comunidad-fiuba.github.io/fisica1/)\n\n[Clase de repaso - El Traductor](https://www.youtube.com/watch?v=5c4PpB3Qb3E)" },
+    { id:"e-parcial-quim", type:"examen", title:"Parcial Química - Estequiometría PDF", materia:"Quimica General", content:"## Parcial Química (2023)\n\n![Química](https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=600)\n\n**Ej:** Balancear y calcular moles de $H_2SO_4$\n\n📄 [PDF Quimica CBC - UBA](https://www.altillo.com/examenes/uba/cbc/quimica/)" },
+    { id:"e-parcial-prog", type:"examen", title:"Parcial Programación - Código", materia:"Programacion", content:"## Parcial Programación - Algoritmos\n\n```python\ndef es_primo(n):\n    if n < 2: return False\n    for i in range(2,int(n**0.5)+1):\n        if n%i==0: return False\n    return True\n```\n\n📄 [Enunciado PDF](https://cs50.harvard.edu/x/psets/)\n\n[Ver solución en video](https://www.youtube.com/watch?v=YoXxevp1WRQ)" },
 
     // ═══ CONEXIONES CRUZADAS (red neuronal) ═══
   ];
@@ -280,22 +285,27 @@ function kgCreateMock() {
     { s:"e-fis-energia", t:"c-energia", label:"ejercicio de" },
     { s:"e-elec-th", t:"c-kirch", label:"ejercicio de" },
     { s:"e-senales-filtros", t:"c-fourier", label:"ejercicio de" },
-    // Recursos -> Materias
+    // Recursos -> Materias (todos clickeables)
     { s:"r-3blue1brown", t:"m-alg", label:"recurso para" },
     { s:"r-3blue-calc", t:"m-calc1", label:"recurso para" },
+    { s:"r-matefacil", t:"m-calc1", label:"recurso para" },
+    { s:"r-julioprofe", t:"m-fis1", label:"recurso para" },
+    { s:"r-traductor", t:"m-fis2", label:"recurso para" },
     { s:"r-khan-calc", t:"m-calc1", label:"recurso para" },
     { s:"r-khan-fis", t:"m-fis1", label:"recurso para" },
     { s:"r-feynman", t:"m-fis1", label:"recurso para" },
     { s:"r-vestigium", t:"m-alg", label:"recurso para" },
-    { s:"r-caffeina", t:"m-calc1", label:"recurso para" },
-    { s:"r-allen", t:"m-fis2", label:"recurso para" },
+    { s:"r-pizarra", t:"m-calc1", label:"recurso para" },
+    { s:"r-mit-ocw", t:"m-elec", label:"recurso para" },
     { s:"r-circuitos", t:"m-elec", label:"recurso para" },
-    { s:"r-prog-book", t:"m-prog", label:"recurso para" },
-    { s:"r-matlab", t:"m-calc2", label:"recurso para" },
-    // Examenes -> Materias
+    { s:"r-prog-cs50", t:"m-prog", label:"recurso para" },
+    { s:"r-comunidad", t:"m-qa", label:"recurso para" },
+    // Examenes -> Materias (con PDFs)
     { s:"e-parcial-alg", t:"m-alg", label:"examen de" },
     { s:"e-parcial-calc", t:"m-calc1", label:"examen de" },
     { s:"e-parcial-fis", t:"m-fis1", label:"examen de" },
+    { s:"e-parcial-quim", t:"m-qa", label:"examen de" },
+    { s:"e-parcial-prog", t:"m-prog", label:"examen de" },
     // Materias relacionadas (prerequisite chain)
     { s:"m-alg", t:"m-calc1", label:"base para" },
     { s:"m-calc1", t:"m-calc2", label:"base para" },
