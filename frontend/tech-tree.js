@@ -460,9 +460,15 @@ function kgMd(text) {
     '<div style="margin:0.5rem 0;border-radius:8px;overflow:hidden;aspect-ratio:16/9"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/$2" frameborder="0" allowfullscreen style="border-radius:8px"></iframe></div>');
   h = h.replace(/!\[([^\]]*)\]\(https?:\/\/(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]+)[^)]*\)/g,
     '<div style="margin:0.5rem 0;border-radius:8px;overflow:hidden;aspect-ratio:16/9"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/$2" frameborder="0" allowfullscreen style="border-radius:8px"></iframe></div>');
-  // Regular images
+  // PDF embeds: ![title](file.pdf) with viewer + download button
+  h = h.replace(/!\[([^\]]*)\]\(([^)]*\.pdf[^)]*)\)/g,
+    '<div style="margin:0.5rem 0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;overflow:hidden"><div style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 0.6rem;background:linear-gradient(135deg,rgba(239,68,68,0.08),rgba(220,38,38,0.05));border-bottom:1px solid var(--border-color)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg><span style="font-size:0.72rem;font-weight:600;color:var(--text-primary)">$1</span><a href="$2" target="_blank" download style="margin-left:auto;padding:0.2rem 0.5rem;background:#ef444420;color:#ef4444;border:1px solid #ef444440;border-radius:4px;font-size:0.62rem;text-decoration:none;font-weight:600">Abrir PDF</a></div><iframe src="$2" style="width:100%;height:380px;border:none" loading="lazy"></iframe></div>');
+  // Regular images (click to zoom)
   h = h.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
-    '<div style="margin:0.5rem 0"><img src="$2" alt="$1" style="max-width:100%;border-radius:8px;border:1px solid var(--border-color)" onerror="this.style.display=\'none\'"></div>');
+    '<div style="margin:0.5rem 0"><img src="$2" alt="$1" style="max-width:100%;border-radius:8px;border:1px solid var(--border-color);cursor:zoom-in" onclick="window.open(this.src,\'_blank\')" onerror="this.parentElement.innerHTML=\'<div style=padding:0.5rem;background:var(--bg-secondary);border:1px dashed var(--border-color);border-radius:8px;text-align:center;font-size:0.65rem;color:var(--text-muted)\">Imagen no disponible</div>\'"><div style="font-size:0.6rem;color:var(--text-muted);text-align:center;margin-top:0.2rem">$1 — click para ampliar</div></div>');
+  // Clickable links: [text](https://url) → open in new tab with external icon
+  h = h.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener" style="color:#8b5cf6;text-decoration:underline;text-underline-offset:3px;font-weight:600;cursor:pointer" onclick="event.stopPropagation()">$1 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;display:inline-block"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>');
   h = "<p>" + h + "</p>";
   return kgKatex(h);
 }
