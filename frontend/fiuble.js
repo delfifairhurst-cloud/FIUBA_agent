@@ -2,6 +2,81 @@
 const FIUBLE_KEY = 'fiuba_fiuble';
 const FIUBLE_TUTORIAL = 'fiuba_fiuble_tutorial';
 
+// ─── ENGINEERING WORD BANK (Wordle mode ~80%) ───
+const FIUBLE_WORDS = [
+  // Matemática
+  { w: "MATRIZ", topic: "Álgebra", hint: "Arreglo de números en filas y columnas" },
+  { w: "VECTOR", topic: "Álgebra", hint: "Tiene magnitud y dirección" },
+  { w: "LIMITE", topic: "Análisis", hint: "Valor al que tiende una función" },
+  { w: "DERIVA", topic: "Análisis", hint: "Pendiente instantánea" },
+  { w: "INTEGRA", topic: "Análisis", hint: "Antiderivada / área bajo curva" },
+  { w: "TENSOR", topic: "Álgebra", hint: "Generalización de escalar y vector" },
+  { w: "EIGEN", topic: "Álgebra", hint: "Valor/vector propio" },
+  { w: "BINOMIO", topic: "Álgebra", hint: "Expresión de dos términos" },
+  { w: "FACTOR", topic: "Álgebra", hint: "Cada parte de una multiplicación" },
+  { w: "MATRIZ", topic: "Álgebra", hint: " Tabla numérica" },
+  { w: "RADIAN", topic: "Análisis", hint: "Unidad natural de ángulo" },
+  // Física
+  { w: "FUERZA", topic: "Física", hint: "Causa de aceleración, F=ma" },
+  { w: "ENERGIA", topic: "Física", hint: "Capacidad para hacer trabajo" },
+  { w: "INERCIA", topic: "Física", hint: "Resistencia al cambio de movimiento" },
+  { w: "MOMENTO", topic: "Física", hint: "p=m·v o r×F" },
+  { w: "POTENCIA", topic: "Física", hint: "Trabajo por unidad de tiempo" },
+  { w: "PRESION", topic: "Física", hint: "Fuerza sobre área" },
+  { w: "DENSIDA", topic: "Física", hint: "Masa por volumen (sin tilde)" },
+  { w: "GRAVEDA", topic: "Física", hint: "Campo de 9.8 m/s²" },
+  { w: "CALOR", topic: "Física", hint: "Energía en tránsito por diferencia de T" },
+  { w: "ENTROPI", topic: "Física", hint: "Medida del desorden" },
+  { w: "OSCILA", topic: "Física", hint: "Movimiento periódico alrededor del equilibrio" },
+  // Eléctrica / Señales
+  { w: "OHMIO", topic: "Circuitos", hint: "Unidad de resistencia" },
+  { w: "VOLTIO", topic: "Circuitos", hint: "Unidad de tensión" },
+  { w: "CORRIEN", topic: "Circuitos", hint: "Flujo de carga" },
+  { w: "CIRCUIT", topic: "Circuitos", hint: "Camino cerrado para la corriente" },
+  { w: "BOBINA", topic: "Circuitos", hint: "Inductor enrollado" },
+  { w: "FARADIO", topic: "Circuitos", hint: "Unidad de capacidad (sin tilde)" },
+  { w: "LAPLACE", topic: "Señales", hint: "Transformada para EDOs" },
+  { w: "FOURIER", topic: "Señales", hint: "Descomposición en senos" },
+  { w: "FILTRO", topic: "Señales", hint: "Deja pasar ciertas frecuencias" },
+  { w: "MUESTRA", topic: "Señales", hint: "Valor discreto de una señal" },
+  // Química / Materiales
+  { w: "ATOMO", topic: "Química", hint: "Unidad mínima de elemento" },
+  { w: "ENLACE", topic: "Química", hint: "Unión entre átomos" },
+  { w: "MOLAR", topic: "Química", hint: "Masa por mol" },
+  { w: "ACIDO", topic: "Química", hint: "Dona protones, pH<7" },
+  { w: "BASE", topic: "Química", hint: "Acepta protones, pH>7" },
+  { w: "OXIDO", topic: "Química", hint: "Compuesto con oxígeno" },
+  { w: "ALEACI", topic: "Materiales", hint: "Mezcla de metales" },
+  { w: "ACERO", topic: "Materiales", hint: "Hierro + carbono" },
+  { w: "POLIMER", topic: "Materiales", hint: "Macromolécula de monómeros" },
+  // Civil / Mecánica / Fluidos
+  { w: "VIGA", topic: "Estructuras", hint: "Elemento que resiste flexión" },
+  { w: "PUENTE", topic: "Estructuras", hint: "Cruza un vano" },
+  { w: "COLUMNA", topic: "Estructuras", hint: "Elemento a compresión vertical" },
+  { w: "TORSION", topic: "Mecánica", hint: "Giro por momento torsor" },
+  { w: "CORTE", topic: "Mecánica", hint: "Esfuerzo tangencial" },
+  { w: "FLUJO", topic: "Fluidos", hint: "Movimiento de fluido" },
+  { w: "VISCOSO", topic: "Fluidos", hint: "Fluido con resistencia interna" },
+  { w: "BERNOUL", topic: "Fluidos", hint: "Principio de energía en fluidos" },
+  { w: "REYNOLD", topic: "Fluidos", hint: "Número adimensional de régimen" },
+  // Programación / Sistemas
+  { w: "ALGORIT", topic: "Programación", hint: "Pasos para resolver un problema" },
+  { w: "COMPILA", topic: "Programación", hint: "Traduce código fuente" },
+  { w: "HEAP", topic: "Programación", hint: "Memoria dinámica" },
+  { w: "STACK", topic: "Programación", hint: "Pila LIFO" },
+  { w: "CLASE", topic: "Programación", hint: "Molde de objetos" },
+  { w: "HERENCIA", topic: "Programación", hint: "Reutiliza de clase padre" },
+  { w: "SOCKET", topic: "Redes", hint: "Extremo de comunicación" },
+  { w: "ROUTER", topic: "Redes", hint: "Enruta paquetes" },
+  { w: "CACHE", topic: "Sistemas", hint: "Memoria rápida intermedia" },
+  { w: "KERNEL", topic: "Sistemas", hint: "Núcleo del SO" },
+  // Industrial / Optimización
+  { w: "STOCK", topic: "Industrial", hint: "Inventario" },
+  { w: "PERT", topic: "Industrial", hint: "Técnica de planificación" },
+  { w: "FORD", topic: "Industrial", hint: "Pionero de línea de montaje" },
+  { w: "TAYLOR", topic: "Industrial", hint: "Padre de la administración científica" },
+];
+
 // ─── EQUATION GENERATOR ───
 function randInt(rng, min, max) { return Math.floor(rng() * (max - min + 1)) + min; }
 function pick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
@@ -112,10 +187,25 @@ const GENERATORS = ['aritmetica','algebra','fisica','quimica','programacion','cb
 
 function generatePuzzle(seed) {
   const rng = seededRandom(seed);
+  // 80% palabra de ingeniería (modo Wordle), 20% cuenta matemática
+  if (rng() < 0.8) {
+    const entry = pick(rng, FIUBLE_WORDS);
+    const diff = entry.w.length <= 5 ? 1 : entry.w.length <= 7 ? 2 : 3;
+    return {
+      eq: `Adiviná la palabra (${entry.w.length} letras)`,
+      answer: entry.w,
+      topic: entry.topic,
+      hint: entry.hint,
+      difficulty: diff,
+      isWord: true,
+      wordLen: entry.w.length
+    };
+  }
   const diff = randInt(rng, 1, 3);
   const genName = pick(rng, GENERATORS);
   const puzzle = GEN[genName](rng, diff);
   puzzle.difficulty = diff;
+  puzzle.isWord = false;
   return puzzle;
 }
 
@@ -244,14 +334,16 @@ function launchConfetti() {
 
 // ─── GAME LOGIC ───
 function normalizeAnswer(s) {
+  if (!puzzle || puzzle.isWord) return String(s).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   return String(s).replace(/,/g, '.').replace(/\.?0+$/, '');
 }
 function checkGuess(guess) {
   const target = puzzle.answer;
   const gs = normalizeAnswer(guess), ts = normalizeAnswer(target);
   if (gs === ts) return 'correct';
+  // Pad to same length for Wordle-style comparison
   const gd = gs.split(''), td = ts.split('');
-  const result = Array(gs.length).fill('absent');
+  const result = Array(gd.length).fill('absent');
   const tu = Array(td.length).fill(false), gu = Array(gd.length).fill(false);
   for (let i=0;i<gd.length;i++) { if (i<td.length && gd[i]===td[i]) { result[i]='correct'; tu[i]=true; gu[i]=true; } }
   for (let i=0;i<gd.length;i++) { if (gu[i]) continue; for (let j=0;j<td.length;j++) { if (!tu[j] && gd[i]===td[j]) { result[i]='present'; tu[j]=true; break; } } }
@@ -344,22 +436,22 @@ function renderFiuble() {
     html += `
     <div class="fiuble-tutorial-overlay" onclick="if(event.target===this)window.closeFiubleTutorial()">
       <div class="fiuble-tutorial">
-        <div class="fiuble-tutorial-icon">🧮</div>
+        <div class="fiuble-tutorial-icon">🧩</div>
         <h3>¿Cómo jugar FIUBLE?</h3>
-        <p>Resolvé la ecuación y escribí tu respuesta.</p>
+        <p>${puzzle.isWord ? 'Adiviná la palabra de ingeniería del día.' : 'Resolvé la ecuación y escribí tu respuesta.'}</p>
         <div class="fiuble-tutorial-colors">
-          <div><span class="fiuble-tile-preview" style="background:#22c55e">5</span> <strong>Verde</strong>: dígito correcto en posición correcta</div>
-          <div><span class="fiuble-tile-preview" style="background:#f59e0b">3</span> <strong>Amarillo</strong>: dígito correcto pero en otra posición</div>
-          <div><span class="fiuble-tile-preview" style="background:#ef4444">1</span> <strong>Rojo</strong>: dígito no está en la respuesta</div>
+          <div><span class="fiuble-tile-preview" style="background:#22c55e">A</span> <strong>Verde</strong>: letra/dígito correcto en posición correcta</div>
+          <div><span class="fiuble-tile-preview" style="background:#f59e0b">A</span> <strong>Amarillo</strong>: letra/dígito correcto pero en otra posición</div>
+          <div><span class="fiuble-tile-preview" style="background:#ef4444">A</span> <strong>Rojo</strong>: no está en la respuesta</div>
         </div>
         <div class="fiuble-tutorial-example">
-          <div class="fiuble-tutorial-eq">Ejemplo: 15 × 4 = ?</div>
-          <div class="fiuble-tutorial-answer">Respuesta: 60</div>
-          <div class="fiuble-tutorial-guess">Si decís <strong>56</strong>:</div>
+          <div class="fiuble-tutorial-eq">${puzzle.isWord ? 'Palabra de 6 letras — pista: Arreglo de números' : 'Ejemplo: 15 × 4 = ?'}</div>
+          <div class="fiuble-tutorial-answer">Respuesta: ${puzzle.isWord ? 'MATRIZ' : '60'}</div>
+          <div class="fiuble-tutorial-guess">Si decís <strong>${puzzle.isWord ? 'MOTRIZ' : '56'}</strong>:</div>
           <div class="fiuble-tutorial-tiles">
-            <span class="fiuble-tile-preview" style="background:#ef4444">5</span>
-            <span class="fiuble-tile-preview" style="background:#22c55e">6</span>
-            <span class="fiuble-tile-preview" style="background:#f59e0b">0</span>
+            <span class="fiuble-tile-preview" style="background:#22c55e">${puzzle.isWord?'M':'6'}</span>
+            <span class="fiuble-tile-preview" style="background:#f59e0b">${puzzle.isWord?'O':'5'}</span>
+            <span class="fiuble-tile-preview" style="background:#ef4444">${puzzle.isWord?'T':'0'}</span>
           </div>
         </div>
         <button class="fiuble-tutorial-btn" onclick="window.closeFiubleTutorial()">¡A jugar!</button>
@@ -388,9 +480,10 @@ function renderFiuble() {
       <div class="fiuble-topic-row">
         <div class="fiuble-topic-badge">${puzzle.topic}</div>
         <div class="fiuble-diff-badge" style="background:${getDiffColor(puzzle.difficulty)}">${getDiffLabel(puzzle.difficulty)}</div>
+        ${puzzle.isWord ? `<div class="fiuble-topic-badge" style="background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">${puzzle.wordLen} letras</div>` : ''}
       </div>
       <div class="fiuble-equation">${puzzle.eq}</div>
-      <div class="fiuble-hint"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>${puzzle.hint}</div>
+      <div class="fiuble-hint"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>${puzzle.hint}${puzzle.isWord ? ` · <em style="opacity:0.7">${puzzle.wordLen} letras</em>` : ''}</div>
     </div>
 
     <div class="fiuble-grid">`;
@@ -404,9 +497,11 @@ function renderFiuble() {
         <span class="fiuble-check" style="color:${color}">${isC?getAttemptEmoji(i,attempts.length):'✗'}</span>
       </div>`;
     } else if (i===attempts.length && gameActive) {
+      const inputMode = puzzle.isWord ? 'text' : 'numeric';
+      const placeholder = puzzle.isWord ? `Palabra de ${puzzle.wordLen} letras...` : 'Tu respuesta...';
       html += `<div class="fiuble-row fiuble-row-active">
-        <input id="fiuble-input" class="fiuble-input" type="text" inputmode="numeric" placeholder="Tu respuesta..."
-          value="${currentGuess}" oninput="window.setFiubleGuess(this.value)"
+        <input id="fiuble-input" class="fiuble-input" type="text" inputmode="${inputMode}" placeholder="${placeholder}"
+          value="${currentGuess}" oninput="window.setFiubleGuess(this.value)" autocomplete="off" autocapitalize="characters"
           onkeydown="if(event.key==='Enter')window.submitFiubleGuess()" ${!gameActive?'disabled':''}>
         <button class="fiuble-submit-btn" onclick="window.submitFiubleGuess()" ${!gameActive?'disabled':''}>→</button>
       </div>`;
@@ -452,7 +547,7 @@ function renderFiuble() {
     </div>`;
   }
 
-  html += `<div class="fiuble-footer"><p>Resolvé la ecuación · 6 intentos · Se renueva a medianoche</p></div>`;
+  html += `<div class="fiuble-footer"><p>${puzzle.isWord ? 'Adiviná la palabra' : 'Resolvé la ecuación'} · 6 intentos · Se renueva a medianoche</p></div>`;
   container.innerHTML = html;
   const input = document.getElementById('fiuble-input');
   if (input) setTimeout(()=>input.focus(),100);
@@ -460,7 +555,11 @@ function renderFiuble() {
 
 // ─── WINDOW EXPORTS ───
 window.setFiubleGuess = function(v) {
-  currentGuess = v.replace(/[^0-9,.\-]/g,'');
+  if (puzzle && puzzle.isWord) {
+    currentGuess = v.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ]/g,'').toUpperCase().slice(0, 12);
+  } else {
+    currentGuess = v.replace(/[^0-9,.\-]/g,'');
+  }
   const inp = document.getElementById('fiuble-input');
   if (inp && inp.value !== currentGuess) inp.value = currentGuess;
 };
