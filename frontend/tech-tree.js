@@ -332,8 +332,12 @@ function kgFiltered() {
   if (KG.filterType) nodes = nodes.filter(n => n.type === KG.filterType);
   if (KG.filterMateria) nodes = nodes.filter(n => n.materia === KG.filterMateria);
   if (KG.search) {
-    const q = KG.search.toLowerCase();
-    nodes = nodes.filter(n => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q) || n.materia.toLowerCase().includes(q));
+    const q = KG.search.toLowerCase().trim();
+    const tokens = q.split(/\s+/).filter(Boolean);
+    nodes = nodes.filter(n => {
+      const hay = `${n.title} ${n.content} ${n.materia}`.toLowerCase();
+      return tokens.every(tok => hay.includes(tok));
+    });
   }
   return nodes;
 }

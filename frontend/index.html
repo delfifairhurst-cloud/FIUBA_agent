@@ -1533,6 +1533,25 @@
   <script src="calculator.js"></script>
   <script src="admin-bot.js"></script>
 
+  <!-- Quick Capture Modal (Cmd+K) -->
+  <div id="quick-capture-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);backdrop-filter:blur(12px);align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s ease" onclick="if(event.target===this)closeQuickCapture()">
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1.2rem;width:92%;max-width:520px;box-shadow:0 25px 80px rgba(0,0,0,0.4);transform:translateY(10px) scale(0.98);transition:transform 0.2s ease" id="qc-dialog">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
+        <h3 style="margin:0;font-size:1rem;display:flex;align-items:center;gap:0.4rem"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Captura rápida <span style="font-size:0.6rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:0.1rem 0.3rem;color:var(--text-muted)">⌘K</span></h3>
+        <button onclick="closeQuickCapture()" style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;width:28px;height:28px;cursor:pointer;color:var(--text-muted)">✕</button>
+      </div>
+      <input id="qc-title" placeholder="Título de la nota..." style="width:100%;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.55rem 0.7rem;font-size:0.85rem;color:var(--text-primary);outline:none;margin-bottom:0.5rem" oninput="qcAutoTagDebounced()">
+      <textarea id="qc-content" placeholder="Pega texto, link de YouTube/Drive, o arrastra un PDF..." rows="4" style="width:100%;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.6rem 0.7rem;font-size:0.82rem;color:var(--text-primary);outline:none;resize:vertical" oninput="qcAutoTagDebounced()" ondragover="event.preventDefault();this.style.borderColor='#8b5cf6'" ondragleave="this.style.borderColor='var(--border-color)'" ondrop="qcHandleDrop(event)"></textarea>
+      <div style="display:flex;gap:0.4rem;margin:0.6rem 0">
+        <select id="qc-type" style="flex:1;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.45rem;font-size:0.75rem;color:var(--text-primary)"></select>
+        <select id="qc-materia" style="flex:1;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.45rem;font-size:0.75rem;color:var(--text-primary)"></select>
+      </div>
+      <div id="qc-ai-hint" style="font-size:0.68rem;color:var(--text-muted);min-height:1.1rem;display:flex;align-items:center;gap:0.3rem"><span style="width:6px;height:6px;background:#22c55e;border-radius:50%;display:inline-block"></span> AI sugerirá materia y tipo automáticamente</div>
+      <button onclick="handleQuickCapture()" style="width:100%;margin-top:0.7rem;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:white;border:none;border-radius:10px;padding:0.7rem;font-weight:700;cursor:pointer;font-size:0.85rem">Guardar en Knowledge Hub →</button>
+      <div style="font-size:0.62rem;color:var(--text-muted);text-align:center;margin-top:0.4rem">Pega un link y se crea como recurso con preview · Arrastra PDF</div>
+    </div>
+  </div>
+
   <!-- Init de features -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -1567,6 +1586,106 @@
         }
       } catch(e) {}
     });
+  </script>
+
+  <!-- Quick Capture Logic -->
+  <script>
+    let qcTimer = null;
+    const QC_MATERIA_KEYWORDS = {
+      "Álgebra Lineal": ["matriz","vector","determinante","autovalor","eigen","rango","base","inversa"],
+      "Análisis I": ["limite","derivada","integral","continuidad","serie","sucesion"],
+      "Análisis II": ["gradiente","divergencia","rotor","stokes","gauss","multiple"],
+      "Física I": ["newton","fuerza","energia","cinematica","rozamiento","inercia"],
+      "Física II": ["campo","gauss","ampere","faraday","circuito","ohm","capacitor","bobina"],
+      "Química": ["atomo","mol","ph","acido","base","enlace","oxido"],
+      "Programación": ["algoritmo","heap","stack","clase","herencia","compilar","socket","codigo"],
+      "Señales": ["fourier","laplace","filtro","muestra","convolucion","espectro"],
+      "Estructuras": ["viga","puente","columna","torsion","corte","hormigon"]
+    };
+    function openQuickCapture() {
+      const m=document.getElementById('quick-capture-modal'), d=document.getElementById('qc-dialog');
+      if(!m) return;
+      // populate selects from KG
+      const typeSel=document.getElementById('qc-type'), matSel=document.getElementById('qc-materia');
+      if(window.KG_TYPES && typeSel && !typeSel.options.length) {
+        Object.entries(window.KG_TYPES).forEach(([k,v])=>{ const o=document.createElement('option'); o.value=k; o.textContent=v.label; typeSel.appendChild(o); });
+        typeSel.value='concepto';
+      }
+      if(matSel && !matSel.options.length) {
+        const materias=[...new Set((window.KG?.nodes||[]).map(n=>n.materia).filter(Boolean))];
+        const allMats=materias.length?materias:Object.keys(QC_MATERIA_KEYWORDS);
+        matSel.innerHTML='<option value="">— Materia —</option>'+allMats.map(ma=>`<option value="${ma}">${ma}</option>`).join('');
+      }
+      m.style.display='flex'; requestAnimationFrame(()=>{ m.style.opacity='1'; if(d) d.style.transform='translateY(0) scale(1)'; });
+      setTimeout(()=>document.getElementById('qc-title')?.focus(),100);
+    }
+    function closeQuickCapture() {
+      const m=document.getElementById('quick-capture-modal'), d=document.getElementById('qc-dialog');
+      if(!m) return;
+      m.style.opacity='0'; if(d) d.style.transform='translateY(10px) scale(0.98)';
+      setTimeout(()=>{ m.style.display='none'; },200);
+    }
+    function qcHandleDrop(e) {
+      e.preventDefault(); e.target.style.borderColor='var(--border-color)';
+      const f=e.dataTransfer.files[0];
+      if(f && f.type==='application/pdf') {
+        document.getElementById('qc-title').value = f.name.replace(/\.pdf$/i,'');
+        document.getElementById('qc-content').value = `![${f.name}](pdf:${f.name})`;
+        document.getElementById('qc-type').value='apunte';
+        document.getElementById('qc-ai-hint').innerHTML='<span style="color:#22c55e">●</span> PDF detectado → tipo Apunte';
+      }
+    }
+    function qcAutoTag() {
+      const title=(document.getElementById('qc-title')?.value||'')+' '+(document.getElementById('qc-content')?.value||'');
+      const t=title.toLowerCase();
+      let bestMat='', bestScore=0;
+      for(const [mat, kws] of Object.entries(QC_MATERIA_KEYWORDS)) {
+        let s=0; kws.forEach(k=>{ if(t.includes(k)) s++; });
+        if(s>bestScore){ bestScore=s; bestMat=mat; }
+      }
+      if(bestScore>0) {
+        const sel=document.getElementById('qc-materia');
+        if(sel && sel.querySelector(`option[value="${bestMat}"]`)) sel.value=bestMat;
+        else if(sel){ const o=document.createElement('option'); o.value=bestMat; o.textContent=bestMat; sel.appendChild(o); sel.value=bestMat; }
+      }
+      // type heuristic
+      let type='concepto';
+      if(/https?:\/\//.test(t) || /youtube|drive\.google|pdf:/.test(t)) type='recurso';
+      else if(t.includes('ejercicio')||t.includes('resolver')||t.includes('calcular')) type='ejercicio';
+      else if(title.length>400) type='apunte';
+      const typeSel=document.getElementById('qc-type'); if(typeSel) typeSel.value=type;
+      const hint=document.getElementById('qc-ai-hint');
+      if(hint) hint.innerHTML= bestScore>0 ? `<span style="color:#8b5cf6">●</span> Sugerido: <strong>${bestMat||'—'}</strong> · ${type}` : '<span style="color:#22c55e">●</span> Escribí para sugerir materia/tipo';
+    }
+    function qcAutoTagDebounced(){ clearTimeout(qcTimer); qcTimer=setTimeout(qcAutoTag,350); }
+    async function handleQuickCapture() {
+      const title=document.getElementById('qc-title')?.value.trim();
+      const content=document.getElementById('qc-content')?.value.trim();
+      const type=document.getElementById('qc-type')?.value||'concepto';
+      const materia=document.getElementById('qc-materia')?.value||'';
+      if(!title) { alert('Poné un título'); return; }
+      if(!window.KG) { alert('Knowledge Graph no cargado aún, abrí Herramientas > Knowledge Graph primero'); return; }
+      const id='n_'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
+      const node={ id, title, type, materia: materia||undefined, content: content||'_Sin contenido_', created: new Date().toISOString() };
+      window.KG.nodes.push(node);
+      // auto-connect to closest existing node of same materia
+      if(materia) {
+        const same=window.KG.nodes.filter(n=>n.materia===materia && n.id!==id).slice(-1)[0];
+        if(same) window.KG.edges.push({ id:'e_'+Date.now(), source: same.id, target: id, label:'relacionado' });
+      }
+      if(window.kgSave) window.kgSave();
+      closeQuickCapture();
+      document.getElementById('qc-title').value=''; document.getElementById('qc-content').value='';
+      // go to graph
+      if(window.switchView) window.switchView('herramientas');
+      setTimeout(()=>{ if(window.KG) { window.KG.active=id; if(window.kgRender) window.kgRender(); }}, 400);
+    }
+    document.addEventListener('keydown', (e)=>{
+      if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openQuickCapture(); }
+      if(e.key==='Escape'){ const m=document.getElementById('quick-capture-modal'); if(m && m.style.display!=='none') closeQuickCapture(); }
+    });
+    window.openQuickCapture=openQuickCapture; window.closeQuickCapture=closeQuickCapture;
+    window.qcAutoTagDebounced=qcAutoTagDebounced; window.qcHandleDrop=qcHandleDrop; window.handleQuickCapture=handleQuickCapture;
   </script>
 </body>
 </html>
