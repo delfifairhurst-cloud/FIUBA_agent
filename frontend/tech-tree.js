@@ -7,8 +7,24 @@ const KG = {
   dragging: null, panning: false, lastMouse: null, dragMoved: false,
   anim: null, time: 0,
   focus: null, // focus mode: nodeId or null
-  focusLevels: new Map() // nodeId -> level (0=center, 1=direct, 2=indirect, 99=dimmed)
+  focusLevels: new Map(), // nodeId -> level (0=center, 1=direct, 2=indirect, 99=dimmed)
+  listMode: false,
+  showOnboarding: !localStorage.getItem("kg_onboarding_done")
 };
+
+const MATERIA_COLORS = {
+  "Algebra Lineal": "#8b5cf6",
+  "Calculo I": "#3b82f6",
+  "Calculo II": "#06b6d4",
+  "Quimica General": "#22c55e",
+  "Fisica I": "#f59e0b",
+  "Fisica II": "#ef4444",
+  "Programacion": "#ec4899",
+  "Circuitos Electricos": "#14b8a6",
+  "Senales y Sistemas": "#a855f7",
+  "Estructuras de Fluidos": "#eab308",
+};
+function kgMateriaColor(m) { return MATERIA_COLORS[m] || "#8b5cf6"; }
 
 const KG_TYPES = {
   materia: { color: "#8b5cf6", icon: "M", label: "Materia" },
@@ -473,6 +489,18 @@ function kgMd(text) {
   return kgKatex(h);
 }
 
+function kgRenderList(filtered) {
+  const grouped={}; filtered.forEach(function(n){ var m=n.materia||'Sin materia'; if(!grouped[m]) grouped[m]=[]; grouped[m].push(n); });
+  return Object.entries(grouped).sort(function(a,b){return a[0].localeCompare(b[0]);}).map(function(entry){
+    var mat=entry[0], nodes=entry[1], col=kgMateriaColor(mat);
+    var cards = nodes.map(function(n){
+      var ti=KG_TYPES[n.type]||KG_TYPES.concepto;
+      return '<div onclick="KG.active=\''+n.id+'\';kgRender()" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.6rem;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;cursor:pointer" onmouseover="this.style.borderColor=\''+ti.color+'40\'" onmouseout="this.style.borderColor=\'var(--border-color)\'"><span style="width:28px;height:28px;border-radius:50%;background:'+ti.color+'15;border:1px solid '+ti.color+'30;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:'+ti.color+';flex-shrink:0">'+ti.icon+'</span><div style="flex:1;min-width:0"><div style="font-size:0.72rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+n.title+'</div><div style="font-size:0.6rem;color:var(--text-muted)">'+ti.label+'</div></div><span style="font-size:0.6rem;color:var(--text-muted)">→</span></div>';
+    }).join('');
+    return '<div style="margin-bottom:0.8rem"><div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.35rem;position:sticky;top:0;background:var(--bg-primary);padding:0.2rem 0;z-index:1"><span style="width:10px;height:10px;border-radius:50%;background:'+col+';display:inline-block"></span><span style="font-size:0.75rem;font-weight:700;color:var(--text-primary)">'+mat+'</span><span style="font-size:0.6rem;color:var(--text-muted)">'+nodes.length+'</span></div><div style="display:grid;gap:0.3rem">'+cards+'</div></div>';
+  }).join('');
+}
+
 // ─── RENDER ───
 function kgRender() {
   const el = document.getElementById("tech-tree-content");
@@ -494,43 +522,74 @@ function kgRender() {
           <h2 style="font-family:var(--font-heading);font-size:1rem;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:0.4rem">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M7.5 11l7-3.5M7.5 13l7 3.5"/></svg>
             Knowledge Graph
+            <span style="font-size:0.55rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:0.1rem 0.3rem;color:var(--text-muted);font-weight:400">${filtered.length}</span>
           </h2>
           <div style="display:flex;gap:0.3rem;align-items:center">
-            <span style="font-size:0.6rem;color:var(--text-muted)">${filtered.length} nodos</span>
-            ${KG.focus ? `<button class="kg-btn" onclick="kgClearFocus()" title="Salir del modo enfoque" style="background:rgba(139,92,246,0.15);color:#8b5cf6;border-color:rgba(139,92,246,0.3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg> Enfoque</button>` : ""}
+            <div style="display:flex;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:2px">
+              <button onclick="KG.listMode=false;kgRender()" style="padding:0.25rem 0.6rem;border-radius:6px;border:none;font-size:0.7rem;cursor:pointer;font-weight:600;${!KG.listMode?'background:var(--bg-card);color:var(--text-primary);box-shadow:0 1px 3px rgba(0,0,0,0.1)':'background:transparent;color:var(--text-muted)'}">Grafo</button>
+              <button onclick="KG.listMode=true;kgRender()" style="padding:0.25rem 0.6rem;border-radius:6px;border:none;font-size:0.7rem;cursor:pointer;font-weight:600;${KG.listMode?'background:var(--bg-card);color:var(--text-primary);box-shadow:0 1px 3px rgba(0,0,0,0.1)':'background:transparent;color:var(--text-muted)'}">Lista</button>
+            </div>
+            ${KG.focus ? `<button class="kg-btn" onclick="kgClearFocus()" title="Salir del modo enfoque" style="background:rgba(139,92,246,0.15);color:#8b5cf6;border-color:rgba(139,92,246,0.3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>` : ""}
             <button class="kg-btn" onclick="kgRandomExplore()" title="Explorar algo random" style="font-size:0.75rem">🧠</button>
             <button class="kg-btn" onclick="kgResetView()" title="Centrar vista"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg></button>
             <button class="kg-btn" onclick="kgFullscreen()" title="Pantalla completa"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg></button>
           </div>
         </div>
 
-        <!-- Search -->
-        <div style="padding:0.4rem 0.8rem;border-bottom:1px solid var(--border-color);display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;flex-shrink:0">
-          <input id="kg-search" type="text" value="${KG.search}" placeholder="Buscar concepto..."
-            style="flex:1;min-width:140px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.5rem;font-size:0.72rem;color:var(--text-primary);outline:none"
+        <!-- Search + chips -->
+        <div style="padding:0.4rem 0.8rem;border-bottom:1px solid var(--border-color);display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;flex-shrink:0;background:var(--bg-card)">
+          <input id="kg-search" type="text" value="${KG.search}" placeholder="Buscar concepto, apunte, video..."
+            style="flex:1;min-width:140px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.35rem 0.6rem;font-size:0.72rem;color:var(--text-primary);outline:none"
             oninput="KG.search=this.value;kgRender()">
-          <select id="kg-type-filter" onchange="KG.filterType=this.value;kgRender()" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.68rem;color:var(--text-primary);cursor:pointer">
-            <option value="">Todos los tipos</option>
-            ${allTypes.map(t => `<option value="${t}" ${KG.filterType===t?"selected":""}>[${KG_TYPES[t].icon}] ${KG_TYPES[t].label}</option>`).join("")}
-          </select>
-          <select id="kg-materia-filter" onchange="KG.filterMateria=this.value;kgRender()" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.68rem;color:var(--text-primary);cursor:pointer">
+          <select id="kg-materia-filter" onchange="KG.filterMateria=this.value;kgRender()" style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.3rem 0.4rem;font-size:0.68rem;color:var(--text-primary);cursor:pointer">
             <option value="">Todas las materias</option>
             ${allMaterias.map(m => `<option value="${m}" ${KG.filterMateria===m?"selected":""}>${m}</option>`).join("")}
           </select>
         </div>
 
+        <!-- Chips de tipo -->
+        <div style="padding:0.35rem 0.8rem;border-bottom:1px solid var(--border-color);display:flex;gap:0.3rem;flex-wrap:wrap;align-items:center;background:var(--bg-secondary);flex-shrink:0">
+          <span style="font-size:0.62rem;color:var(--text-muted);margin-right:0.2rem">Filtrar:</span>
+          <button onclick="KG.filterType='';kgRender()" style="padding:0.2rem 0.55rem;border-radius:20px;border:1px solid ${!KG.filterType?'#8b5cf6':'var(--border-color)'};background:${!KG.filterType?'#8b5cf6':'var(--bg-card)'};color:${!KG.filterType?'white':'var(--text-muted)'};font-size:0.65rem;cursor:pointer;font-weight:600">Todos</button>
+          ${allTypes.map(t => {
+            const count = KG.nodes.filter(n => n.type === t).length;
+            const active = KG.filterType===t;
+            return `<button onclick="KG.filterType='${t}';kgRender()" style="padding:0.2rem 0.55rem;border-radius:20px;border:1px solid ${active?KG_TYPES[t].color:'var(--border-color)'};background:${active?KG_TYPES[t].color+'20':'var(--bg-card)'};color:${active?KG_TYPES[t].color:'var(--text-muted)'};font-size:0.65rem;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:0.25rem"><span style="width:8px;height:8px;border-radius:50%;background:${KG_TYPES[t].color};display:inline-block"></span>${KG_TYPES[t].label} ${count}</button>`;
+          }).join("")}
+        </div>
+
+        <!-- Leyenda materias (colores) -->
+        <div style="padding:0.3rem 0.8rem;border-bottom:1px solid var(--border-color);display:flex;gap:0.35rem;flex-wrap:wrap;align-items:center;background:var(--bg-card);flex-shrink:0">
+          <span style="font-size:0.62rem;color:var(--text-muted);margin-right:0.2rem">Materias:</span>
+          ${allMaterias.map(m => {
+            const active = KG.filterMateria===m;
+            const col = kgMateriaColor(m);
+            return `<button onclick="KG.filterMateria=KG.filterMateria==='${m.replace(/'/g,"\\'")}'?'':'${m.replace(/'/g,"\\'")}';kgRender()" title="${m}" style="display:flex;align-items:center;gap:0.25rem;padding:0.15rem 0.45rem;border-radius:20px;border:1px solid ${active?col:'var(--border-color)'};background:${active?col+'18':'var(--bg-card)'};color:${active?col:'var(--text-muted)'};font-size:0.62rem;cursor:pointer"><span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>${m}</button>`;
+          }).join("")}
+          ${KG.filterMateria || KG.filterType || KG.search ? `<button onclick="KG.filterMateria='';KG.filterType='';KG.search='';kgRender()" style="margin-left:auto;padding:0.15rem 0.5rem;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-muted);font-size:0.6rem;cursor:pointer">Limpiar ✕</button>` : ''}
+        </div>
+
+        ${KG.showOnboarding ? `
+        <div id="kg-onboarding" style="margin:0.5rem 0.8rem;padding:0.6rem 0.8rem;background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(59,130,246,0.06));border:1px solid rgba(139,92,246,0.2);border-radius:10px;display:flex;align-items:center;gap:0.6rem;flex-shrink:0">
+          <div style="font-size:1.1rem">💡</div>
+          <div style="flex:1;font-size:0.68rem;color:var(--text-secondary);line-height:1.4"><strong>Tip:</strong> Click en un nodo para ver detalle · Arrastrá para mover · Scroll para zoom · Usá los chips para filtrar · <span style="color:#8b5cf6;font-weight:600">⌘K para captura rápida</span></div>
+          <button onclick="localStorage.setItem('kg_onboarding_done','1');KG.showOnboarding=false;kgRender()" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.2rem 0.5rem;font-size:0.65rem;cursor:pointer;color:var(--text-muted)">Entendido</button>
+        </div>` : ''}
+
+        ${KG.listMode ? `
+        <!-- LISTA VIEW -->
+        <div style="flex:1;overflow-y:auto;padding:0.6rem 0.8rem;background:var(--bg-primary)">
+          ${kgRenderList(filtered)}
+          ${filtered.length===0?'<div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:0.8rem">Sin resultados para esos filtros</div>':''}
+        </div>
+        ` : `
         <!-- Canvas container: fills remaining space -->
         <div id="kg-canvas-wrap" style="flex:1;position:relative;overflow:hidden;min-height:0">
           <canvas id="kg-canvas" style="width:100%;height:100%;display:block;cursor:grab"></canvas>
           <div id="kg-tooltip" style="display:none;position:fixed;background:rgba(15,15,25,0.95);backdrop-filter:blur(12px);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:0.7rem 0.9rem;font-size:0.72rem;color:#e2e8f0;pointer-events:none;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,0.4),0 0 20px rgba(139,92,246,0.1);max-width:300px"></div>
-          <div style="position:absolute;bottom:8px;left:10px;font-size:0.6rem;color:var(--text-muted);opacity:0.5">Hover preview · Click panel · Drag mover · Scroll zoom</div>
-          <div style="position:absolute;top:8px;right:10px;display:flex;gap:0.4rem">
-            ${allTypes.map(t => {
-              const count = KG.nodes.filter(n => n.type === t).length;
-              return count > 0 ? `<span class="kg-type-badge" style="background:${KG_TYPES[t].color}18;color:${KG_TYPES[t].color};border:1px solid ${KG_TYPES[t].color}40">[${KG_TYPES[t].icon}] ${count}</span>` : "";
-            }).join("")}
-          </div>
+          <div style="position:absolute;bottom:8px;left:10px;font-size:0.6rem;color:var(--text-muted);opacity:0.5">Hover preview · Click panel · Drag mover · Scroll zoom · ⌘K captura</div>
         </div>
+        `}
       </div>
 
       <!-- Side panel -->
@@ -539,7 +598,7 @@ function kgRender() {
       </div>
     </div>`;
 
-  setTimeout(kgSetupCanvas, 30);
+  if (!KG.listMode) setTimeout(kgSetupCanvas, 30);
 }
 
 function kgRenderSidePanel() {
