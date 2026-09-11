@@ -518,7 +518,7 @@ function kgRender() {
     <div style="display:flex;height:100%;gap:0">
       <!-- Main graph area -->
       <div style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden">
-        <div class="kg-bar" style="justify-content:space-between;padding:0.4rem 0.8rem;border-bottom:1px solid var(--border-color);flex-shrink:0">
+        <div class="kg-bar" style="justify-content:space-between;padding:0.45rem 0.8rem;border-bottom:1px solid rgba(139,92,246,0.15);flex-shrink:0;background:rgba(10,10,22,0.85);backdrop-filter:blur(12px)">
           <h2 style="font-family:var(--font-heading);font-size:1rem;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:0.4rem">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M7.5 11l7-3.5M7.5 13l7 3.5"/></svg>
             Knowledge Graph
@@ -536,37 +536,37 @@ function kgRender() {
           </div>
         </div>
 
-        <!-- Search + chips -->
-        <div style="padding:0.4rem 0.8rem;border-bottom:1px solid var(--border-color);display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;flex-shrink:0;background:var(--bg-card)">
+        <!-- Search + chips — galaxy immersive -->
+        <div style="padding:0.45rem 0.8rem;border-bottom:1px solid rgba(139,92,246,0.15);display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;flex-shrink:0;background:rgba(15,15,25,0.75);backdrop-filter:blur(12px)">
           <input id="kg-search" type="text" value="${KG.search}" placeholder="Buscar concepto, apunte, video..."
-            style="flex:1;min-width:140px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.35rem 0.6rem;font-size:0.72rem;color:var(--text-primary);outline:none"
+            style="flex:1;min-width:140px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.72rem;color:#e2e8f0;outline:none"
             oninput="KG.search=this.value;kgRender()">
-          <select id="kg-materia-filter" onchange="KG.filterMateria=this.value;kgRender()" style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.3rem 0.4rem;font-size:0.68rem;color:var(--text-primary);cursor:pointer">
-            <option value="">Todas las materias</option>
-            ${allMaterias.map(m => `<option value="${m}" ${KG.filterMateria===m?"selected":""}>${m}</option>`).join("")}
+          <select id="kg-materia-filter" onchange="KG.filterMateria=this.value;kgRender()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.35rem 0.45rem;font-size:0.68rem;color:#e2e8f0;cursor:pointer">
+            <option value="" style="background:#0f0f1a">Todas las materias</option>
+            ${allMaterias.map(m => `<option value="${m}" ${KG.filterMateria===m?"selected":""} style="background:#0f0f1a">${m}</option>`).join("")}
           </select>
         </div>
 
-        <!-- Chips de tipo -->
-        <div style="padding:0.35rem 0.8rem;border-bottom:1px solid var(--border-color);display:flex;gap:0.3rem;flex-wrap:wrap;align-items:center;background:var(--bg-secondary);flex-shrink:0">
-          <span style="font-size:0.62rem;color:var(--text-muted);margin-right:0.2rem">Filtrar:</span>
-          <button onclick="KG.filterType='';kgRender()" style="padding:0.2rem 0.55rem;border-radius:20px;border:1px solid ${!KG.filterType?'#8b5cf6':'var(--border-color)'};background:${!KG.filterType?'#8b5cf6':'var(--bg-card)'};color:${!KG.filterType?'white':'var(--text-muted)'};font-size:0.65rem;cursor:pointer;font-weight:600">Todos</button>
+        <!-- Chips de tipo — galaxy -->
+        <div style="padding:0.35rem 0.8rem;border-bottom:1px solid rgba(139,92,246,0.12);display:flex;gap:0.3rem;flex-wrap:wrap;align-items:center;background:rgba(15,15,25,0.6);backdrop-filter:blur(10px);flex-shrink:0">
+          <span style="font-size:0.62rem;color:#94a3b8;margin-right:0.2rem">Filtrar:</span>
+          <button onclick="KG.filterType='';kgRender()" style="padding:0.22rem 0.6rem;border-radius:20px;border:1px solid ${!KG.filterType?'#8b5cf6':'rgba(255,255,255,0.1)'};background:${!KG.filterType?'#8b5cf6':'rgba(255,255,255,0.05)'};color:${!KG.filterType?'white':'#94a3b8'};font-size:0.65rem;cursor:pointer;font-weight:600">Todos</button>
           ${allTypes.map(t => {
             const count = KG.nodes.filter(n => n.type === t).length;
             const active = KG.filterType===t;
-            return `<button onclick="KG.filterType='${t}';kgRender()" style="padding:0.2rem 0.55rem;border-radius:20px;border:1px solid ${active?KG_TYPES[t].color:'var(--border-color)'};background:${active?KG_TYPES[t].color+'20':'var(--bg-card)'};color:${active?KG_TYPES[t].color:'var(--text-muted)'};font-size:0.65rem;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:0.25rem"><span style="width:8px;height:8px;border-radius:50%;background:${KG_TYPES[t].color};display:inline-block"></span>${KG_TYPES[t].label} ${count}</button>`;
+            return `<button onclick="KG.filterType='${t}';kgRender()" style="padding:0.22rem 0.6rem;border-radius:20px;border:1px solid ${active?KG_TYPES[t].color:'rgba(255,255,255,0.1)'};background:${active?KG_TYPES[t].color+'25':'rgba(255,255,255,0.05)'};color:${active?KG_TYPES[t].color:'#94a3b8'};font-size:0.65rem;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:0.25rem"><span style="width:8px;height:8px;border-radius:50%;background:${KG_TYPES[t].color};display:inline-block"></span>${KG_TYPES[t].label} ${count}</button>`;
           }).join("")}
         </div>
 
-        <!-- Leyenda materias (colores) -->
-        <div style="padding:0.3rem 0.8rem;border-bottom:1px solid var(--border-color);display:flex;gap:0.35rem;flex-wrap:wrap;align-items:center;background:var(--bg-card);flex-shrink:0">
-          <span style="font-size:0.62rem;color:var(--text-muted);margin-right:0.2rem">Materias:</span>
+        <!-- Leyenda materias — galaxy -->
+        <div style="padding:0.35rem 0.8rem;border-bottom:1px solid rgba(139,92,246,0.12);display:flex;gap:0.35rem;flex-wrap:wrap;align-items:center;background:rgba(10,10,20,0.6);backdrop-filter:blur(10px);flex-shrink:0">
+          <span style="font-size:0.62rem;color:#64748b;margin-right:0.2rem">Materias:</span>
           ${allMaterias.map(m => {
             const active = KG.filterMateria===m;
             const col = kgMateriaColor(m);
-            return `<button onclick="KG.filterMateria=KG.filterMateria==='${m.replace(/'/g,"\\'")}'?'':'${m.replace(/'/g,"\\'")}';kgRender()" title="${m}" style="display:flex;align-items:center;gap:0.25rem;padding:0.15rem 0.45rem;border-radius:20px;border:1px solid ${active?col:'var(--border-color)'};background:${active?col+'18':'var(--bg-card)'};color:${active?col:'var(--text-muted)'};font-size:0.62rem;cursor:pointer"><span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>${m}</button>`;
+            return `<button onclick="KG.filterMateria=KG.filterMateria==='${m.replace(/'/g,"\\'")}'?'':'${m.replace(/'/g,"\\'")}';kgRender()" title="${m}" style="display:flex;align-items:center;gap:0.25rem;padding:0.18rem 0.5rem;border-radius:20px;border:1px solid ${active?col:'rgba(255,255,255,0.08)'};background:${active?col+'20':'rgba(255,255,255,0.04)'};color:${active?col:'#64748b'};font-size:0.62rem;cursor:pointer"><span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>${m}</button>`;
           }).join("")}
-          ${KG.filterMateria || KG.filterType || KG.search ? `<button onclick="KG.filterMateria='';KG.filterType='';KG.search='';kgRender()" style="margin-left:auto;padding:0.15rem 0.5rem;border-radius:20px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-muted);font-size:0.6rem;cursor:pointer">Limpiar ✕</button>` : ''}
+          ${KG.filterMateria || KG.filterType || KG.search ? `<button onclick="KG.filterMateria='';KG.filterType='';KG.search='';kgRender()" style="margin-left:auto;padding:0.18rem 0.55rem;border-radius:20px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#94a3b8;font-size:0.6rem;cursor:pointer">Limpiar ✕</button>` : ''}
         </div>
 
         ${KG.showOnboarding ? `
@@ -577,8 +577,8 @@ function kgRender() {
         </div>` : ''}
 
         ${KG.listMode ? `
-        <!-- LISTA VIEW -->
-        <div style="flex:1;overflow-y:auto;padding:0.6rem 0.8rem;background:var(--bg-primary)">
+        <!-- LISTA VIEW — galaxy -->
+        <div style="flex:1;overflow-y:auto;padding:0.6rem 0.8rem;background:rgba(8,8,18,0.7);backdrop-filter:blur(8px)">
           ${kgRenderList(filtered)}
           ${filtered.length===0?'<div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:0.8rem">Sin resultados para esos filtros</div>':''}
         </div>
