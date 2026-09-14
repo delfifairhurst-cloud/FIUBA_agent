@@ -1575,7 +1575,7 @@ function switchView(view) {
   });
 
   // IDs of all view panels
-  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'tech-tree-view'];
+  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'blockblast-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'tech-tree-view'];
   const chatEl = document.querySelector('.chat-container');
   const appLayout = document.querySelector('.app-layout');
 
@@ -1648,6 +1648,9 @@ function switchView(view) {
   } else if (view === 'playground') {
     const el = document.getElementById('playground-view');
     if (el) { el.classList.remove('hidden'); if (window.renderPlayground) window.renderPlayground(); }
+  } else if (view === 'blockblast') {
+    const el = document.getElementById('blockblast-view');
+    if (el) { el.classList.remove('hidden'); if (window.bbInit) window.bbInit(); }
   } else if (view === 'ratings') {
     const el = document.getElementById('ratings-view');
     if (el) { el.classList.remove('hidden'); if (window.renderProfessorRatings) window.renderProfessorRatings(); }
