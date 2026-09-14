@@ -29,6 +29,8 @@ let bbDragging = null;
 let bbHover = null;
 let bbGhost = null;
 let bbCellEls = []; // 10x10
+let bbPrevPreview = []; // last preview cells
+let bbLastHoverKey = null;
 let bbCombo = 0;
 let bbAnimating = false;
 
@@ -135,6 +137,16 @@ function bbTryPlace(idx,r,c){
   }
 }
 
+function bbHandleCellClick(r,c){
+  if(bbDragging!==null) return;
+  if(bbSelected===null) return;
+  const sh=bbPieces[bbSelected];
+  if(!sh) return;
+  const rows=Math.max(...sh.cells.map(cc=>cc[0]))+1, cols=Math.max(...sh.cells.map(cc=>cc[1]))+1;
+  const offR=Math.floor(rows/2), offC=Math.floor(cols/2);
+  bbTryPlace(bbSelected, r - offR, c - offC);
+}
+function bbHandleCellHover(r,c){}
 // DOM helpers
 function bbUpdateBoard(){
   for(let r=0;r<BB_SIZE;r++) for(let c=0;c<BB_SIZE;c++){
@@ -143,23 +155,6 @@ function bbUpdateBoard(){
     if(val){ el.style.background=val; el.style.border='1px solid rgba(255,255,255,0.14)'; el.style.boxShadow='inset 0 1px 0 rgba(255,255,255,0.25)'; }
     else { el.style.background='rgba(255,255,255,0.035)'; el.style.border='1px solid rgba(255,255,255,0.05)'; el.style.boxShadow='none'; }
     el.style.transform='';
-  }
-  // preview
-  if(bbDragging!==null && bbHover){
-    const sh=bbPieces[bbDragging];
-    if(sh){
-      const can=bbCanPlace(bbBoard, sh, bbHover.r, bbHover.c);
-      for(const [dr,dc] of sh.cells){
-        const nr=bbHover.r+dr,nc=bbHover.c+dc;
-        if(nr>=0&&nr<BB_SIZE&&nc>=0&&nc<BB_SIZE){
-          const el=bbCellEls[nr][nc];
-          if(!bbBoard[nr][nc]){
-            el.style.background = can ? sh.color+'B0' : 'rgba(239,68,68,0.55)';
-            el.style.transform='scale(0.92)';
-          }
-        }
-      }
-    }
   }
 }
 function bbUpdatePieces(){
@@ -182,31 +177,77 @@ function bbUpdatePieces(){
   });
 }
 
+function bbClearPreview(){
+  for(const key of bbPrevPreview){
+    const [r,c]=key.split(',').map(Number);
+    const el=bbCellEls[r] && bbCellEls[r][c];
+    if(el && !bbBoard[r][c]){
+      el.style.background='rgba(255,255,255,0.035)';
+      el.style.transform='';
+      el.style.border='1px solid rgba(255,255,255,0.05)';
+    }
+  }
+  bbPrevPreview=[];
+}
+function bbSetPreview(hover){
+  bbClearPreview();
+  if(!hover || bbDragging===null) return;
+  const sh=bbPieces[bbDragging];
+  if(!sh) return;
+  const rows=Math.max(...sh.cells.map(c=>c[0]))+1, cols=Math.max(...sh.cells.map(c=>c[1]))+1;
+  const offR=Math.floor(rows/2), offC=Math.floor(cols/2);
+  const baseR=hover.r - offR, baseC=hover.c - offC;
+  const can=bbCanPlace(bbBoard, sh, baseR, baseC);
+  for(const [dr,dc] of sh.cells){
+    const nr=baseR+dr, nc=baseC+dc;
+    if(nr>=0&&nr<BB_SIZE&&nc>=0&&nc<BB_SIZE && !bbBoard[nr][nc]){
+      const el=bbCellEls[nr][nc];
+      el.style.background = can ? sh.color+'B0' : 'rgba(239,68,68,0.55)';
+      el.style.transform='scale(0.92)';
+      el.style.border=can ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(239,68,68,0.4)';
+      bbPrevPreview.push(nr+','+nc);
+    }
+  }
+}
 function bbDragStart(idx, e){
   if(!bbPieces[idx]) return;
-  bbDragging=idx; bbHover=null;
-  e.preventDefault(); e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId);
-  // ghost
+  bbDragging=idx; bbHover=null; bbPrevPreview=[];
+  e.preventDefault(); try{ e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId); }catch{}
   const piece=bbPieces[idx];
   const ghost=document.createElement('div');
   ghost.id='bb-ghost';
-  ghost.style.cssText='position:fixed;left:0;top:0;pointer-events:none;z-index:9999;opacity:0.96;transform:translate(-50%,-50%);filter:drop-shadow(0 10px 20px rgba(0,0,0,0.45))';
+  ghost.style.cssText='position:fixed;left:0;top:0;pointer-events:none;z-index:9999;opacity:0.96;transform:translate(-50%,-50%);filter:drop-shadow(0 10px 20px rgba(0,0,0,0.45));will-change:transform,left,top';
   const cols=Math.max(...piece.cells.map(c=>c[1]))+1, rows=Math.max(...piece.cells.map(c=>c[0]))+1;
   ghost.innerHTML=`<div style="display:grid;grid-template-columns:repeat(${cols},20px);gap:2px">${Array.from({length:rows}).map((_,r)=> Array.from({length:cols}).map((_,c)=> piece.cells.some(([dr,dc])=>dr===r&&dc===c) ? `<div style="width:20px;height:20px;border-radius:4px;background:${piece.color};border:1px solid rgba(255,255,255,0.22)"></div>` : `<div style="width:20px;height:20px"></div>`).join('')).join('')}</div>`;
   document.body.appendChild(ghost); bbGhost=ghost;
+  let lastX=0,lastY=0, raf=null;
   const onMove = (ev)=>{
-    const x=ev.clientX, y=ev.clientY;
-    ghost.style.left=x+'px'; ghost.style.top=y+'px';
-    const el=document.elementFromPoint(x,y);
-    const cell=el && el.closest && el.closest('[data-bb-cell]');
-    if(cell){
-      const r=parseInt(cell.getAttribute('data-r')), c=parseInt(cell.getAttribute('data-c'));
-      if(!bbHover || bbHover.r!==r || bbHover.c!==c){
-        bbHover={r,c}; bbUpdateBoard();
+    lastX=ev.clientX; lastY=ev.clientY;
+    if(raf) return;
+    raf=requestAnimationFrame(()=>{
+      raf=null;
+      ghost.style.left=lastX+'px'; ghost.style.top=lastY+'px';
+      const el=document.elementFromPoint(lastX,lastY);
+      const cell=el && el.closest && el.closest('[data-bb-cell]');
+      if(cell){
+        const r=parseInt(cell.getAttribute('data-r')), c=parseInt(cell.getAttribute('data-c'));
+        const key=r+','+c;
+        if(bbLastHoverKey!==key){
+          bbLastHoverKey=key;
+          const rows2=Math.max(...piece.cells.map(cc=>cc[0]))+1, cols2=Math.max(...piece.cells.map(cc=>cc[1]))+1;
+          const offR=Math.floor(rows2/2), offC=Math.floor(cols2/2);
+          const baseR=r - offR, baseC=c - offC;
+          const newHover={r:baseR,c:baseC};
+          // use base for placement, but hover for preview base
+          if(!bbHover || bbHover.r!==newHover.r || bbHover.c!==newHover.c){
+            bbHover=newHover;
+            bbSetPreview(newHover);
+          }
+        }
+      } else {
+        if(bbHover){ bbHover=null; bbLastHoverKey=null; bbClearPreview(); }
       }
-    } else {
-      if(bbHover){ bbHover=null; bbUpdateBoard(); }
-    }
+    });
   };
   const onUp = (ev)=>{
     document.removeEventListener('pointermove', onMove);
@@ -217,11 +258,13 @@ function bbDragStart(idx, e){
     const cell=el && el.closest && el.closest('[data-bb-cell]');
     if(cell){
       const r=parseInt(cell.getAttribute('data-r')), c=parseInt(cell.getAttribute('data-c'));
-      bbTryPlace(idx,r,c);
+      const rows2=Math.max(...piece.cells.map(cc=>cc[0]))+1, cols2=Math.max(...piece.cells.map(cc=>cc[1]))+1;
+      const offR=Math.floor(rows2/2), offC=Math.floor(cols2/2);
+      bbTryPlace(idx,r - offR, c - offC);
     } else {
-      bbHover=null; bbUpdateBoard();
+      bbHover=null; bbLastHoverKey=null; bbClearPreview(); bbUpdateBoard();
     }
-    bbDragging=null; bbHover=null; bbUpdateBoard(); bbUpdatePieces();
+    bbDragging=null; bbHover=null; bbLastHoverKey=null; bbClearPreview(); bbUpdatePieces();
   };
   document.addEventListener('pointermove', onMove);
   document.addEventListener('pointerup', onUp);
@@ -264,5 +307,7 @@ function bbRenderFull(){
   bbUpdateBoard(); bbUpdatePieces();
 }
 
+window.bbHandleCellClick=bbHandleCellClick;
+window.bbHandleDragStart=bbDragStart;
 window.bbInit=bbInit;
 window.renderBlockBlast=bbRenderFull;
