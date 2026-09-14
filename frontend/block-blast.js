@@ -29,6 +29,8 @@ let bbDragging = null;
 let bbHover = null;
 let bbGhost = null;
 let bbCellEls = []; // 10x10
+let bbCombo = 0;
+let bbAnimating = false;
 
 function bbRandomPieces(){ return [0,1,2].map(()=> BB_SHAPES[Math.floor(Math.random()*BB_SHAPES.length)]); }
 function bbCanPlace(board, shape, r, c){
@@ -54,36 +56,82 @@ function bbIsGameOver(board, pieces){
 }
 function bbInit(){
   bbBoard = Array(BB_SIZE).fill(0).map(()=>Array(BB_SIZE).fill(0));
-  bbScore=0; bbPieces=bbRandomPieces(); bbDragging=null; bbHover=null;
+  bbScore=0; bbCombo=0; bbAnimating=false; bbPieces=bbRandomPieces(); bbDragging=null; bbHover=null;
   bbRenderFull();
-  bbUpdateAll();
+}
+function bbShowFloating(text, color, offsetY){
+  const board=document.getElementById('bb-board');
+  if(!board) return;
+  const el=document.createElement('div');
+  el.textContent=text;
+  el.style.cssText=`position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);background:${color};color:white;font-weight:900;font-size:1.1rem;padding:0.35rem 0.7rem;border-radius:10px;pointer-events:none;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,0.3);opacity:0;`;
+  board.style.position='relative';
+  board.appendChild(el);
+  el.animate([{opacity:0, transform:'translate(-50%,-30%) scale(0.85)'},{opacity:1, transform:'translate(-50%,-50%) scale(1.08)'},{opacity:1, transform:'translate(-50%,-50%) scale(1)'},{opacity:0, transform:'translate(-50%,-70%) scale(0.95)'}],{duration:900, easing:'cubic-bezier(0.2,0.8,0.2,1)'});
+  setTimeout(()=>el.remove(),900);
 }
 function bbTryPlace(idx,r,c){
+  if(bbAnimating) return;
   const shape = bbPieces[idx]; if(!shape) return;
   if(!bbCanPlace(bbBoard, shape, r, c)){
-    const el=document.getElementById('bb-board'); if(el){ el.animate([{transform:'translateX(0)'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],{duration:180}); }
+    const el=document.getElementById('bb-board'); if(el){ el.animate([{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],{duration:180}); }
     return;
   }
   bbBoard = bbPlace(bbBoard, shape, r, c);
-  bbScore += shape.cells.length * 10;
+  bbUpdateBoard();
+  let gained = shape.cells.length * 10;
   const res = bbClearLines(bbBoard);
-  // flash cleared
-  if(res.cleared>0){
-    res.rows.forEach(r=>{ for(let c=0;c<BB_SIZE;c++){ const el=bbCellEls[r][c]; el.style.transition='background 0.15s'; el.style.background='white'; }});
-    res.cols.forEach(c=>{ for(let r=0;r<BB_SIZE;r++){ const el=bbCellEls[r][c]; el.style.background='white'; }});
-    setTimeout(()=>{ bbBoard=res.board; bbUpdateBoard(); }, 120);
-    bbScore += res.cleared * 100;
-    if(window.addXP) try{ window.addXP(res.cleared*10, 'Block Blast'); }catch{}
+  const cleared = res.cleared;
+  let comboBonus=0;
+  if(cleared>0){
+    bbCombo++;
+    comboBonus = bbCombo>=2 ? (bbCombo-1)*50*cleared : 0;
+    // animate rows/cols: scale + flash
+    const toFlash = new Set();
+    res.rows.forEach(rr=>{ for(let cc=0;cc<BB_SIZE;cc++) toFlash.add(rr+','+cc); });
+    res.cols.forEach(cc=>{ for(let rr=0;rr<BB_SIZE;rr++) toFlash.add(rr+','+cc); });
+    toFlash.forEach(key=>{
+      const [rr,cc]=key.split(',').map(Number);
+      const el=bbCellEls[rr][cc];
+      el.animate([{transform:'scale(1)', background: el.style.background},{transform:'scale(1.12)', background:'white'},{transform:'scale(0.2)', background:'white', opacity:0.6}],{duration:260, easing:'cubic-bezier(0.4,0,0.6,1)'});
+    });
+    bbAnimating=true;
+    setTimeout(()=>{
+      bbBoard=res.board;
+      gained += cleared*100 + comboBonus;
+      bbScore += gained;
+      if(window.addXP) try{ window.addXP(cleared*10 + (bbCombo>=2?5:0), 'Block Blast'); }catch{}
+      if(bbScore>bbBest){ bbBest=bbScore; localStorage.setItem(BB_KEY_BEST, String(bbBest)); }
+      const scoreEl=document.getElementById('bb-score'); if(scoreEl) scoreEl.textContent=bbScore;
+      const bestEl=document.getElementById('bb-best'); if(bestEl) bestEl.textContent=bbBest;
+      bbUpdateBoard();
+      // floating texts
+      if(cleared>=2) bbShowFloating('¡'+cleared+' líneas! +'+(cleared*100), '#8b5cf6', 0);
+      if(bbCombo>=2) setTimeout(()=>bbShowFloating('COMBO x'+bbCombo+' +'+comboBonus+'!', '#f59e0b', -28), 180);
+      else if(cleared===1) bbShowFloating('+100', '#22c55e', 0);
+      bbPieces[idx]=null;
+      if(bbPieces.every(p=>p===null)) bbPieces = bbRandomPieces();
+      bbUpdatePieces();
+      bbAnimating=false;
+      if(bbIsGameOver(bbBoard, bbPieces.filter(Boolean))){
+        setTimeout(()=>{ alert('¡Sin movimientos! Puntaje: '+bbScore+' | Récord: '+bbBest); },250);
+      }
+    }, 260);
   } else {
-    bbBoard=res.board;
+    bbCombo=0;
+    bbScore += gained;
+    const scoreEl=document.getElementById('bb-score'); if(scoreEl) scoreEl.textContent=bbScore;
+    if(bbScore>bbBest){ bbBest=bbScore; localStorage.setItem(BB_KEY_BEST, String(bbBest)); const b=document.getElementById('bb-best'); if(b) b.textContent=bbBest; }
+    bbPieces[idx]=null;
+    if(bbPieces.every(p=>p===null)) bbPieces = bbRandomPieces();
+    bbUpdateBoard(); bbUpdatePieces();
+    if(bbIsGameOver(bbBoard, bbPieces.filter(Boolean))){
+      setTimeout(()=>{ alert('¡Sin movimientos! Puntaje: '+bbScore+' | Récord: '+bbBest); },200);
+    }
   }
-  bbPieces[idx]=null;
-  if(bbPieces.every(p=>p===null)) bbPieces = bbRandomPieces();
-  if(bbScore>bbBest){ bbBest=bbScore; localStorage.setItem(BB_KEY_BEST, String(bbBest)); document.getElementById('bb-best').textContent=bbBest; }
-  document.getElementById('bb-score').textContent=bbScore;
-  bbUpdateBoard(); bbUpdatePieces();
-  if(bbIsGameOver(bbBoard, bbPieces.filter(Boolean))){
-    setTimeout(()=>{ alert('¡Sin movimientos! Puntaje: '+bbScore+' | Récord: '+bbBest); },200);
+  // immediate visual for placed piece
+  if(cleared===0){
+    document.getElementById('bb-score').textContent=bbScore;
   }
 }
 
