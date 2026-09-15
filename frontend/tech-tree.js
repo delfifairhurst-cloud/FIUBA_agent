@@ -29,6 +29,9 @@ function kgMateriaColor(m) { return MATERIA_COLORS[m] || "#8b5cf6"; }
 const KG_TYPES = {
   materia: { color: "#8b5cf6", icon: "M", label: "Materia" },
   concepto: { color: "#3b82f6", icon: "C", label: "Concepto" },
+  pregunta: { color: "#f59e0b", icon: "?", label: "Pregunta" },
+  idea: { color: "#ec4899", icon: "◆", label: "Idea" },
+  proyecto: { color: "#14b8a6", icon: "P", label: "Proyecto" },
   apunte: { color: "#22c55e", icon: "A", label: "Apunte" },
   ejercicio: { color: "#f59e0b", icon: "E", label: "Ejercicio" },
   examen: { color: "#ef4444", icon: "X", label: "Examen" },
@@ -134,12 +137,47 @@ function kgDrawTypeIcon(ctx, x, y, r, type, alpha) {
       ctx.roundRect(-s*0.05, -s*0.25, s*0.55, s*0.5, s*0.15);
       ctx.stroke();
       break;
+    case "pregunta": // Question mark
+      ctx.font = `bold ${s*1.1}px system-ui`;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("?", 0, s*0.05);
+      ctx.beginPath();
+      ctx.arc(0, s*0.45, s*0.08, 0, Math.PI*2);
+      ctx.fill();
+      break;
+    case "idea": // Diamond
+      ctx.beginPath();
+      ctx.moveTo(0, -s*0.6);
+      ctx.lineTo(s*0.5, 0);
+      ctx.lineTo(0, s*0.6);
+      ctx.lineTo(-s*0.5, 0);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -s*0.3);
+      ctx.lineTo(s*0.2, 0);
+      ctx.lineTo(0, s*0.3);
+      ctx.lineTo(-s*0.2, 0);
+      ctx.closePath();
+      ctx.stroke();
+      break;
+    case "proyecto": // Folder
+      ctx.beginPath();
+      ctx.moveTo(-s*0.6, -s*0.2);
+      ctx.lineTo(-s*0.2, -s*0.2);
+      ctx.lineTo(-s*0.05, -s*0.45);
+      ctx.lineTo(s*0.6, -s*0.45);
+      ctx.lineTo(s*0.6, s*0.5);
+      ctx.lineTo(-s*0.6, s*0.5);
+      ctx.closePath();
+      ctx.stroke();
+      break;
   }
   ctx.restore();
 }
 
 function kgInit() {
-  const KG_VERSION = 4;
+  const KG_VERSION = 5;
   const stored = parseInt(localStorage.getItem("kg_version") || "0");
   if (stored < KG_VERSION) {
     localStorage.removeItem("kg_nodes");
@@ -191,6 +229,14 @@ function kgCreateMock() {
     { id:"c-laplace", type:"concepto", title:"Transformada de Laplace", materia:"Senales y Sistemas", content:"**Definicion:**\n$$X(s) = \\int_0^{\\infty} x(t) e^{-st} dt$$\n\n**Usos:**\n- Resolver EDOs\n- Analisis de estabilidad\n- Funcion de transferencia\n- Sistemas LTI" },
     { id:"c-bernoulli", type:"concepto", title:"Ecuacion de Bernoulli", materia:"Estructuras de Fluidos", content:"$$P_1 + \\frac{1}{2}\\rho v_1^2 + \\rho g h_1 = P_2 + \\frac{1}{2}\\rho v_2^2 + \\rho g h_2$$\n\n**Significado:**\nLa energia mecanica por unidad de volumen se conserva a lo largo de una linea de corriente." },
     { id:"c-mohr", type:"concepto", title:"Circulo de Mohr", materia:"Estructuras de Fluidos", content:"**Representacion grafica** del estado de esfuerzo en un punto.\n\n$$\\sigma_{avg} = \\frac{\\sigma_x + \\sigma_y}{2}$$\n$$R = \\sqrt{\\left(\\frac{\\sigma_x - \\sigma_y}{2}\\right)^2 + \\tau_{xy}^2}$$\n\n**Esfuerzos principales:**\n$$\\sigma_{1,2} = \\sigma_{avg} \\pm R$$" },
+
+    // ═══ SEGUNDO CEREBRO — Preguntas, Ideas, Proyectos (ejemplos vivos) ═══
+    { id:"q-infinito", type:"pregunta", title:"¿Por qué existe el infinito?", materia:"Filosofía", content:"**Pregunta:** ¿Es el infinito una propiedad del mundo o una invención de nuestro lenguaje matemático?\n\n**Contexto:** Leyendo sobre [[Límite]] e [[Infinito]] en análisis.\n\n**Qué sé:** En matemática, infinito es un comportamiento, no un número. En física no sabemos si el universo es infinito.\n\n**Falta:** Diferencia entre infinito potencial y actual (Aristóteles)." },
+    { id:"q-onda", type:"pregunta", title:"¿Qué significa físicamente una función de onda?", materia:"Física", content:"**Pregunta:** ¿La función de onda es real o solo herramienta de cálculo?\n\n**Contexto:** Química cuántica.\n\n**Qué sé:** Matemáticamente es solución de Schrödinger, |ψ|² es probabilidad.\n\n**Conexiones:** [[Onda]] · [[Filosofía]]" },
+    { id:"q-irracional", type:"pregunta", title:"¿Por qué los irracionales son necesarios?", materia:"Matemática", content:"**Pregunta:** ¿Por qué no alcanzan los racionales?\n\n**Conexiones:** [[Límite]] · [[Aproximación lineal]] · [[Taylor]]" },
+    { id:"i-fourier-musica", type:"idea", title:"Fourier conecta matemática, música y señales", materia:"Música", content:"**Idea:** Si [[Serie de Fourier]] descompone ondas en senos, un acorde de guitarra es literalmente una suma de Fourier que el oído descompone. La misma matemática que usan los ecualizadores.\n\n**Origen:** Practicar guitarra y leer sobre [[Procesamiento de señales]]." },
+    { id:"i-taylor-error", type:"idea", title:"Taylor, error y oscilaciones", materia:"Matemática", content:"**Idea:** [[Taylor]] → [[Error]] → [[Oscilaciones]] → [[Física]]. Aproximar con polinomios es como aproximar un movimiento real con la recta tangente. El error es la física que ignoras." },
+    { id:"p-fiuba-agent", type:"proyecto", title:"FIUBA Agent", materia:"Tecnología", content:"**Proyecto:** Plataforma para estudiantes de ingeniería que conecta conocimiento, no solo lo almacena.\n\n**Preguntas que lo guían:**\n- ¿Cómo representar conocimiento para que IA y humano lo usen?\n- ¿Cómo evitar que el conocimiento quede fragmentado?\n\n**Notas clave:** [[Serie de Fourier]] · [[Derivadas]] · [[FIUBA Agent]]" },
 
     // ═══ APUNTES ═══
     { id:"a-alg-autoval", type:"apunte", title:"Apuntes: Autovalores", materia:"Algebra Lineal", content:"## Resumen de autovalores\n\nPara encontrar autovalores:\n1. Calcular $\\det(A - \\lambda I) = 0$\n2. Resolver el polinomio caracteristico\n3. Para cada $\\lambda$, resolver $(A - \\lambda I)v = 0$\n\n**Ejemplo:**\n$$A = \\begin{pmatrix} 2 & 1 \\\\ 1 & 2 \\end{pmatrix}$$\n$$\\det(A - \\lambda I) = (2-\\lambda)^2 - 1 = 0$$\n$$\\lambda_1 = 3, \\lambda_2 = 1$$" },
@@ -289,6 +335,17 @@ function kgCreateMock() {
     { s:"c-integ", t:"c-energia", label:"calcula" },
     { s:"c-matrices", t:"c-fourier", label:"base de" },
     { s:"c-bernoulli", t:"c-newton", label:"deriva de" },
+    // Segundo Cerebro — preguntas, ideas, proyectos
+    { s:"q-infinito", t:"c-series", label:"pregunta sobre" },
+    { s:"q-onda", t:"c-campo-e", label:"pregunta sobre" },
+    { s:"q-irracional", t:"c-deriv", label:"pregunta sobre" },
+    { s:"i-fourier-musica", t:"c-fourier", label:"idea sobre" },
+    { s:"i-fourier-musica", t:"c-energia", label:"conecta con" },
+    { s:"i-taylor-error", t:"c-deriv", label:"idea sobre" },
+    { s:"i-taylor-error", t:"c-energia", label:"conecta con" },
+    { s:"p-fiuba-agent", t:"c-fourier", label:"usa" },
+    { s:"p-fiuba-agent", t:"c-matrices", label:"usa" },
+    { s:"q-infinito", t:"i-taylor-error", label:"relacionado" },
     // Apuntes -> Concepts
     { s:"a-alg-autoval", t:"c-autoval", label:"describe" },
     { s:"a-calc-deriv", t:"c-deriv", label:"describe" },

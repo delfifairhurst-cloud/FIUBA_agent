@@ -1616,6 +1616,24 @@
       "Señales": ["fourier","laplace","filtro","muestra","convolucion","espectro"],
       "Estructuras": ["viga","puente","columna","torsion","corte","hormigon"]
     };
+    const QC_TEMPLATES = {
+      concepto: "## Idea central\n\n## Intuición\n\n## Formalmente\n\n## Ejemplo\n\n## Conexiones\n- [[ ]]\n",
+      pregunta: "> ¿Pregunta completa?\n\n## Contexto\n\n## Qué sé hasta ahora\n\n## Conexiones\n- [[ ]]\n",
+      idea: "## Idea\n\n## Origen\n\n## Conexiones\n- [[ ]]\n",
+      proyecto: "## Intención\n\n## Preguntas clave\n- [[ ]]\n\n## Recursos\n- \n",
+      recurso: "## Por qué lo guardo\n\n## Ideas clave\n- \n\n## Conexiones\n- [[ ]]\n",
+      apunte: "## Resumen\n\n## Ejemplo\n\n",
+      ejercicio: "## Enunciado\n\n## Resolución\n\n",
+      materia: "## Conceptos centrales\n- [[ ]]\n\n## Preguntas abiertas\n- [[ ]]\n"
+    };
+    function qcApplyTemplate() {
+      const type=document.getElementById('qc-type')?.value;
+      const contentEl=document.getElementById('qc-content');
+      if(!type || !contentEl) return;
+      if(contentEl.value.trim()) return; // no pises si ya escribió
+      const tmpl=QC_TEMPLATES[type];
+      if(tmpl){ contentEl.value=tmpl; contentEl.focus(); }
+    }
     function openQuickCapture() {
       const m=document.getElementById('quick-capture-modal'), d=document.getElementById('qc-dialog');
       if(!m) return;
@@ -1624,6 +1642,7 @@
       if(window.KG_TYPES && typeSel && !typeSel.options.length) {
         Object.entries(window.KG_TYPES).forEach(([k,v])=>{ const o=document.createElement('option'); o.value=k; o.textContent=v.label; typeSel.appendChild(o); });
         typeSel.value='concepto';
+        typeSel.onchange = qcApplyTemplate;
       }
       if(matSel && !matSel.options.length) {
         const materias=[...new Set((window.KG?.nodes||[]).map(n=>n.materia).filter(Boolean))];
@@ -1699,7 +1718,7 @@
       if(e.key==='Escape'){ const m=document.getElementById('quick-capture-modal'); if(m && m.style.display!=='none') closeQuickCapture(); }
     });
     window.openQuickCapture=openQuickCapture; window.closeQuickCapture=closeQuickCapture;
-    window.qcAutoTagDebounced=qcAutoTagDebounced; window.qcHandleDrop=qcHandleDrop; window.handleQuickCapture=handleQuickCapture;
+    window.qcAutoTagDebounced=qcAutoTagDebounced; window.qcHandleDrop=qcHandleDrop; window.handleQuickCapture=handleQuickCapture; window.qcApplyTemplate=qcApplyTemplate;
   </script>
 </body>
 </html>
