@@ -9,7 +9,10 @@ const KG = {
   focus: null, // focus mode: nodeId or null
   focusLevels: new Map(), // nodeId -> level (0=center, 1=direct, 2=indirect, 99=dimmed)
   listMode: false,
-  showOnboarding: !localStorage.getItem("kg_onboarding_done")
+  showOnboarding: !localStorage.getItem("kg_onboarding_done"),
+  expanded: new Set(),
+  nodePos: new Map(),
+  lastClickTime: 0, lastClickNode: null
 };
 
 const MATERIA_COLORS = {
@@ -440,6 +443,17 @@ function kgFiltered() {
       return tokens.every(tok => hay.includes(tok));
     });
   }
+  // Órbita progresiva — solo materias al inicio, al click se abre constelación
+  if (!KG.listMode && !KG.search && !KG.filterType && !KG.filterMateria) {
+    if (KG.expanded.size === 0) return nodes.filter(n => n.type === "materia");
+    const visible = new Set();
+    nodes.filter(n => n.type==="materia").forEach(n=>visible.add(n.id));
+    for(const eid of KG.expanded){
+      visible.add(eid);
+      KG.edges.forEach(e=>{ if(e.source===eid) visible.add(e.target); if(e.target===eid) visible.add(e.source); });
+    }
+    return nodes.filter(n=>visible.has(n.id));
+  }
   return nodes;
 }
 
@@ -518,6 +532,14 @@ function kgInjectStyles() {
     .kg-fullscreen #tech-tree-content > div { height: 100vh !important; }
     .kg-fullscreen #kg-canvas-wrap { flex: 1 !important; min-height: 0 !important; }
     .kg-fullscreen #kg-canvas { width: 100% !important; height: 100% !important; display: block !important; }
+    .kg-modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.55); backdrop-filter:blur(12px); display:flex; align-items:center; justify-content:center; z-index:10000; opacity:0; transition:opacity 0.2s; padding:1rem; }
+    .kg-modal-backdrop.open { opacity:1; }
+    .kg-modal { background:#fdfbf3; border:1px solid #e7ddd0; border-radius:18px; width:100%; max-width:720px; max-height:85vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,0.28); transform:translateY(14px) scale(0.98); transition:transform 0.2s cubic-bezier(0.34,1.26,0.64,1); }
+    .kg-modal-backdrop.open .kg-modal { transform:translateY(0) scale(1); }
+    .kg-modal-tabs { display:flex; gap:0.25rem; padding:0.5rem 0.8rem 0; border-bottom:1px solid #ece8df; background:#fdfbf3; }
+    .kg-modal-tab { padding:0.45rem 0.8rem; border-radius:8px 8px 0 0; border:1px solid transparent; border-bottom:none; font-size:0.72rem; font-weight:600; cursor:pointer; color:#78716c; background:transparent; }
+    .kg-modal-tab.active { background:#fff; border-color:#e7ddd0; color:#1c1917; box-shadow:0 -2px 8px rgba(0,0,0,0.04); }
+    .kg-modal-body { padding:1rem 1.1rem; overflow-y:auto; flex:1; }
   `;
   document.head.appendChild(s);
 }
@@ -592,6 +614,7 @@ function kgRender() {
   const filtered = kgFiltered();
   const allMaterias = [...new Set(KG.nodes.map(n => n.materia).filter(Boolean))];
   const allTypes = Object.keys(KG_TYPES);
+  const isOrbitModePanel = !KG.listMode && !KG.search && !KG.filterType && !KG.filterMateria;
 
   el.innerHTML = `
     <div style="display:flex;height:100%;gap:0">
@@ -671,9 +694,9 @@ function kgRender() {
         `}
       </div>
 
-      <!-- Side panel -->
-      <div id="kg-side" class="kg-side" style="width:${KG.active?'380px':'0px'};${KG.active?'border-left:1px solid var(--border-color)':'border:none'};flex-shrink:0;height:100%;overflow:hidden">
-        ${KG.active ? kgRenderSidePanel() : ""}
+      <!-- Side panel — oculto en modo órbita (usa modal) -->
+      <div id="kg-side" class="kg-side" style="width:${(KG.active && !isOrbitModePanel)?'380px':'0px'};${(KG.active && !isOrbitModePanel)?'border-left:1px solid #e7ddd0':'border:none'};flex-shrink:0;height:100%;overflow:hidden">
+        ${(KG.active && !isOrbitModePanel) ? kgRenderSidePanel() : ""}
       </div>
     </div>`;
 
@@ -895,6 +918,63 @@ function kgRenderSide(el) {
   kgRender();
 }
 
+function kgShowModal(id){
+  KG.active=id;
+  const n=kgNode(id); if(!n) return;
+  const ti=KG_TYPES[n.type]||KG_TYPES.concepto;
+  const conns=kgConnectedNodes(n.id);
+  const grouped={}; conns.forEach(c=>{ const t=c.type; if(!grouped[t]) grouped[t]=[]; grouped[t].push(c); });
+  const html=`<div class="kg-modal-backdrop" id="kg-modal" onclick="if(event.target===this)kgCloseModal()">
+    <div class="kg-modal">
+      <div style="padding:1rem 1.1rem 0.8rem;background:linear-gradient(135deg,${ti.color}14,${ti.color}07);border-bottom:1px solid #ece8df;display:flex;align-items:center;gap:0.7rem">
+        <div style="width:44px;height:44px;border-radius:12px;background:${ti.color};display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:0.95rem;flex-shrink:0">${ti.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:1.05rem;font-weight:800;color:#1c1917;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.title}</div>
+          <div style="display:flex;gap:0.3rem;align-items:center;margin-top:0.2rem">
+            <span style="font-size:0.6rem;background:${ti.color};color:white;border-radius:4px;padding:0.1rem 0.35rem;font-weight:700">${ti.label}</span>
+            ${n.materia?`<span style="font-size:0.62rem;color:#78716c">${n.materia}</span>`:''}
+          </div>
+        </div>
+        <button onclick="kgCloseModal()" style="background:#fff;border:1px solid #e7ddd0;border-radius:10px;width:32px;height:32px;cursor:pointer;color:#78716c">✕</button>
+      </div>
+      <div class="kg-modal-tabs">
+        <button class="kg-modal-tab active" onclick="kgModalTab('content',this)">Contenido</button>
+        <button class="kg-modal-tab" onclick="kgModalTab('conexiones',this)">Conexiones <span style="background:#f5f0e6;border-radius:4px;padding:0.05rem 0.3rem;margin-left:0.2rem">${conns.length}</span></button>
+        <button class="kg-modal-tab" onclick="kgModalTab('recursos',this)">Recursos</button>
+      </div>
+      <div class="kg-modal-body" id="kg-modal-body">
+        <div id="kg-modal-content">${kgMd(n.content)}</div>
+        <div id="kg-modal-conexiones" style="display:none">
+          ${Object.entries(grouped).map(([type, list])=>{
+            const tti=KG_TYPES[type]||KG_TYPES.concepto;
+            return `<div style="margin-bottom:0.75rem"><div style="font-size:0.68rem;font-weight:700;color:${tti.color};margin-bottom:0.3rem;display:flex;align-items:center;gap:0.3rem"><span style="width:8px;height:8px;border-radius:50%;background:${tti.color}"></span>${tti.label} · ${list.length}</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">${list.map(c=>`<button onclick="kgCloseModal();setTimeout(()=>kgShowModal('${c.id}'),180)" style="padding:0.32rem 0.6rem;background:#fff;border:1px solid #e7ddd0;border-radius:20px;font-size:0.68rem;cursor:pointer;color:#44403c">${c.title}</button>`).join('')}</div></div>`;
+          }).join('') || '<div style="text-align:center;padding:1.2rem;color:#a8a29e;font-size:0.75rem">Sin conexiones aún — usa Cmd+K para conectar ideas</div>'}
+        </div>
+        <div id="kg-modal-recursos" style="display:none">
+          <div style="font-size:0.75rem;color:#44403c;line-height:1.5">Videos y PDFs conectados a <strong>${n.title}</strong> aparecen aquí. Usa <em>Cmd+K</em> y pega un link de YouTube o arrastra un PDF para conectarlo.</div>
+        </div>
+      </div>
+      <div style="padding:0.6rem 1rem;border-top:1px solid #ece8df;display:flex;gap:0.4rem;background:#fdfbf3">
+        <button onclick="kgCloseModal();KG.expanded.add('${n.id}');kgRender()" style="flex:1;background:#fff;border:1px solid #e7ddd0;border-radius:10px;padding:0.5rem;font-size:0.75rem;cursor:pointer;color:#44403c">Ver órbita</button>
+        <button onclick="switchView('chat');kgCloseModal();const ci=document.getElementById('chatInput');if(ci){ci.value='Explica: ${n.title.replace(/'/g,"\\'")}';ci.focus()}" style="flex:1;background:${ti.color};color:white;border:none;border-radius:10px;padding:0.5rem;font-size:0.75rem;cursor:pointer;font-weight:700">🧠 Aprender esto</button>
+      </div>
+    </div>
+  </div>`;
+  let ex=document.getElementById('kg-modal'); if(ex) ex.remove();
+  document.body.insertAdjacentHTML('beforeend', html);
+  requestAnimationFrame(()=>{ const b=document.getElementById('kg-modal'); if(b) b.classList.add('open'); });
+  if(typeof katex!=="undefined") setTimeout(()=>{ const b=document.getElementById('kg-modal-body'); if(b) kgKatex(b.innerHTML); },80);
+}
+function kgCloseModal(){ const m=document.getElementById('kg-modal'); if(m){ m.classList.remove('open'); setTimeout(()=>m.remove(),200); } }
+function kgModalTab(which,btn){
+  document.querySelectorAll('.kg-modal-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const c=document.getElementById('kg-modal-content'), x=document.getElementById('kg-modal-conexiones'), r=document.getElementById('kg-modal-recursos');
+  if(c) c.style.display= which==='content'?'block':'none';
+  if(x) x.style.display= which==='conexiones'?'block':'none';
+  if(r) r.style.display= which==='recursos'?'block':'none';
+}
+window.kgShowModal=kgShowModal; window.kgCloseModal=kgCloseModal; window.kgModalTab=kgModalTab;
 function kgSetupCanvas() {
   const canvas = document.getElementById("kg-canvas");
   if (!canvas) return;
@@ -928,42 +1008,98 @@ function kgSetupCanvas() {
     return;
   }
 
-  // Position nodes with force simulation
-  const spread = Math.min(W, H) * 0.35;
-  const positioned = nodes.map((n, i) => {
-    const angle = i * 2 * Math.PI / nodes.length;
-    const radius = spread * (0.5 + Math.random() * 0.5);
-    return { ...n, x: W/2 + Math.cos(angle) * radius, y: H/2 + Math.sin(angle) * radius, vx: 0, vy: 0, r: n.type === "materia" ? 22 : 14 };
-  });
-  const posMap = {}; positioned.forEach(p => { posMap[p.id] = p; });
-
-  // Only include edges where both nodes are visible
-  const visibleEdges = KG.edges.filter(e => posMap[e.source] && posMap[e.target]);
-
-  // Force simulation
-  for (let iter = 0; iter < 300; iter++) {
-    const rep = 6000, sk = 0.005, sl = 120, damp = 0.85, grav = 0.0008;
-    for (let i = 0; i < positioned.length; i++) {
-      for (let j = i+1; j < positioned.length; j++) {
-        let dx = positioned[j].x - positioned[i].x, dy = positioned[j].y - positioned[i].y;
-        let d = Math.sqrt(dx*dx+dy*dy) || 1, f = rep/(d*d);
-        positioned[i].vx -= (dx/d)*f; positioned[i].vy -= (dy/d)*f;
-        positioned[j].vx += (dx/d)*f; positioned[j].vy += (dy/d)*f;
+  // Position — órbita progresiva si no hay búsqueda/filtro
+  const isOrbitMode = !KG.listMode && !KG.search && !KG.filterType && !KG.filterMateria;
+  let positioned, posMap, visibleEdges;
+  if (isOrbitMode) {
+    const materiaNodes = nodes.filter(n=>n.type==="materia");
+    const childNodes = nodes.filter(n=>n.type!=="materia");
+    const materiaPositioned = materiaNodes.map(n=>{
+      const saved=KG.nodePos.get(n.id);
+      if(saved) return { ...n, x:saved.x, y:saved.y, vx:0, vy:0, r:22 };
+      const idx=materiaNodes.indexOf(n);
+      const angle=idx*2*Math.PI/Math.max(materiaNodes.length,1) - Math.PI/2;
+      const radius=Math.min(W,H)*0.28;
+      const pos={ x:W/2+Math.cos(angle)*radius, y:H/2+Math.sin(angle)*radius };
+      KG.nodePos.set(n.id,pos);
+      return { ...n, x:pos.x, y:pos.y, vx:0, vy:0, r:22 };
+    });
+    const allPos=new Map(); materiaPositioned.forEach(m=>allPos.set(m.id,m));
+    const childPositioned = childNodes.map(n=>{
+      const saved=KG.nodePos.get(n.id);
+      if(saved) { const p={...n, x:saved.x, y:saved.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p; }
+      const parentEdge=KG.edges.find(e=>(e.target===n.id && KG.expanded.has(e.source))||(e.source===n.id && KG.expanded.has(e.target)));
+      const parentId=parentEdge ? (KG.expanded.has(parentEdge.source)?parentEdge.source:parentEdge.target) : null;
+      const parent=parentId?allPos.get(parentId):null;
+      if(parent){
+        const siblings=childNodes.filter(c=>{ if(c.id===n.id) return false; const pe=KG.edges.find(e=>(e.target===c.id&&KG.expanded.has(e.source))||(e.source===c.id&&KG.expanded.has(e.target))); return pe && (KG.expanded.has(pe.source)?pe.source:pe.target)===parentId; });
+        const total=siblings.length+1;
+        const idx=siblings.indexOf(n); // -1 if not found, fix
+        const sIdx = idx===-1 ? total-1 : idx;
+        const angle=sIdx*2*Math.PI/total;
+        const radius= 85 + Math.min(total*6, 28);
+        const pos={ x:parent.x+Math.cos(angle)*radius, y:parent.y+Math.sin(angle)*radius };
+        KG.nodePos.set(n.id,pos);
+        const p={...n, x:pos.x, y:pos.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p;
       }
+      const angle=Math.random()*Math.PI*2, radius=110+Math.random()*80;
+      const pos={ x:W/2+Math.cos(angle)*radius, y:H/2+Math.sin(angle)*radius };
+      KG.nodePos.set(n.id,pos);
+      const p={...n, x:pos.x, y:pos.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p;
+    });
+    positioned=[...materiaPositioned, ...childPositioned];
+    posMap={}; positioned.forEach(p=>{posMap[p.id]=p;});
+    visibleEdges=KG.edges.filter(e=>posMap[e.source] && posMap[e.target]);
+    // gentle anti-overlap, keep orbit
+    for(let iter=0; iter<50; iter++){
+      const rep=1800, damp=0.92;
+      for(let i=0;i<positioned.length;i++) for(let j=i+1;j<positioned.length;j++){
+        let dx=positioned[j].x-positioned[i].x, dy=positioned[j].y-positioned[i].y;
+        let d=Math.sqrt(dx*dx+dy*dy)||1; if(d>140) continue; const f=rep/(d*d);
+        positioned[i].vx-=(dx/d)*f; positioned[i].vy-=(dy/d)*f;
+        positioned[j].vx+=(dx/d)*f; positioned[j].vy+=(dy/d)*f;
+      }
+      positioned.forEach(n=>{
+        const saved=KG.nodePos.get(n.id);
+        if(saved && n.type==="materia"){ n.vx+=(saved.x-n.x)*0.08; n.vy+=(saved.y-n.y)*0.08; }
+        n.vx*=damp; n.vy*=damp; n.x+=n.vx; n.y+=n.vy;
+        n.x=Math.max(60,Math.min(W-60,n.x)); n.y=Math.max(60,Math.min(H-60,n.y));
+      });
     }
-    visibleEdges.forEach(e => {
-      const s = posMap[e.source], t = posMap[e.target];
-      if (!s || !t) return;
-      let dx = t.x-s.x, dy = t.y-s.y, d = Math.sqrt(dx*dx+dy*dy) || 1, f = sk*(d-sl);
-      s.vx += (dx/d)*f; s.vy += (dy/d)*f; t.vx -= (dx/d)*f; t.vy -= (dy/d)*f;
+    positioned.forEach(n=>KG.nodePos.set(n.id,{x:n.x,y:n.y}));
+  } else {
+    const spread = Math.min(W, H) * 0.35;
+    positioned = nodes.map((n, i) => {
+      const angle = i * 2 * Math.PI / nodes.length;
+      const radius = spread * (0.5 + Math.random() * 0.5);
+      return { ...n, x: W/2 + Math.cos(angle) * radius, y: H/2 + Math.sin(angle) * radius, vx: 0, vy: 0, r: n.type === "materia" ? 22 : 14 };
     });
-    positioned.forEach(n => {
-      n.vx += (W/2 - n.x) * grav; n.vy += (H/2 - n.y) * grav;
-      n.vx *= damp; n.vy *= damp;
-      n.x += n.vx; n.y += n.vy;
-      n.x = Math.max(50, Math.min(W-50, n.x));
-      n.y = Math.max(50, Math.min(H-50, n.y));
-    });
+    posMap = {}; positioned.forEach(p => { posMap[p.id] = p; });
+    visibleEdges = KG.edges.filter(e => posMap[e.source] && posMap[e.target]);
+    for (let iter = 0; iter < 120; iter++) {
+      const rep = 4000, sk = 0.004, sl = 110, damp = 0.88, grav = 0.0006;
+      for (let i = 0; i < positioned.length; i++) {
+        for (let j = i+1; j < positioned.length; j++) {
+          let dx = positioned[j].x - positioned[i].x, dy = positioned[j].y - positioned[i].y;
+          let d = Math.sqrt(dx*dx+dy*dy) || 1, f = rep/(d*d);
+          positioned[i].vx -= (dx/d)*f; positioned[i].vy -= (dy/d)*f;
+          positioned[j].vx += (dx/d)*f; positioned[j].vy += (dy/d)*f;
+        }
+      }
+      visibleEdges.forEach(e => {
+        const s = posMap[e.source], t = posMap[e.target];
+        if (!s || !t) return;
+        let dx = t.x-s.x, dy = t.y-s.y, d = Math.sqrt(dx*dx+dy*dy) || 1, f = sk*(d-sl);
+        s.vx += (dx/d)*f; s.vy += (dy/d)*f; t.vx -= (dx/d)*f; t.vy -= (dy/d)*f;
+      });
+      positioned.forEach(n => {
+        n.vx += (W/2 - n.x) * grav; n.vy += (H/2 - n.y) * grav;
+        n.vx *= damp; n.vy *= damp;
+        n.x += n.vx; n.y += n.vy;
+        n.x = Math.max(50, Math.min(W-50, n.x));
+        n.y = Math.max(50, Math.min(H-50, n.y));
+      });
+    }
   }
 
   let scale = KG.camZoom, panX = KG.camX, panY = KG.camY;
@@ -1199,36 +1335,21 @@ function kgSetupCanvas() {
       ctx.lineWidth = isActive ? 2.2 : (isH ? 1.6 : 0.9);
       ctx.stroke();
 
-      // Icon — materia: símbolo de ingeniería, otros: forma sutil
-      if (n.type === "materia") {
-        const sym = kgMateriaSymbol(n.materia || n.title);
+      // Sin icono — esfera pura, color habla (menos ruido)
+
+      // Label sin fondo — texto limpio con sombra
+      if (scale > 0.32) {
+        const fontSize = Math.max(10, (isH ? 12 : 10.5) * Math.min(scale, 1.15));
+        ctx.font = `${isH ? "700" : "500"} ${fontSize}px 'Outfit', system-ui, sans-serif`;
+        const ly = s.y + r + 10;
         ctx.save();
-        ctx.globalAlpha = 0.92;
-        ctx.fillStyle = "#fff";
-        ctx.font = `600 ${r * 0.7}px ui-serif, Georgia`;
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(sym, s.x, s.y + r * 0.08);
-        ctx.restore();
-      } else {
-        kgDrawTypeIcon(ctx, s.x, s.y, r, n.type, 0.55);
-      }
-
-      // Label with pill
-      if (scale > 0.3) {
-        const fontSize = Math.max(10, (isH ? 12 : 10) * Math.min(scale, 1.2));
-        ctx.font = `${isH ? "700" : "600"} ${fontSize}px system-ui,sans-serif`;
-        const lw = ctx.measureText(n.title).width;
-        const ly = s.y + r + 8;
-
-        ctx.fillStyle = isActive ? "#fdfbf3" : "rgba(253,251,243,0.94)";
-        ctx.beginPath(); ctx.roundRect(s.x - lw/2 - 7, ly - 3, lw + 14, fontSize + 8, (fontSize+8)/2); ctx.fill();
-        ctx.strokeStyle = isActive ? typeInfo.color : "rgba(214,199,184,0.6)";
-        ctx.lineWidth = isActive ? 1.2 : 0.8;
-        ctx.stroke();
-
+        ctx.shadowColor = "rgba(0,0,0,0.85)";
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetY = 2;
         ctx.textAlign = "center"; ctx.textBaseline = "top";
-        ctx.fillStyle = isActive ? "#1c1917" : (isH ? "#1c1917" : "#44403c");
+        ctx.fillStyle = isActive ? "#fef3c7" : (isH ? "#ffffff" : "rgba(255,255,255,0.82)");
         ctx.fillText(n.title, s.x, ly);
+        ctx.restore();
       }
       ctx.globalAlpha = 1; // reset after focus mode
     });
@@ -1273,8 +1394,11 @@ function kgSetupCanvas() {
       }
     } else if (tt) tt.style.display = "none";
 
-    // Drag / Pan
-    if (drag) { drag.x = w.x; drag.y = w.y; dragMoved = true; }
+    // Drag / Pan (con umbral 3px)
+    if (drag) {
+      drag.x = w.x; drag.y = w.y;
+      if (!dragMoved && drag.startX!==undefined && (Math.abs(w.x-drag.startX)>3 || Math.abs(w.y-drag.startY)>3)) dragMoved = true;
+    }
     else if (panning && lastMouse) {
       panX += (e.offsetX - lastMouse.x) / scale;
       panY += (e.offsetY - lastMouse.y) / scale;
@@ -1286,14 +1410,39 @@ function kgSetupCanvas() {
   canvas.onmousedown = e => {
     const w = tw(e.offsetX, e.offsetY);
     const node = positioned.find(n => Math.sqrt((n.x-w.x)**2 + (n.y-w.y)**2) < n.r + 5);
-    if (node) { drag = node; dragMoved = false; canvas.style.cursor = "grabbing"; }
+    if (node) { drag = node; drag.startX=w.x; drag.startY=w.y; dragMoved = false; canvas.style.cursor = "grabbing"; }
     else { panning = true; lastMouse = { x: e.offsetX, y: e.offsetY }; canvas.style.cursor = "grabbing"; }
   };
 
+  // Orbit: click abre/cierra constelación, doble click abre modal
   canvas.onmouseup = () => {
     if (drag && !dragMoved) {
-      KG.active = drag.id;
-      kgRender();
+      const isOrbitMode = !KG.listMode && !KG.search && !KG.filterType && !KG.filterMateria;
+      const now = Date.now();
+      const isDouble = (KG.lastClickNode === drag.id && now - KG.lastClickTime < 420);
+      if (isDouble) {
+        KG.active = drag.id;
+        if (isOrbitMode) kgShowModal(drag.id);
+        else kgRender();
+        KG.lastClickTime = 0; KG.lastClickNode = null;
+      } else {
+        if (isOrbitMode && KG.edges.some(e=>e.source===drag.id||e.target===drag.id)) {
+          if (KG.expanded.has(drag.id)) {
+            KG.expanded.delete(drag.id);
+            // limpia posiciones de hijos que ya no se ven (para recolocar limpio al reabrir)
+            KG.edges.forEach(e=>{ if(e.source===drag.id) KG.nodePos.delete(e.target); if(e.target===drag.id) KG.nodePos.delete(e.source); });
+          } else {
+            KG.expanded.add(drag.id);
+          }
+          KG.lastClickTime = now; KG.lastClickNode = drag.id;
+          kgRender();
+        } else {
+          KG.active = drag.id;
+          if (isOrbitMode) kgShowModal(drag.id);
+          else kgRender();
+          KG.lastClickTime = now; KG.lastClickNode = drag.id;
+        }
+      }
     }
     drag = null; panning = false; lastMouse = null; dragMoved = false;
     canvas.style.cursor = hoverNode ? "pointer" : "grab";
