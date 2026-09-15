@@ -616,7 +616,6 @@ function kgRender() {
   const allMaterias = [...new Set(KG.nodes.map(n => n.materia).filter(Boolean))];
   const allTypes = Object.keys(KG_TYPES);
   const isOrbitModePanel = !KG.listMode && !KG.search && !KG.filterType && !KG.filterMateria;
-  const useVis = typeof vis !== 'undefined';
 
   el.innerHTML = `
     <div style="display:flex;height:100%;gap:0">
@@ -686,12 +685,6 @@ function kgRender() {
           ${kgRenderList(filtered)}
           ${filtered.length===0?'<div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:0.8rem">Sin resultados para esos filtros</div>':''}
         </div>
-        ` : (useVis ? `
-        <!-- Galaxy vis-network — tu navegación original -->
-        <div id="kbGraphWrap" class="kb-graph-wrap" style="flex:1;position:relative;overflow:hidden;min-height:0">
-          <canvas id="kbStars" class="kb-stars"></canvas>
-          <div id="kbGraph" class="kb-graph"></div>
-        </div>
         ` : `
         <!-- Canvas container: fills remaining space -->
         <div id="kg-canvas-wrap" style="flex:1;position:relative;overflow:hidden;min-height:0">
@@ -699,7 +692,7 @@ function kgRender() {
           <div id="kg-tooltip" style="display:none;position:fixed;background:rgba(15,15,25,0.95);backdrop-filter:blur(12px);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:0.7rem 0.9rem;font-size:0.72rem;color:#e2e8f0;pointer-events:none;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,0.4),0 0 20px rgba(139,92,246,0.1);max-width:300px"></div>
           <div style="position:absolute;bottom:8px;left:10px;font-size:0.6rem;color:var(--text-muted);opacity:0.5">Hover preview · Click panel · Drag mover · Scroll zoom · ⌘K captura</div>
         </div>
-        `) }
+        `}
       </div>
 
       <!-- Side panel — oculto en modo órbita (usa modal) -->
@@ -708,10 +701,7 @@ function kgRender() {
       </div>
     </div>`;
 
-  if (!KG.listMode) {
-    if (useVis && typeof kbGalaxyInit === 'function') setTimeout(()=>kbGalaxyInit(), 80);
-    else setTimeout(kgSetupCanvas, 30);
-  }
+  if (!KG.listMode) setTimeout(kgSetupCanvas, 30);
 }
 
 function kgRenderSidePanel() {
@@ -1054,9 +1044,9 @@ function kgSetupCanvas() {
         const idx=siblings.indexOf(n);
         const sIdx = idx===-1 ? total-1 : idx;
         const parentAngle = Math.atan2(parent.y - H/2, parent.x - W/2);
-        const arcSpan = Math.min(total * 0.38, Math.PI * 0.55);
+        const arcSpan = Math.min(total * 0.58, Math.PI * 0.92);
         const angle = total===1 ? parentAngle : parentAngle + (sIdx/(total-1)-0.5)*arcSpan;
-        const radius = 128 + Math.min(total*7, 36);
+        const radius = 112 + Math.min(total*9, 44);
         const pos={ x:parent.x+Math.cos(angle)*radius, y:parent.y+Math.sin(angle)*radius };
         KG.nodePos.set(n.id,pos);
         KG.nodeOrbit.set(n.id,{parentId, baseAngle:angle, radius, idx:sIdx, total});
@@ -1174,17 +1164,14 @@ function kgSetupCanvas() {
           }
         }
       }
-      // repulsión entre todas las hijas (intra e inter-órbita) para que no se solapen
-      const allChildren = positioned.filter(n=> KG.nodeOrbit.has(n.id));
-      for(let i=0;i<allChildren.length;i++) for(let j=i+1;j<allChildren.length;j++){
-        const a=allChildren[i], b=allChildren[j];
-        let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
-        const sameParent = KG.nodeOrbit.get(a.id).parentId === KG.nodeOrbit.get(b.id).parentId;
-        const minDist = sameParent ? 48 : 52;
-        if(d < minDist){
-          const f=(minDist-d)*0.11;
-          a.x-=(dx/d)*f*0.5; a.y-=(dy/d)*f*0.5;
-          b.x+=(dx/d)*f*0.5; b.y+=(dy/d)*f*0.5;
+      // repulsión entre hermanas de la misma órbita (que no se pisen)
+      const sibMap=new Map();
+      for(const n of positioned){ const o=KG.nodeOrbit.get(n.id); if(o){ if(!sibMap.has(o.parentId)) sibMap.set(o.parentId,[]); sibMap.get(o.parentId).push(n); } }
+      for(const group of sibMap.values()){
+        for(let i=0;i<group.length;i++) for(let j=i+1;j<group.length;j++){
+          const a=group[i], b=group[j];
+          let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+          if(d<46){ const f=(46-d)*0.09; a.x-=(dx/d)*f*0.5; a.y-=(dy/d)*f*0.5; b.x+=(dx/d)*f*0.5; b.y+=(dy/d)*f*0.5; }
         }
       }
     }
