@@ -12,6 +12,7 @@ const KG = {
   showOnboarding: !localStorage.getItem("kg_onboarding_done"),
   expanded: new Set(),
   nodePos: new Map(),
+  nodeOrbit: new Map(), // id -> {parentId, baseAngle, radius, idx, total}
   lastClickTime: 0, lastClickNode: null
 };
 
@@ -1027,22 +1028,31 @@ function kgSetupCanvas() {
     const allPos=new Map(); materiaPositioned.forEach(m=>allPos.set(m.id,m));
     const childPositioned = childNodes.map(n=>{
       const saved=KG.nodePos.get(n.id);
-      if(saved) { const p={...n, x:saved.x, y:saved.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p; }
+      const orbitSaved=KG.nodeOrbit.get(n.id);
+      if(saved && orbitSaved && KG.expanded.has(orbitSaved.parentId)){
+        const p={...n, x:saved.x, y:saved.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p;
+      }
+      if(saved && !orbitSaved && KG.expanded.size>0){
+        const p={...n, x:saved.x, y:saved.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p;
+      }
       const parentEdge=KG.edges.find(e=>(e.target===n.id && KG.expanded.has(e.source))||(e.source===n.id && KG.expanded.has(e.target)));
       const parentId=parentEdge ? (KG.expanded.has(parentEdge.source)?parentEdge.source:parentEdge.target) : null;
       const parent=parentId?allPos.get(parentId):null;
       if(parent){
         const siblings=childNodes.filter(c=>{ if(c.id===n.id) return false; const pe=KG.edges.find(e=>(e.target===c.id&&KG.expanded.has(e.source))||(e.source===c.id&&KG.expanded.has(e.target))); return pe && (KG.expanded.has(pe.source)?pe.source:pe.target)===parentId; });
         const total=siblings.length+1;
-        const idx=siblings.indexOf(n); // -1 if not found, fix
+        const idx=siblings.indexOf(n);
         const sIdx = idx===-1 ? total-1 : idx;
-        const angle=sIdx*2*Math.PI/total;
-        const radius= 85 + Math.min(total*6, 28);
+        const parentAngle = Math.atan2(parent.y - H/2, parent.x - W/2);
+        const arcSpan = Math.min(total * 0.42, Math.PI * 0.72);
+        const angle = total===1 ? parentAngle : parentAngle + (sIdx/(total-1)-0.5)*arcSpan;
+        const radius = 96 + Math.min(total*6, 32);
         const pos={ x:parent.x+Math.cos(angle)*radius, y:parent.y+Math.sin(angle)*radius };
         KG.nodePos.set(n.id,pos);
+        KG.nodeOrbit.set(n.id,{parentId, baseAngle:angle, radius, idx:sIdx, total});
         const p={...n, x:pos.x, y:pos.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p;
       }
-      const angle=Math.random()*Math.PI*2, radius=110+Math.random()*80;
+      const angle=Math.random()*Math.PI*2, radius=120+Math.random()*70;
       const pos={ x:W/2+Math.cos(angle)*radius, y:H/2+Math.sin(angle)*radius };
       KG.nodePos.set(n.id,pos);
       const p={...n, x:pos.x, y:pos.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p;
@@ -1123,6 +1133,28 @@ function kgSetupCanvas() {
 
   function draw() {
     KG.time += 0.012;
+    // Órbita flotante — todo respira
+    if (isOrbitMode) {
+      for (const n of positioned) {
+        if (n.type === "materia") {
+          const saved = KG.nodePos.get(n.id);
+          if (saved) {
+            n.x = saved.x + Math.sin(KG.time*0.32 + n.id.charCodeAt(0)*0.6)*4;
+            n.y = saved.y + Math.cos(KG.time*0.26 + n.id.charCodeAt(1)*0.5)*4;
+          }
+        } else {
+          const orb = KG.nodeOrbit.get(n.id);
+          if (orb) {
+            const parent = posMap[orb.parentId];
+            if (parent) {
+              const ang = orb.baseAngle + Math.sin(KG.time*0.20 + orb.idx*0.85)*0.13;
+              n.x = parent.x + Math.cos(ang)*orb.radius;
+              n.y = parent.y + Math.sin(ang)*orb.radius;
+            }
+          }
+        }
+      }
+    }
     ctx.clearRect(0,0,W,H);
 
     // === BACKGROUND: deep space ===
@@ -1429,8 +1461,10 @@ function kgSetupCanvas() {
         if (isOrbitMode && KG.edges.some(e=>e.source===drag.id||e.target===drag.id)) {
           if (KG.expanded.has(drag.id)) {
             KG.expanded.delete(drag.id);
-            // limpia posiciones de hijos que ya no se ven (para recolocar limpio al reabrir)
-            KG.edges.forEach(e=>{ if(e.source===drag.id) KG.nodePos.delete(e.target); if(e.target===drag.id) KG.nodePos.delete(e.source); });
+            KG.edges.forEach(e=>{
+              if(e.source===drag.id){ KG.nodePos.delete(e.target); KG.nodeOrbit.delete(e.target); }
+              if(e.target===drag.id){ KG.nodePos.delete(e.source); KG.nodeOrbit.delete(e.source); }
+            });
           } else {
             KG.expanded.add(drag.id);
           }
