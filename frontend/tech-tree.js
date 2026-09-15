@@ -616,6 +616,7 @@ function kgRender() {
   const allMaterias = [...new Set(KG.nodes.map(n => n.materia).filter(Boolean))];
   const allTypes = Object.keys(KG_TYPES);
   const isOrbitModePanel = !KG.listMode && !KG.search && !KG.filterType && !KG.filterMateria;
+  const useVis = typeof vis !== 'undefined';
 
   el.innerHTML = `
     <div style="display:flex;height:100%;gap:0">
@@ -685,6 +686,14 @@ function kgRender() {
           ${kgRenderList(filtered)}
           ${filtered.length===0?'<div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:0.8rem">Sin resultados para esos filtros</div>':''}
         </div>
+        ` : (useVis ? `
+        <!-- Galaxy vis-network -->
+        <div id="kbGraphWrap" class="kb-graph-wrap" style="flex:1;position:relative;overflow:hidden;min-height:0">
+          <canvas id="kbStars" class="kb-stars"></canvas>
+          <div id="kbGraph" class="kb-graph"></div>
+          <div id="kbNodeDetails" class="kb-overlay kb-overlay-tl kb-node-details"><div class="kb-node-empty">Selecciona un nodo para explorar.<div class="kb-node-hint">Click categoría para expandir · click archivo para abrir · arrastra para mover · scroll para zoom</div></div></div>
+          <div class="kb-overlay kb-overlay-tr kb-mini-legend"><span><i class="kb-legend-swatch memory"></i>Materia</span><span><i class="kb-legend-swatch skills"></i>Concepto</span><span><i class="kb-legend-swatch apps"></i>Idea</span><span><i class="kb-legend-swatch routines"></i>Pregunta</span><span><i class="kb-legend-swatch file"></i>Recurso</span></div>
+        </div>
         ` : `
         <!-- Canvas container: fills remaining space -->
         <div id="kg-canvas-wrap" style="flex:1;position:relative;overflow:hidden;min-height:0">
@@ -692,7 +701,7 @@ function kgRender() {
           <div id="kg-tooltip" style="display:none;position:fixed;background:rgba(15,15,25,0.95);backdrop-filter:blur(12px);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:0.7rem 0.9rem;font-size:0.72rem;color:#e2e8f0;pointer-events:none;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,0.4),0 0 20px rgba(139,92,246,0.1);max-width:300px"></div>
           <div style="position:absolute;bottom:8px;left:10px;font-size:0.6rem;color:var(--text-muted);opacity:0.5">Hover preview · Click panel · Drag mover · Scroll zoom · ⌘K captura</div>
         </div>
-        `}
+        `) }
       </div>
 
       <!-- Side panel — oculto en modo órbita (usa modal) -->
@@ -701,7 +710,10 @@ function kgRender() {
       </div>
     </div>`;
 
-  if (!KG.listMode) setTimeout(kgSetupCanvas, 30);
+  if (!KG.listMode) {
+    if (useVis && typeof kbGalaxyInit === 'function') setTimeout(()=>kbGalaxyInit(), 80);
+    else setTimeout(kgSetupCanvas, 30);
+  }
 }
 
 function kgRenderSidePanel() {
