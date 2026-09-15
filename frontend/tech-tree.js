@@ -1044,9 +1044,9 @@ function kgSetupCanvas() {
         const idx=siblings.indexOf(n);
         const sIdx = idx===-1 ? total-1 : idx;
         const parentAngle = Math.atan2(parent.y - H/2, parent.x - W/2);
-        const arcSpan = Math.min(total * 0.58, Math.PI * 0.92);
+        const arcSpan = Math.min(total * 0.38, Math.PI * 0.55);
         const angle = total===1 ? parentAngle : parentAngle + (sIdx/(total-1)-0.5)*arcSpan;
-        const radius = 112 + Math.min(total*9, 44);
+        const radius = 128 + Math.min(total*7, 36);
         const pos={ x:parent.x+Math.cos(angle)*radius, y:parent.y+Math.sin(angle)*radius };
         KG.nodePos.set(n.id,pos);
         KG.nodeOrbit.set(n.id,{parentId, baseAngle:angle, radius, idx:sIdx, total});
@@ -1164,14 +1164,17 @@ function kgSetupCanvas() {
           }
         }
       }
-      // repulsión entre hermanas de la misma órbita (que no se pisen)
-      const sibMap=new Map();
-      for(const n of positioned){ const o=KG.nodeOrbit.get(n.id); if(o){ if(!sibMap.has(o.parentId)) sibMap.set(o.parentId,[]); sibMap.get(o.parentId).push(n); } }
-      for(const group of sibMap.values()){
-        for(let i=0;i<group.length;i++) for(let j=i+1;j<group.length;j++){
-          const a=group[i], b=group[j];
-          let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
-          if(d<46){ const f=(46-d)*0.09; a.x-=(dx/d)*f*0.5; a.y-=(dy/d)*f*0.5; b.x+=(dx/d)*f*0.5; b.y+=(dy/d)*f*0.5; }
+      // repulsión entre todas las hijas (intra e inter-órbita) para que no se solapen
+      const allChildren = positioned.filter(n=> KG.nodeOrbit.has(n.id));
+      for(let i=0;i<allChildren.length;i++) for(let j=i+1;j<allChildren.length;j++){
+        const a=allChildren[i], b=allChildren[j];
+        let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+        const sameParent = KG.nodeOrbit.get(a.id).parentId === KG.nodeOrbit.get(b.id).parentId;
+        const minDist = sameParent ? 48 : 52;
+        if(d < minDist){
+          const f=(minDist-d)*0.11;
+          a.x-=(dx/d)*f*0.5; a.y-=(dy/d)*f*0.5;
+          b.x+=(dx/d)*f*0.5; b.y+=(dy/d)*f*0.5;
         }
       }
     }
