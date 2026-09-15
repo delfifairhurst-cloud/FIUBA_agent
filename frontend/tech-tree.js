@@ -25,6 +25,24 @@ const MATERIA_COLORS = {
   "Estructuras de Fluidos": "#eab308",
 };
 function kgMateriaColor(m) { return MATERIA_COLORS[m] || "#8b5cf6"; }
+const MATERIA_SYMBOLS = {
+  "Algebra Lineal": "⊞",
+  "Calculo I": "∫",
+  "Calculo II": "∬",
+  "Quimica General": "⬡",
+  "Fisica I": "◉",
+  "Fisica II": "⚡",
+  "Programacion": "⟨⟩",
+  "Circuitos Electricos": "◯",
+  "Senales y Sistemas": "∿",
+  "Estructuras de Fluidos": "≋",
+  "Matemática": "Σ",
+  "Física": "◉",
+  "Filosofía": "◐",
+  "Música": "♫",
+  "Tecnología": "⬢"
+};
+function kgMateriaSymbol(m) { return MATERIA_SYMBOLS[m] || "●"; }
 
 const KG_TYPES = {
   materia: { color: "#8b5cf6", icon: "M", label: "Materia" },
@@ -478,11 +496,15 @@ function kgInjectStyles() {
     .kg-btn:hover { border-color:var(--accent); color:var(--text-primary); }
     .kg-btn.active { background:rgba(139,92,246,0.1); color:#8b5cf6; border-color:rgba(139,92,246,0.25); }
     .kg-type-badge { display:inline-flex; align-items:center; gap:0.2rem; font-size:0.6rem; padding:0.1rem 0.4rem; border-radius:10px; font-weight:600; }
-    .kg-side { background:var(--bg-card); border-left:1px solid var(--border-color); overflow:hidden; transition:width 0.2s; display:flex; flex-direction:column; height:100%; }
-    .kg-side-header { padding:0.8rem; border-bottom:1px solid var(--border-color); flex-shrink:0; }
-    .kg-side-body { padding:0.8rem; overflow-y:auto; flex:1; min-height:0; }
-    .kg-conn-item { padding:0.4rem 0.6rem; border:1px solid var(--border-color); border-radius:8px; margin-bottom:0.3rem; cursor:pointer; transition:all 0.15s; font-size:0.78rem; }
-    .kg-conn-item:hover { border-color:#8b5cf6; background:rgba(139,92,246,0.05); }
+    .kg-side { background:#fdfbf3; border-left:1px solid #e7ddd0; overflow:hidden; transition:width 0.2s; display:flex; flex-direction:column; height:100%; box-shadow:-8px 0 24px rgba(0,0,0,0.08); }
+    .kg-side-header { padding:0.9rem 1rem; border-bottom:1px solid #ece8df; flex-shrink:0; background:#fdfbf3; }
+    .kg-side-body { padding:0.9rem 1rem; overflow-y:auto; flex:1; min-height:0; background:#fdfbf3; color:#292524; font-family:'Newsreader','Georgia',serif; line-height:1.65; }
+    .kg-side-body h1, .kg-side-body h2, .kg-side-body h3 { font-family:'Outfit',system-ui; color:#1c1917; margin:0.8rem 0 0.4rem; }
+    .kg-side-body p { margin:0.5rem 0; color:#44403c; font-size:0.82rem; }
+    .kg-side-body blockquote { border-left:2px solid #d6c7b8; padding-left:0.6rem; color:#78716c; font-style:italic; margin:0.6rem 0; }
+    .kg-side-body code { background:#f5f0e6; border:1px solid #ece8df; border-radius:4px; padding:0.1rem 0.25rem; font-size:0.75rem; color:#57534e; }
+    .kg-conn-item { padding:0.45rem 0.65rem; border:1px solid #e7e5e4; border-radius:10px; margin-bottom:0.3rem; cursor:pointer; transition:all 0.15s; font-size:0.75rem; background:#fffcf5; color:#44403c; }
+    .kg-conn-item:hover { border-color:#d6c7b8; background:#fff7ed; transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.06); }
     .kg-fullscreen {
       position: fixed !important; top: 0 !important; left: 0 !important;
       width: 100vw !important; height: 100vh !important;
@@ -1051,15 +1073,15 @@ function kgSetupCanvas() {
       const cx = (ss.x + tt.x) / 2 + nx * curvature;
       const cy = (ss.y + tt.y) / 2 + ny * curvature;
 
-      // Energy glow on hover
+      // Subtle glow on hover (biblioteca, no neón)
       if (isH) {
-        for (let g = 0; g < 3; g++) {
+        for (let g = 0; g < 2; g++) {
           ctx.beginPath();
           ctx.moveTo(ss.x, ss.y);
           ctx.quadraticCurveTo(cx, cy, tt.x, tt.y);
-          ctx.strokeStyle = srcType.color + "30";
-          ctx.lineWidth = 8 - g * 2;
-          ctx.globalAlpha = 0.15 - g * 0.04;
+          ctx.strokeStyle = srcType.color + "20";
+          ctx.lineWidth = 6 - g * 2;
+          ctx.globalAlpha = 0.10 - g * 0.04;
           ctx.stroke();
         }
         ctx.globalAlpha = 1;
@@ -1070,12 +1092,12 @@ function kgSetupCanvas() {
       ctx.moveTo(ss.x, ss.y);
       ctx.quadraticCurveTo(cx, cy, tt.x, tt.y);
       const edgeGrad = ctx.createLinearGradient(ss.x, ss.y, tt.x, tt.y);
-      edgeGrad.addColorStop(0, isH ? srcType.color : "#667");
-      edgeGrad.addColorStop(0.5, isH ? blendColor(srcType.color, tgtType.color, 0.5) : "#556");
-      edgeGrad.addColorStop(1, isH ? tgtType.color : "#667");
+      edgeGrad.addColorStop(0, isH ? srcType.color : "#8a8684");
+      edgeGrad.addColorStop(0.5, isH ? blendColor(srcType.color, tgtType.color, 0.5) : "#7a7774");
+      edgeGrad.addColorStop(1, isH ? tgtType.color : "#8a8684");
       ctx.strokeStyle = edgeGrad;
-      ctx.lineWidth = isH ? 2 : 1.2;
-      ctx.globalAlpha = isH ? 0.8 : 0.2;
+      ctx.lineWidth = isH ? 1.8 : 0.85;
+      ctx.globalAlpha = isH ? 0.65 : 0.11;
       ctx.stroke();
       ctx.globalAlpha = 1;
 
@@ -1132,7 +1154,7 @@ function kgSetupCanvas() {
         const gr2 = r + 15 + gl * 10;
         ctx.beginPath(); ctx.arc(s.x, s.y, gr2, 0, Math.PI*2);
         const glGrad = ctx.createRadialGradient(s.x, s.y, r, s.x, s.y, gr2);
-        const a = (isActive ? 0.18 : isH ? 0.12 : 0.04) * (1 - gl * 0.3);
+        const a = (isActive ? 0.10 : isH ? 0.06 : 0.018) * (1 - gl * 0.3);
         glGrad.addColorStop(0, typeInfo.color + Math.round(a * 255).toString(16).padStart(2,"0"));
         glGrad.addColorStop(1, typeInfo.color + "00");
         ctx.fillStyle = glGrad; ctx.fill();
@@ -1171,14 +1193,25 @@ function kgSetupCanvas() {
       glass.addColorStop(1, "rgba(255,255,255,0)");
       ctx.fillStyle = glass; ctx.fill();
 
-      // Border with glow
+      // Border — cálido, no neón
       ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI*2);
-      ctx.strokeStyle = isActive ? "#fff" : (isH ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.12)");
-      ctx.lineWidth = isActive ? 2.5 : (isH ? 2 : 1);
+      ctx.strokeStyle = isActive ? "#fdfbf3" : (isH ? "rgba(253,251,243,0.75)" : "rgba(255,255,255,0.10)");
+      ctx.lineWidth = isActive ? 2.2 : (isH ? 1.6 : 0.9);
       ctx.stroke();
 
-      // Icon (custom shape)
-      kgDrawTypeIcon(ctx, s.x, s.y, r, n.type, 0.9);
+      // Icon — materia: símbolo de ingeniería, otros: forma sutil
+      if (n.type === "materia") {
+        const sym = kgMateriaSymbol(n.materia || n.title);
+        ctx.save();
+        ctx.globalAlpha = 0.92;
+        ctx.fillStyle = "#fff";
+        ctx.font = `600 ${r * 0.7}px ui-serif, Georgia`;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(sym, s.x, s.y + r * 0.08);
+        ctx.restore();
+      } else {
+        kgDrawTypeIcon(ctx, s.x, s.y, r, n.type, 0.55);
+      }
 
       // Label with pill
       if (scale > 0.3) {
@@ -1187,14 +1220,14 @@ function kgSetupCanvas() {
         const lw = ctx.measureText(n.title).width;
         const ly = s.y + r + 8;
 
-        ctx.fillStyle = isActive ? typeInfo.color + "50" : "rgba(8,8,20,0.8)";
+        ctx.fillStyle = isActive ? "#fdfbf3" : "rgba(253,251,243,0.94)";
         ctx.beginPath(); ctx.roundRect(s.x - lw/2 - 7, ly - 3, lw + 14, fontSize + 8, (fontSize+8)/2); ctx.fill();
-        if (isH || isActive) {
-          ctx.strokeStyle = typeInfo.color + "60"; ctx.lineWidth = 1; ctx.stroke();
-        }
+        ctx.strokeStyle = isActive ? typeInfo.color : "rgba(214,199,184,0.6)";
+        ctx.lineWidth = isActive ? 1.2 : 0.8;
+        ctx.stroke();
 
         ctx.textAlign = "center"; ctx.textBaseline = "top";
-        ctx.fillStyle = isActive ? "#fff" : (isH ? "#fff" : "#d0d8e8");
+        ctx.fillStyle = isActive ? "#1c1917" : (isH ? "#1c1917" : "#44403c");
         ctx.fillText(n.title, s.x, ly);
       }
       ctx.globalAlpha = 1; // reset after focus mode
