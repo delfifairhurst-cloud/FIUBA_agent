@@ -687,12 +687,10 @@ function kgRender() {
           ${filtered.length===0?'<div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:0.8rem">Sin resultados para esos filtros</div>':''}
         </div>
         ` : (useVis ? `
-        <!-- Galaxy vis-network -->
+        <!-- Galaxy vis-network — tu navegación original -->
         <div id="kbGraphWrap" class="kb-graph-wrap" style="flex:1;position:relative;overflow:hidden;min-height:0">
           <canvas id="kbStars" class="kb-stars"></canvas>
           <div id="kbGraph" class="kb-graph"></div>
-          <div id="kbNodeDetails" class="kb-overlay kb-overlay-tl kb-node-details"><div class="kb-node-empty">Selecciona un nodo para explorar.<div class="kb-node-hint">Click categoría para expandir · click archivo para abrir · arrastra para mover · scroll para zoom</div></div></div>
-          <div class="kb-overlay kb-overlay-tr kb-mini-legend"><span><i class="kb-legend-swatch memory"></i>Materia</span><span><i class="kb-legend-swatch skills"></i>Concepto</span><span><i class="kb-legend-swatch apps"></i>Idea</span><span><i class="kb-legend-swatch routines"></i>Pregunta</span><span><i class="kb-legend-swatch file"></i>Recurso</span></div>
         </div>
         ` : `
         <!-- Canvas container: fills remaining space -->

@@ -164,7 +164,7 @@ function initGalaxy(){
   Object.keys(KB.colors).forEach(k=>{ groups[k]={shape:'custom',ctxRenderer:galaxyRenderer(k),color:{background:KB.colors[k].main,border:KB.colors[k].glow},shadow:{enabled:false},borderWidth:0}; });
   const options={
     physics:{enabled:true,solver:'forceAtlas2Based',forceAtlas2Based:{gravitationalConstant:-110,springLength:160,springConstant:0.07,damping:0.6,avoidOverlap:0.4},timestep:0.5,stabilization:{iterations:200}},
-    interaction:{hover:true,tooltipDelay:150,navigationButtons:true,keyboard:true,zoomView:true,dragView:true},
+    interaction:{hover:true,tooltipDelay:150,navigationButtons:false,keyboard:true,zoomView:true,dragView:true},
     edges:{smooth:{type:'continuous',forceDirection:'none'},arrows:{to:{enabled:false}},color:{color:'#a78bfa',highlight:'#e9d5ff',hover:'#e9d5ff',opacity:0.4,inherit:false},width:1.5,hoverWidth:0.6,selectionWidth:0.8,font:{size:10,color:'#c4b5fd',strokeWidth:0}},
     nodes:{borderWidthSelected:0,scaling:{min:26,max:300},font:{face:KB.font,color:'#fff'}}
   };
