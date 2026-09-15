@@ -1153,9 +1153,10 @@ function kgSetupCanvas() {
           if (orb) {
             const parent = posMap[orb.parentId];
             if (parent) {
-              const ang = orb.baseAngle + KG.time*0.26 + Math.sin(KG.time*0.18 + orb.idx*1.1)*0.22;
-              n.x = parent.x + Math.cos(ang)*orb.radius;
-              n.y = parent.y + Math.sin(ang)*orb.radius;
+              const ang = orb.baseAngle + Math.sin(KG.time*0.19 + orb.idx*1.35)*0.32 + Math.cos(KG.time*0.11 + orb.idx*0.9)*0.14;
+              const rad = orb.radius + Math.sin(KG.time*0.24 + orb.idx*1.7)*7;
+              n.x = parent.x + Math.cos(ang)*rad;
+              n.y = parent.y + Math.sin(ang)*rad;
             }
           } else {
             // deriva suave si no tiene órbita
@@ -1164,17 +1165,18 @@ function kgSetupCanvas() {
           }
         }
       }
-      // repulsión entre todas las hijas — que queden separadas y clickeables
+      // polos opuestos — repulsión magnética continua
       const allChildren = positioned.filter(n=> KG.nodeOrbit.has(n.id));
       for(let i=0;i<allChildren.length;i++) for(let j=i+1;j<allChildren.length;j++){
         const a=allChildren[i], b=allChildren[j];
         let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
-        const sameParent = KG.nodeOrbit.get(a.id).parentId === KG.nodeOrbit.get(b.id).parentId;
-        const minDist = sameParent ? 64 : 70;
-        if(d < minDist){
-          const f=(minDist-d)*0.14;
-          a.x-=(dx/d)*f*0.5; a.y-=(dy/d)*f*0.5;
-          b.x+=(dx/d)*f*0.5; b.y+=(dy/d)*f*0.5;
+        if(d < 90){
+          const sameParent = KG.nodeOrbit.get(a.id).parentId === KG.nodeOrbit.get(b.id).parentId;
+          const minDist = sameParent ? 66 : 74;
+          // magnético: 1/d² + lineal si muy cerca
+          const mag = 900/(d*d) + (d < minDist ? (minDist-d)*0.16 : 0);
+          a.x-=(dx/d)*mag*0.6; a.y-=(dy/d)*mag*0.6;
+          b.x+=(dx/d)*mag*0.6; b.y+=(dy/d)*mag*0.6;
         }
       }
     }
