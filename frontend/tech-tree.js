@@ -1044,9 +1044,9 @@ function kgSetupCanvas() {
         const idx=siblings.indexOf(n);
         const sIdx = idx===-1 ? total-1 : idx;
         const parentAngle = Math.atan2(parent.y - H/2, parent.x - W/2);
-        const arcSpan = Math.min(total * 0.42, Math.PI * 0.72);
+        const arcSpan = Math.min(total * 0.58, Math.PI * 0.92);
         const angle = total===1 ? parentAngle : parentAngle + (sIdx/(total-1)-0.5)*arcSpan;
-        const radius = 96 + Math.min(total*6, 32);
+        const radius = 112 + Math.min(total*9, 44);
         const pos={ x:parent.x+Math.cos(angle)*radius, y:parent.y+Math.sin(angle)*radius };
         KG.nodePos.set(n.id,pos);
         KG.nodeOrbit.set(n.id,{parentId, baseAngle:angle, radius, idx:sIdx, total});
@@ -1162,6 +1162,16 @@ function kgSetupCanvas() {
             n.x += Math.sin(KG.time*0.4 + n.id.charCodeAt(0))*0.35;
             n.y += Math.cos(KG.time*0.35 + n.id.charCodeAt(1))*0.35;
           }
+        }
+      }
+      // repulsión entre hermanas de la misma órbita (que no se pisen)
+      const sibMap=new Map();
+      for(const n of positioned){ const o=KG.nodeOrbit.get(n.id); if(o){ if(!sibMap.has(o.parentId)) sibMap.set(o.parentId,[]); sibMap.get(o.parentId).push(n); } }
+      for(const group of sibMap.values()){
+        for(let i=0;i<group.length;i++) for(let j=i+1;j<group.length;j++){
+          const a=group[i], b=group[j];
+          let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+          if(d<46){ const f=(46-d)*0.09; a.x-=(dx/d)*f*0.5; a.y-=(dy/d)*f*0.5; b.x+=(dx/d)*f*0.5; b.y+=(dy/d)*f*0.5; }
         }
       }
     }
@@ -1456,18 +1466,14 @@ function kgSetupCanvas() {
     else { panning = true; lastMouse = { x: e.offsetX, y: e.offsetY }; canvas.style.cursor = "grabbing"; }
   };
 
-  // Orbit: click abre/cierra constelación, doble click abre modal
+  // Orbit: 1 click = expandir / entrar, 2 clicks = colapsar
   canvas.onmouseup = () => {
     if (drag && !dragMoved) {
       const isOrbitMode = !KG.listMode && !KG.search && !KG.filterType && !KG.filterMateria;
       const now = Date.now();
       const isDouble = (KG.lastClickNode === drag.id && now - KG.lastClickTime < 420);
       if (isDouble) {
-        KG.active = drag.id;
-        if (isOrbitMode) kgShowModal(drag.id);
-        else kgRender();
-        KG.lastClickTime = 0; KG.lastClickNode = null;
-      } else {
+        // doble click → colapsa si está expandido, si no expande
         if (isOrbitMode && KG.edges.some(e=>e.source===drag.id||e.target===drag.id)) {
           if (KG.expanded.has(drag.id)) {
             KG.expanded.delete(drag.id);
@@ -1475,20 +1481,36 @@ function kgSetupCanvas() {
               if(e.source===drag.id){ KG.nodePos.delete(e.target); KG.nodeOrbit.delete(e.target); }
               if(e.target===drag.id){ KG.nodePos.delete(e.source); KG.nodeOrbit.delete(e.source); }
             });
+            kgRender();
           } else {
             KG.expanded.add(drag.id);
+            kgRender();
           }
-          KG.lastClickTime = now; KG.lastClickNode = drag.id;
-          kgRender();
         } else {
-          KG.active = drag.id;
-          if (isOrbitMode) kgShowModal(drag.id);
-          else kgRender();
-          KG.lastClickTime = now; KG.lastClickNode = drag.id;
+          kgShowModal(drag.id);
         }
+        KG.lastClickTime = 0; KG.lastClickNode = null;
+      } else {
+        // click simple
+        if (isOrbitMode && KG.edges.some(e=>e.source===drag.id||e.target===drag.id)) {
+          if (KG.expanded.has(drag.id)) {
+            // ya expandido → entra a ver contenido
+            kgShowModal(drag.id);
+          } else {
+            // expande órbita
+            KG.expanded.add(drag.id);
+            kgRender();
+          }
+        } else {
+          kgShowModal(drag.id);
+        }
+        KG.lastClickTime = now; KG.lastClickNode = drag.id;
       }
     }
-    if (drag && dragMoved) KG.nodePos.set(drag.id, {x: drag.x, y: drag.y});
+    if (drag && dragMoved) {
+      KG.nodePos.set(drag.id, {x: drag.x, y: drag.y});
+      if (KG.nodeOrbit.has(drag.id)) KG.nodeOrbit.delete(drag.id); // liberada, ya no orbita
+    }
     drag = null; panning = false; lastMouse = null; dragMoved = false;
     canvas.style.cursor = hoverNode ? "pointer" : "grab";
   };
