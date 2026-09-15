@@ -1132,25 +1132,35 @@ function kgSetupCanvas() {
   }
 
   function draw() {
-    KG.time += 0.012;
-    // Órbita flotante — todo respira
+    KG.time += 0.014;
+    // Campo magnético — todo flota y orbita, arrastrable
     if (isOrbitMode) {
       for (const n of positioned) {
+        if (n === drag) continue; // no pisar el arrastre
         if (n.type === "materia") {
           const saved = KG.nodePos.get(n.id);
           if (saved) {
-            n.x = saved.x + Math.sin(KG.time*0.32 + n.id.charCodeAt(0)*0.6)*4;
-            n.y = saved.y + Math.cos(KG.time*0.26 + n.id.charCodeAt(1)*0.5)*4;
+            // órbita lenta alrededor del centro + deriva magnética
+            const baseAng = Math.atan2(saved.y - H/2, saved.x - W/2);
+            const baseR = Math.hypot(saved.x - W/2, saved.y - H/2);
+            const ang = baseAng + KG.time * 0.018;
+            const r = baseR + Math.sin(KG.time*0.22 + n.id.charCodeAt(0))*8;
+            n.x = W/2 + Math.cos(ang)*r + Math.sin(KG.time*0.35 + n.id.charCodeAt(0))*5;
+            n.y = H/2 + Math.sin(ang)*r + Math.cos(KG.time*0.28 + n.id.charCodeAt(1))*5;
           }
         } else {
           const orb = KG.nodeOrbit.get(n.id);
           if (orb) {
             const parent = posMap[orb.parentId];
             if (parent) {
-              const ang = orb.baseAngle + Math.sin(KG.time*0.20 + orb.idx*0.85)*0.13;
+              const ang = orb.baseAngle + KG.time*0.26 + Math.sin(KG.time*0.18 + orb.idx*1.1)*0.22;
               n.x = parent.x + Math.cos(ang)*orb.radius;
               n.y = parent.y + Math.sin(ang)*orb.radius;
             }
+          } else {
+            // deriva suave si no tiene órbita
+            n.x += Math.sin(KG.time*0.4 + n.id.charCodeAt(0))*0.35;
+            n.y += Math.cos(KG.time*0.35 + n.id.charCodeAt(1))*0.35;
           }
         }
       }
@@ -1322,7 +1332,7 @@ function kgSetupCanvas() {
         const gr2 = r + 15 + gl * 10;
         ctx.beginPath(); ctx.arc(s.x, s.y, gr2, 0, Math.PI*2);
         const glGrad = ctx.createRadialGradient(s.x, s.y, r, s.x, s.y, gr2);
-        const a = (isActive ? 0.10 : isH ? 0.06 : 0.018) * (1 - gl * 0.3);
+        const a = (isActive ? 0.16 : isH ? 0.10 : 0.045) * (1 - gl * 0.3);
         glGrad.addColorStop(0, typeInfo.color + Math.round(a * 255).toString(16).padStart(2,"0"));
         glGrad.addColorStop(1, typeInfo.color + "00");
         ctx.fillStyle = glGrad; ctx.fill();
@@ -1478,6 +1488,7 @@ function kgSetupCanvas() {
         }
       }
     }
+    if (drag && dragMoved) KG.nodePos.set(drag.id, {x: drag.x, y: drag.y});
     drag = null; panning = false; lastMouse = null; dragMoved = false;
     canvas.style.cursor = hoverNode ? "pointer" : "grab";
   };
