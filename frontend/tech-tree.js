@@ -1045,9 +1045,18 @@ function kgSetupCanvas() {
       const parentId=parentEdge ? (KG.expanded.has(parentEdge.source)?parentEdge.source:parentEdge.target) : null;
       const parent=parentId?allPos.get(parentId):null;
       if(parent){
-        const siblings=childNodes.filter(c=>{ if(c.id===n.id) return false; const pe=KG.edges.find(e=>(e.target===c.id&&KG.expanded.has(e.source))||(e.source===c.id&&KG.expanded.has(e.target))); return pe && (KG.expanded.has(pe.source)?pe.source:pe.target)===parentId; });
-        const total=siblings.length+1;
-        const idx=siblings.indexOf(n);
+        const directChildren=childNodes.filter(c=>{
+          if(c.id===n.id) return false;
+          const pe=KG.edges.find(e=>(e.target===c.id&&KG.expanded.has(e.source))||(e.source===c.id&&KG.expanded.has(e.target)));
+          if(!pe) return false;
+          const p=KG.expanded.has(pe.source)?pe.source:pe.target;
+          if(p!==parentId) return false;
+          // exclude grandchildren: if this child has its own expanded parent, skip
+          const grandchild=KG.edges.find(e=>(e.target===c.id&&KG.expanded.has(e.source)&&e.source!==parentId)||(e.source===c.id&&KG.expanded.has(e.target)&&e.target!==parentId));
+          return !grandchild;
+        });
+        const total=directChildren.length+1;
+        const idx=directChildren.indexOf(n);
         const sIdx = idx===-1 ? total-1 : idx;
         const parentAngle = Math.atan2(parent.y - H/2, parent.x - W/2);
         const arcSpan = Math.min(total * 0.85, Math.PI * 1.8);
