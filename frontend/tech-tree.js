@@ -6,13 +6,14 @@ const KG = {
   camX: 0, camY: 0, camZoom: 1,
   dragging: null, panning: false, lastMouse: null, dragMoved: false,
   anim: null, time: 0,
-  focus: null, // focus mode: nodeId or null
-  focusLevels: new Map(), // nodeId -> level (0=center, 1=direct, 2=indirect, 99=dimmed)
+  focus: null,
+  focusLevels: new Map(),
   listMode: false,
   showOnboarding: !localStorage.getItem("kg_onboarding_done"),
   expanded: new Set(),
+  visible: new Set(),
   nodePos: new Map(),
-  nodeOrbit: new Map(), // id -> {parentId, baseAngle, radius, idx, total}
+  nodeOrbit: new Map(),
   lastClickTime: 0, lastClickNode: null
 };
 
@@ -47,6 +48,62 @@ const MATERIA_SYMBOLS = {
   "Tecnología": "⬢"
 };
 function kgMateriaSymbol(m) { return MATERIA_SYMBOLS[m] || "●"; }
+
+// Spiral slot search: find a free position around (cx,cy) that doesn't overlap any existing node
+function kgFindFreeSlot(cx, cy, existingPositions, minDist, startRadius) {
+  const r = startRadius || minDist * 1.5;
+  // Try slots in a circle, then spiral outward
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const ring = Math.floor(attempt / 8);
+    const slotInRing = attempt % 8;
+    const angle = slotInRing * (Math.PI * 2 / 8) + ring * 0.4;
+    const radius = r + ring * minDist * 0.8;
+    const tx = cx + Math.cos(angle) * radius;
+    const ty = cy + Math.sin(angle) * radius;
+    let ok = true;
+    for (const p of existingPositions) {
+      const dx = tx - p.x, dy = ty - p.y;
+      if (Math.sqrt(dx*dx + dy*dy) < minDist) { ok = false; break; }
+    }
+    if (ok) return { x: tx, y: ty };
+  }
+  // Fallback: just place it
+  return { x: cx + Math.cos(Math.random()*Math.PI*2) * r, y: cy + Math.sin(Math.random()*Math.PI*2) * r };
+}
+
+// Progressive reveal: make a node and its direct connections visible
+function kgRevealConnections(nodeId) {
+  KG.expanded.add(nodeId);
+  KG.visible.add(nodeId);
+  KG.edges.forEach(e => {
+    if (e.source === nodeId) KG.visible.add(e.target);
+    if (e.target === nodeId) KG.visible.add(e.source);
+  });
+}
+
+function kgHideConnections(nodeId) {
+  KG.expanded.delete(nodeId);
+  // Only hide nodes that are NOT connected to any other expanded node
+  const toCheck = new Set();
+  KG.edges.forEach(e => {
+    if (e.source === nodeId) toCheck.add(e.target);
+    if (e.target === nodeId) toCheck.add(e.source);
+  });
+  toCheck.forEach(cid => {
+    const stillConnected = KG.edges.some(e =>
+      (e.source === cid || e.target === cid) &&
+      KG.expanded.has(e.source === cid ? e.target : e.source) &&
+      (e.source === cid ? e.target : e.source) !== nodeId
+    );
+    if (!stillConnected) {
+      // Also recursively hide if this node was expanded
+      if (KG.expanded.has(cid)) kgHideConnections(cid);
+      KG.visible.delete(cid);
+      KG.nodePos.delete(cid);
+      KG.nodeOrbit.delete(cid);
+    }
+  });
+}
 
 const KG_TYPES = {
   materia: { color: "#8b5cf6", icon: "M", label: "Materia" },
@@ -681,7 +738,7 @@ function kgRender() {
         ${KG.showOnboarding ? `
         <div id="kg-onboarding" style="margin:0.5rem 0.8rem;padding:0.6rem 0.8rem;background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(59,130,246,0.06));border:1px solid rgba(139,92,246,0.2);border-radius:10px;display:flex;align-items:center;gap:0.6rem;flex-shrink:0">
           <div style="font-size:1.1rem">💡</div>
-          <div style="flex:1;font-size:0.68rem;color:var(--text-secondary);line-height:1.4"><strong>Tip:</strong> Click en un nodo para ver detalle · Arrastrá para mover · Scroll para zoom · Usá los chips para filtrar · <span style="color:#8b5cf6;font-weight:600">⌘K para captura rápida</span></div>
+          <div style="flex:1;font-size:0.68rem;color:var(--text-secondary);line-height:1.4"><strong>Tip:</strong> Click para explorar conexiones · Doble click para colapsar · Arrastrá para mover nodos · Scroll para zoom · <span style="color:#8b5cf6;font-weight:600">⌘K para captura rápida</span></div>
           <button onclick="localStorage.setItem('kg_onboarding_done','1');KG.showOnboarding=false;kgRender()" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:0.2rem 0.5rem;font-size:0.65rem;cursor:pointer;color:var(--text-muted)">Entendido</button>
         </div>` : ''}
 
@@ -696,7 +753,7 @@ function kgRender() {
         <div id="kg-canvas-wrap" style="flex:1;position:relative;overflow:hidden;min-height:0">
           <canvas id="kg-canvas" style="width:100%;height:100%;display:block;cursor:grab"></canvas>
           <div id="kg-tooltip" style="display:none;position:fixed;background:rgba(15,15,25,0.95);backdrop-filter:blur(12px);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:0.7rem 0.9rem;font-size:0.72rem;color:#e2e8f0;pointer-events:none;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,0.4),0 0 20px rgba(139,92,246,0.1);max-width:300px"></div>
-          <div style="position:absolute;bottom:8px;left:10px;font-size:0.6rem;color:var(--text-muted);opacity:0.5">Hover preview · Click panel · Drag mover · Scroll zoom · ⌘K captura</div>
+          <div style="position:absolute;bottom:8px;left:10px;font-size:0.6rem;color:var(--text-muted);opacity:0.5">Click explorar · DblClick colapsar · Drag mover · Scroll zoom · ⌘K captura</div>
         </div>
         `}
       </div>
@@ -962,7 +1019,7 @@ function kgShowModal(id){
         </div>
       </div>
       <div style="padding:0.6rem 1rem;border-top:1px solid #ece8df;display:flex;gap:0.4rem;background:#fdfbf3">
-        <button onclick="kgCloseModal();KG.expanded.add('${n.id}');kgRender()" style="flex:1;background:#fff;border:1px solid #e7ddd0;border-radius:10px;padding:0.5rem;font-size:0.75rem;cursor:pointer;color:#44403c">Ver órbita</button>
+        <button onclick="kgCloseModal();kgRevealConnections('${n.id}');kgRender()" style="flex:1;background:#fff;border:1px solid #e7ddd0;border-radius:10px;padding:0.5rem;font-size:0.75rem;cursor:pointer;color:#44403c">Ver órbita</button>
         <button onclick="switchView('chat');kgCloseModal();const ci=document.getElementById('chatInput');if(ci){ci.value='Explica: ${n.title.replace(/'/g,"\\'")}';ci.focus()}" style="flex:1;background:${ti.color};color:white;border:none;border-radius:10px;padding:0.5rem;font-size:0.75rem;cursor:pointer;font-weight:700">🧠 Aprender esto</button>
       </div>
     </div>
@@ -1015,12 +1072,14 @@ function kgSetupCanvas() {
     return;
   }
 
-  // Position — órbita progresiva si no hay búsqueda/filtro
+  // Position — progressive exploration with free-slot placement
   const isOrbitMode = !KG.listMode && !KG.search && !KG.filterType && !KG.filterMateria;
   let positioned, posMap, visibleEdges;
   if (isOrbitMode) {
     const materiaNodes = nodes.filter(n=>n.type==="materia");
     const childNodes = nodes.filter(n=>n.type!=="materia");
+
+    // Place materia nodes in a circle (reuse saved positions)
     const materiaPositioned = materiaNodes.map(n=>{
       const saved=KG.nodePos.get(n.id);
       if(saved) return { ...n, x:saved.x, y:saved.y, vx:0, vy:0, r:22 };
@@ -1032,42 +1091,49 @@ function kgSetupCanvas() {
       return { ...n, x:pos.x, y:pos.y, vx:0, vy:0, r:22 };
     });
     const allPos=new Map(); materiaPositioned.forEach(m=>allPos.set(m.id,m));
+
+    // Place child nodes: reuse saved pos, or find free slot around parent
     const childPositioned = childNodes.map(n=>{
       const saved=KG.nodePos.get(n.id);
-      const orbitSaved=KG.nodeOrbit.get(n.id);
-      if(saved && orbitSaved && KG.expanded.has(orbitSaved.parentId)){
-        const p={...n, x:saved.x, y:saved.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p;
+      // If already positioned and parent is expanded, keep position
+      if(saved){
+        const orbitSaved=KG.nodeOrbit.get(n.id);
+        if(orbitSaved && KG.expanded.has(orbitSaved.parentId)){
+          const p={...n, x:saved.x, y:saved.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p;
+        }
+        if(!orbitSaved && KG.expanded.size>0){
+          const p={...n, x:saved.x, y:saved.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p;
+        }
       }
-      if(saved && !orbitSaved && KG.expanded.size>0){
-        const p={...n, x:saved.x, y:saved.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p;
-      }
+      // Find parent
       const parentEdge=KG.edges.find(e=>(e.target===n.id && KG.expanded.has(e.source))||(e.source===n.id && KG.expanded.has(e.target)));
       const parentId=parentEdge ? (KG.expanded.has(parentEdge.source)?parentEdge.source:parentEdge.target) : null;
       const parent=parentId?allPos.get(parentId):null;
       if(parent){
+        // Find ALL direct children of this parent (same logic as before)
         const directChildren=childNodes.filter(c=>{
           if(c.id===n.id) return false;
           const pe=KG.edges.find(e=>(e.target===c.id&&KG.expanded.has(e.source))||(e.source===c.id&&KG.expanded.has(e.target)));
           if(!pe) return false;
           const p=KG.expanded.has(pe.source)?pe.source:pe.target;
           if(p!==parentId) return false;
-          // exclude grandchildren: if this child has its own expanded parent, skip
           const grandchild=KG.edges.find(e=>(e.target===c.id&&KG.expanded.has(e.source)&&e.source!==parentId)||(e.source===c.id&&KG.expanded.has(e.target)&&e.target!==parentId));
           return !grandchild;
         });
-        const total=directChildren.length+1;
+        const total=directChildren.length;
         const idx=directChildren.indexOf(n);
-        const sIdx = idx===-1 ? total-1 : idx;
-        const parentAngle = Math.atan2(parent.y - H/2, parent.x - W/2);
-        const arcSpan = Math.min(total * 0.85, Math.PI * 1.8);
-        const angle = total===1 ? parentAngle : parentAngle + (sIdx/(total-1)-0.5)*arcSpan;
-        const baseR = Math.min(W,H)*0.28;
-        const radius = baseR*0.55 + Math.min(total*11, 55);
-        const pos={ x:parent.x+Math.cos(angle)*radius, y:parent.y+Math.sin(angle)*radius };
+        // Find free slot around parent using spiral search
+        const existingPositions = [...allPos.values()].map(p=>({x:p.x,y:p.y}));
+        const slot = kgFindFreeSlot(parent.x, parent.y, existingPositions, 55, 70);
+        const angle = Math.atan2(slot.y - parent.y, slot.x - parent.x);
+        const radius = Math.hypot(slot.x - parent.x, slot.y - parent.y);
+        const sIdx = idx===-1 ? 0 : idx;
+        const pos={ x:slot.x, y:slot.y };
         KG.nodePos.set(n.id,pos);
         KG.nodeOrbit.set(n.id,{parentId, baseAngle:angle, radius, idx:sIdx, total});
         const p={...n, x:pos.x, y:pos.y, vx:0, vy:0, r:13}; allPos.set(n.id,p); return p;
       }
+      // No parent found — place near center with random offset
       const angle=Math.random()*Math.PI*2, radius=120+Math.random()*70;
       const pos={ x:W/2+Math.cos(angle)*radius, y:H/2+Math.sin(angle)*radius };
       KG.nodePos.set(n.id,pos);
@@ -1076,34 +1142,16 @@ function kgSetupCanvas() {
     positioned=[...materiaPositioned, ...childPositioned];
     posMap={}; positioned.forEach(p=>{posMap[p.id]=p;});
     visibleEdges=KG.edges.filter(e=>posMap[e.source] && posMap[e.target]);
-    // gentle anti-overlap, keep orbit
-    for(let iter=0; iter<80; iter++){
-      const rep=2400, damp=0.92;
+    // Gentle anti-overlap settle
+    for(let iter=0; iter<40; iter++){
       for(let i=0;i<positioned.length;i++) for(let j=i+1;j<positioned.length;j++){
         let dx=positioned[j].x-positioned[i].x, dy=positioned[j].y-positioned[i].y;
         let d=Math.sqrt(dx*dx+dy*dy)||1;
         const iMat=positioned[i].type==="materia", jMat=positioned[j].type==="materia";
-        let minD = (iMat && jMat) ? 100 : 46;
-        // children of same parent need extra separation
-        if(!iMat && !jMat){
-          const oi=KG.nodeOrbit.get(positioned[i].id), oj=KG.nodeOrbit.get(positioned[j].id);
-          if(oi && oj && oi.parentId===oj.parentId) minD = 58;
-        }
-        if(d>200) continue;
-        const f = d < minD ? rep/(d*d) + (minD-d)*0.35 : rep/(d*d);
-        positioned[i].vx-=(dx/d)*f; positioned[i].vy-=(dy/d)*f;
-        positioned[j].vx+=(dx/d)*f; positioned[j].vy+=(dy/d)*f;
+        let minD = (iMat && jMat) ? 100 : 48;
+        if(d<minD){ const f=(minD-d)*0.12; positioned[i].x-=(dx/d)*f; positioned[i].y-=(dy/d)*f; positioned[j].x+=(dx/d)*f; positioned[j].y+=(dy/d)*f; }
       }
       positioned.forEach(n=>{
-        // materia: gentle pull toward ideal circle
-        if(n.type==="materia"){
-          const saved=KG.nodePos.get(n.id);
-          if(saved){
-            const dx=saved.x-n.x, dy=saved.y-n.y;
-            n.vx+=dx*0.03; n.vy+=dy*0.03;
-          }
-        }
-        n.vx*=damp; n.vy*=damp; n.x+=n.vx; n.y+=n.vy;
         n.x=Math.max(60,Math.min(W-60,n.x)); n.y=Math.max(60,Math.min(H-60,n.y));
       });
     }
@@ -1146,9 +1194,20 @@ function kgSetupCanvas() {
   let scale = KG.camZoom, panX = KG.camX, panY = KG.camY;
   let drag = null, panning = false, lastMouse = null, dragMoved = false;
   let hoverNode = null;
+  const DRAG_THRESHOLD = 8;
 
   function ts(x,y) { return { x:(x+panX)*scale+W/2, y:(y+panY)*scale+H/2 }; }
   function tw(sx,sy) { return { x:(sx-W/2)/scale-panX, y:(sy-H/2)/scale-panY }; }
+
+  function hitTest(wx, wy) {
+    let found = null;
+    for (let i = positioned.length - 1; i >= 0; i--) {
+      const n = positioned[i];
+      const dx = n.x - wx, dy = n.y - wy;
+      if (Math.sqrt(dx*dx + dy*dy) < n.r + 5) { found = n; break; }
+    }
+    return found;
+  }
 
   // Pre-generate stars for background
   const stars = [];
@@ -1164,52 +1223,7 @@ function kgSetupCanvas() {
 
   function draw() {
     KG.time += 0.014;
-    // Campo magnético — todo flota y orbita, arrastrable
-    if (isOrbitMode) {
-      for (const n of positioned) {
-        if (n === drag) continue; // no pisar el arrastre
-        if (n.type === "materia") {
-          const saved = KG.nodePos.get(n.id);
-          if (saved) {
-            // órbita lenta alrededor del centro + deriva magnética
-            const baseAng = Math.atan2(saved.y - H/2, saved.x - W/2);
-            const baseR = Math.hypot(saved.x - W/2, saved.y - H/2);
-            const ang = baseAng + KG.time * 0.018;
-            const r = baseR + Math.sin(KG.time*0.22 + n.id.charCodeAt(0))*8;
-            n.x = W/2 + Math.cos(ang)*r + Math.sin(KG.time*0.35 + n.id.charCodeAt(0))*5;
-            n.y = H/2 + Math.sin(ang)*r + Math.cos(KG.time*0.28 + n.id.charCodeAt(1))*5;
-          }
-        } else {
-          const orb = KG.nodeOrbit.get(n.id);
-          if (orb) {
-            const parent = posMap[orb.parentId];
-            if (parent) {
-              const ang = orb.baseAngle + KG.time * 0.22;
-              n.x = parent.x + Math.cos(ang)*orb.radius;
-              n.y = parent.y + Math.sin(ang)*orb.radius;
-            }
-          } else {
-            n.x += Math.sin(KG.time*0.4 + n.id.charCodeAt(0))*0.35;
-            n.y += Math.cos(KG.time*0.35 + n.id.charCodeAt(1))*0.35;
-          }
-        }
-      }
-      // strong repulsion every frame — prevents overlap even as parents orbit
-      const allChildren = positioned.filter(n=> KG.nodeOrbit.has(n.id));
-      for(let iter=0; iter<3; iter++){
-        for(let i=0;i<allChildren.length;i++) for(let j=i+1;j<allChildren.length;j++){
-          const a=allChildren[i], b=allChildren[j];
-          let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
-          const sameParent = KG.nodeOrbit.get(a.id).parentId === KG.nodeOrbit.get(b.id).parentId;
-          const minD = sameParent ? 56 : 50;
-          if(d < minD){
-            const f=(minD-d)*0.45;
-            a.x-=(dx/d)*f; a.y-=(dy/d)*f;
-            b.x+=(dx/d)*f; b.y+=(dy/d)*f;
-          }
-        }
-      }
-    }
+    // No orbit animation — nodes stay where placed, only drag moves them
     ctx.clearRect(0,0,W,H);
 
     // === BACKGROUND: deep space ===
@@ -1445,20 +1459,41 @@ function kgSetupCanvas() {
   }
   draw();
 
-  // Interactions
-  canvas.onmousemove = e => {
+  // === POINTER EVENTS ===
+  canvas.style.touchAction = "none";
+  let pointerDownPos = null;
+  let pointerDownTime = 0;
+
+  canvas.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
     const w = tw(e.offsetX, e.offsetY);
-    let found = null;
-    positioned.forEach(n => {
-      if (Math.sqrt((n.x-w.x)**2 + (n.y-w.y)**2) < n.r + 5) found = n.id;
-    });
-    hoverNode = found;
-    canvas.style.cursor = found ? "pointer" : (drag ? "grabbing" : "grab");
+    pointerDownPos = { x: e.offsetX, y: e.offsetY };
+    pointerDownTime = Date.now();
+    const node = hitTest(w.x, w.y);
+    if (node) {
+      drag = node;
+      drag.startX = w.x; drag.startY = w.y;
+      dragMoved = false;
+      canvas.style.cursor = "grabbing";
+    } else {
+      panning = true;
+      lastMouse = { x: e.offsetX, y: e.offsetY };
+      canvas.style.cursor = "grabbing";
+    }
+  });
+
+  canvas.addEventListener("pointermove", e => {
+    const w = tw(e.offsetX, e.offsetY);
+    // Hit test for hover
+    const hit = hitTest(w.x, w.y);
+    hoverNode = hit ? hit.id : null;
+    canvas.style.cursor = hit ? "pointer" : (drag ? "grabbing" : "grab");
 
     // Tooltip
     const tt = document.getElementById("kg-tooltip");
-    if (tt && found) {
-      const n = kgNode(found);
+    if (tt && hit) {
+      const n = kgNode(hit.id);
       if (n) {
         const typeInfo = KG_TYPES[n.type] || KG_TYPES.concepto;
         const conns = kgConnectedNodes(n.id);
@@ -1477,63 +1512,58 @@ function kgSetupCanvas() {
           ${n.materia ? `<div style="font-size:0.65rem;color:#94a3b8;margin-bottom:0.25rem"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> ${n.materia}</div>` : ""}
           <div style="font-size:0.68rem;color:#94a3b8;margin-bottom:0.3rem;line-height:1.4;border-top:1px solid rgba(255,255,255,0.06);padding-top:0.3rem">${preview}...</div>
           ${conns.length > 0 ? `<div style="font-size:0.6rem;color:#8b5cf6;border-top:1px solid rgba(255,255,255,0.06);padding-top:0.25rem">→ ${conns.slice(0,3).map(c=>c.title).join(", ")}${conns.length>3?"...":""}</div>` : ""}
-          <div style="font-size:0.58rem;color:#22c55e;margin-top:0.2rem;opacity:0.8">Click para ver detalle</div>`;
+          <div style="font-size:0.58rem;color:#22c55e;margin-top:0.2rem;opacity:0.8">Click para explorar</div>`;
       }
     } else if (tt) tt.style.display = "none";
 
-    // Drag / Pan (con umbral 3px)
+    // Drag node or pan canvas
     if (drag) {
-      drag.x = w.x; drag.y = w.y;
-      if (!dragMoved && drag.startX!==undefined && (Math.abs(w.x-drag.startX)>3 || Math.abs(w.y-drag.startY)>3)) dragMoved = true;
-    }
-    else if (panning && lastMouse) {
+      if (!dragMoved && pointerDownPos) {
+        const dx = e.offsetX - pointerDownPos.x;
+        const dy = e.offsetY - pointerDownPos.y;
+        if (Math.sqrt(dx*dx + dy*dy) > DRAG_THRESHOLD) dragMoved = true;
+      }
+      if (dragMoved) {
+        drag.x = w.x; drag.y = w.y;
+      }
+    } else if (panning && lastMouse) {
       panX += (e.offsetX - lastMouse.x) / scale;
       panY += (e.offsetY - lastMouse.y) / scale;
       KG.camX = panX; KG.camY = panY;
       lastMouse = { x: e.offsetX, y: e.offsetY };
     }
-  };
+  });
 
-  canvas.onmousedown = e => {
-    const w = tw(e.offsetX, e.offsetY);
-    const node = positioned.find(n => Math.sqrt((n.x-w.x)**2 + (n.y-w.y)**2) < n.r + 5);
-    if (node) { drag = node; drag.startX=w.x; drag.startY=w.y; dragMoved = false; canvas.style.cursor = "grabbing"; }
-    else { panning = true; lastMouse = { x: e.offsetX, y: e.offsetY }; canvas.style.cursor = "grabbing"; }
-  };
+  canvas.addEventListener("pointerup", e => {
+    const wasDrag = drag && dragMoved;
+    const wasClick = drag && !dragMoved;
 
-  // Orbit: 1 click = expandir / entrar, 2 clicks = colapsar
-  canvas.onmouseup = () => {
-    if (drag && !dragMoved) {
+    if (wasClick) {
       const isOrbitMode = !KG.listMode && !KG.search && !KG.filterType && !KG.filterMateria;
       const now = Date.now();
       const isDouble = (KG.lastClickNode === drag.id && now - KG.lastClickTime < 420);
+
       if (isDouble) {
-        // doble click → colapsa si está expandido, si no expande
-        if (isOrbitMode && KG.edges.some(e=>e.source===drag.id||e.target===drag.id)) {
-          if (KG.expanded.has(drag.id)) {
-            KG.expanded.delete(drag.id);
-            KG.edges.forEach(e=>{
-              if(e.source===drag.id){ KG.nodePos.delete(e.target); KG.nodeOrbit.delete(e.target); }
-              if(e.target===drag.id){ KG.nodePos.delete(e.source); KG.nodeOrbit.delete(e.source); }
-            });
-            kgRender();
-          } else {
-            KG.expanded.add(drag.id);
-            kgRender();
-          }
+        // Double click: collapse if expanded, else expand
+        if (KG.expanded.has(drag.id)) {
+          kgHideConnections(drag.id);
+          kgRender();
+        } else if (isOrbitMode && KG.edges.some(e=>e.source===drag.id||e.target===drag.id)) {
+          kgRevealConnections(drag.id);
+          kgRender();
         } else {
           kgShowModal(drag.id);
         }
         KG.lastClickTime = 0; KG.lastClickNode = null;
       } else {
-        // click simple
+        // Single click: expand (progressive exploration) or open modal
         if (isOrbitMode && KG.edges.some(e=>e.source===drag.id||e.target===drag.id)) {
           if (KG.expanded.has(drag.id)) {
-            // ya expandido → entra a ver contenido
+            // Already expanded → show content
             kgShowModal(drag.id);
           } else {
-            // expande órbita
-            KG.expanded.add(drag.id);
+            // Progressive reveal
+            kgRevealConnections(drag.id);
             kgRender();
           }
         } else {
@@ -1542,19 +1572,28 @@ function kgSetupCanvas() {
         KG.lastClickTime = now; KG.lastClickNode = drag.id;
       }
     }
-    if (drag && dragMoved) {
-      KG.nodePos.set(drag.id, {x: drag.x, y: drag.y});
-      if (KG.nodeOrbit.has(drag.id)) KG.nodeOrbit.delete(drag.id); // liberada, ya no orbita
-    }
-    drag = null; panning = false; lastMouse = null; dragMoved = false;
-    canvas.style.cursor = hoverNode ? "pointer" : "grab";
-  };
 
-  canvas.onmouseleave = () => {
+    if (wasDrag) {
+      // Save dragged position, free from orbit
+      KG.nodePos.set(drag.id, {x: drag.x, y: drag.y});
+      if (KG.nodeOrbit.has(drag.id)) KG.nodeOrbit.delete(drag.id);
+    }
+
+    drag = null; panning = false; lastMouse = null; dragMoved = false;
+    pointerDownPos = null;
+    canvas.style.cursor = hoverNode ? "pointer" : "grab";
+  });
+
+  canvas.addEventListener("pointercancel", () => {
+    drag = null; panning = false; lastMouse = null; dragMoved = false;
+    pointerDownPos = null;
+  });
+
+  canvas.addEventListener("pointerleave", () => {
     hoverNode = null; drag = null; panning = false;
     const tt = document.getElementById("kg-tooltip");
     if (tt) tt.style.display = "none";
-  };
+  });
 
   canvas.onwheel = e => {
     e.preventDefault();
@@ -1572,13 +1611,12 @@ function kgSetupCanvas() {
       const rect = canvas.getBoundingClientRect();
       const tx = t.clientX - rect.left, ty = t.clientY - rect.top;
       const w = tw(tx, ty);
-      const node = positioned.find(n => Math.sqrt((n.x-w.x)**2 + (n.y-w.y)**2) < n.r + 10);
+      const node = hitTest(w.x, w.y);
       if (node) { drag = node; dragMoved = false; }
       else { panning = true; }
       touchStart = { x: tx, y: ty };
       touchMoved = false;
     } else if (e.touches.length === 2) {
-      // Pinch zoom start
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       touchDist = Math.sqrt(dx*dx + dy*dy);
@@ -1592,8 +1630,8 @@ function kgSetupCanvas() {
       const rect = canvas.getBoundingClientRect();
       const tx = t.clientX - rect.left, ty = t.clientY - rect.top;
       const dx = tx - touchStart.x, dy = ty - touchStart.y;
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) touchMoved = true;
-      if (drag) {
+      if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) touchMoved = true;
+      if (drag && touchMoved) {
         const w = tw(tx, ty);
         drag.x = w.x; drag.y = w.y;
         dragMoved = true;
@@ -1604,7 +1642,6 @@ function kgSetupCanvas() {
       }
       touchStart = { x: tx, y: ty };
     } else if (e.touches.length === 2 && touchDist) {
-      // Pinch zoom
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const newDist = Math.sqrt(dx*dx + dy*dy);
@@ -1617,8 +1654,23 @@ function kgSetupCanvas() {
 
   canvas.addEventListener("touchend", e => {
     if (drag && !touchMoved) {
-      KG.active = drag.id;
-      kgRender();
+      // Tap: progressive explore or open modal
+      const isOrbitMode = !KG.listMode && !KG.search && !KG.filterType && !KG.filterMateria;
+      if (isOrbitMode && KG.edges.some(e2=>e2.source===drag.id||e2.target===drag.id)) {
+        if (KG.expanded.has(drag.id)) {
+          kgShowModal(drag.id);
+        } else {
+          kgRevealConnections(drag.id);
+          kgRender();
+        }
+      } else {
+        KG.active = drag.id;
+        kgRender();
+      }
+    }
+    if (drag && dragMoved) {
+      KG.nodePos.set(drag.id, {x: drag.x, y: drag.y});
+      if (KG.nodeOrbit.has(drag.id)) KG.nodeOrbit.delete(drag.id);
     }
     drag = null; panning = false; touchStart = null; touchDist = null; touchMoved = false;
   });
@@ -1951,6 +2003,10 @@ document.addEventListener("fullscreenchange", () => {
 function kgResetView() {
   KG.camX = 0; KG.camY = 0; KG.camZoom = 1;
   KG.active = null;
+  KG.expanded.clear();
+  KG.visible.clear();
+  KG.nodePos.clear();
+  KG.nodeOrbit.clear();
   kgRender();
 }
 
