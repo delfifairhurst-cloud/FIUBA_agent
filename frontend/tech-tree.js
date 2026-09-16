@@ -541,6 +541,12 @@ function kgInjectStyles() {
     .kg-modal-tab { padding:0.45rem 0.8rem; border-radius:8px 8px 0 0; border:1px solid transparent; border-bottom:none; font-size:0.72rem; font-weight:600; cursor:pointer; color:#78716c; background:transparent; }
     .kg-modal-tab.active { background:#fff; border-color:#e7ddd0; color:#1c1917; box-shadow:0 -2px 8px rgba(0,0,0,0.04); }
     .kg-modal-body { padding:1rem 1.1rem; overflow-y:auto; flex:1; }
+    @media (max-width:768px) {
+      .kg-side { width:100% !important; max-width:100% !important; position:fixed !important; top:0 !important; left:0 !important; height:100vh !important; z-index:9999 !important; }
+      .kg-modal { max-width:100% !important; max-height:95vh !important; border-radius:12px !important; }
+      .kg-modal-body { padding:0.7rem !important; font-size:0.8rem !important; }
+      .kg-fullscreen #kg-canvas-wrap { width:100vw !important; }
+    }
   `;
   document.head.appendChild(s);
 }
@@ -1044,9 +1050,9 @@ function kgSetupCanvas() {
         const idx=siblings.indexOf(n);
         const sIdx = idx===-1 ? total-1 : idx;
         const parentAngle = Math.atan2(parent.y - H/2, parent.x - W/2);
-        const arcSpan = Math.min(total * 0.68, Math.PI * 1.05);
+        const arcSpan = Math.min(total * 0.85, Math.PI * 1.8);
         const angle = total===1 ? parentAngle : parentAngle + (sIdx/(total-1)-0.5)*arcSpan;
-        const radius = 120 + Math.min(total*9, 44);
+        const radius = 130 + Math.min(total*11, 55);
         const pos={ x:parent.x+Math.cos(angle)*radius, y:parent.y+Math.sin(angle)*radius };
         KG.nodePos.set(n.id,pos);
         KG.nodeOrbit.set(n.id,{parentId, baseAngle:angle, radius, idx:sIdx, total});
