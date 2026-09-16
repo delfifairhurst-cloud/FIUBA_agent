@@ -1082,13 +1082,27 @@ function kgSetupCanvas() {
       for(let i=0;i<positioned.length;i++) for(let j=i+1;j<positioned.length;j++){
         let dx=positioned[j].x-positioned[i].x, dy=positioned[j].y-positioned[i].y;
         let d=Math.sqrt(dx*dx+dy*dy)||1;
-        const minD = (positioned[i].type==="materia" && positioned[j].type==="materia") ? 100 : 42;
-        if(d>180) continue;
-        const f = d < minD ? rep/(d*d) + (minD-d)*0.3 : rep/(d*d);
+        const iMat=positioned[i].type==="materia", jMat=positioned[j].type==="materia";
+        let minD = (iMat && jMat) ? 100 : 46;
+        // children of same parent need extra separation
+        if(!iMat && !jMat){
+          const oi=KG.nodeOrbit.get(positioned[i].id), oj=KG.nodeOrbit.get(positioned[j].id);
+          if(oi && oj && oi.parentId===oj.parentId) minD = 58;
+        }
+        if(d>200) continue;
+        const f = d < minD ? rep/(d*d) + (minD-d)*0.35 : rep/(d*d);
         positioned[i].vx-=(dx/d)*f; positioned[i].vy-=(dy/d)*f;
         positioned[j].vx+=(dx/d)*f; positioned[j].vy+=(dy/d)*f;
       }
       positioned.forEach(n=>{
+        // materia: gentle pull toward ideal circle
+        if(n.type==="materia"){
+          const saved=KG.nodePos.get(n.id);
+          if(saved){
+            const dx=saved.x-n.x, dy=saved.y-n.y;
+            n.vx+=dx*0.03; n.vy+=dy*0.03;
+          }
+        }
         n.vx*=damp; n.vy*=damp; n.x+=n.vx; n.y+=n.vy;
         n.x=Math.max(60,Math.min(W-60,n.x)); n.y=Math.max(60,Math.min(H-60,n.y));
       });
