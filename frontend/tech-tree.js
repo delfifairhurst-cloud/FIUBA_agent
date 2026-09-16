@@ -1189,18 +1189,25 @@ function kgSetupCanvas() {
               n.y = parent.y + Math.sin(ang)*orb.radius;
             }
           } else {
-            // deriva suave si no tiene órbita
             n.x += Math.sin(KG.time*0.4 + n.id.charCodeAt(0))*0.35;
             n.y += Math.cos(KG.time*0.35 + n.id.charCodeAt(1))*0.35;
           }
         }
       }
-      // gentle safety net: only push if drift brings nodes close
+      // strong repulsion every frame — prevents overlap even as parents orbit
       const allChildren = positioned.filter(n=> KG.nodeOrbit.has(n.id));
-      for(let i=0;i<allChildren.length;i++) for(let j=i+1;j<allChildren.length;j++){
-        const a=allChildren[i], b=allChildren[j];
-        let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
-        if(d < 42){ const f=(42-d)*0.04; a.x-=(dx/d)*f; a.y-=(dy/d)*f; b.x+=(dx/d)*f; b.y+=(dy/d)*f; }
+      for(let iter=0; iter<3; iter++){
+        for(let i=0;i<allChildren.length;i++) for(let j=i+1;j<allChildren.length;j++){
+          const a=allChildren[i], b=allChildren[j];
+          let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+          const sameParent = KG.nodeOrbit.get(a.id).parentId === KG.nodeOrbit.get(b.id).parentId;
+          const minD = sameParent ? 56 : 50;
+          if(d < minD){
+            const f=(minD-d)*0.45;
+            a.x-=(dx/d)*f; a.y-=(dy/d)*f;
+            b.x+=(dx/d)*f; b.y+=(dy/d)*f;
+          }
+        }
       }
     }
     ctx.clearRect(0,0,W,H);
