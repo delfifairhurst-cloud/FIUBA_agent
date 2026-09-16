@@ -1026,7 +1026,7 @@ function kgSetupCanvas() {
       if(saved) return { ...n, x:saved.x, y:saved.y, vx:0, vy:0, r:22 };
       const idx=materiaNodes.indexOf(n);
       const angle=idx*2*Math.PI/Math.max(materiaNodes.length,1) - Math.PI/2;
-      const radius=Math.min(W,H)*0.28;
+      const radius=Math.min(W,H)*0.35;
       const pos={ x:W/2+Math.cos(angle)*radius, y:H/2+Math.sin(angle)*radius };
       KG.nodePos.set(n.id,pos);
       return { ...n, x:pos.x, y:pos.y, vx:0, vy:0, r:22 };
@@ -1061,7 +1061,8 @@ function kgSetupCanvas() {
         const parentAngle = Math.atan2(parent.y - H/2, parent.x - W/2);
         const arcSpan = Math.min(total * 0.85, Math.PI * 1.8);
         const angle = total===1 ? parentAngle : parentAngle + (sIdx/(total-1)-0.5)*arcSpan;
-        const radius = 130 + Math.min(total*11, 55);
+        const baseR = Math.min(W,H)*0.28;
+        const radius = baseR*0.55 + Math.min(total*11, 55);
         const pos={ x:parent.x+Math.cos(angle)*radius, y:parent.y+Math.sin(angle)*radius };
         KG.nodePos.set(n.id,pos);
         KG.nodeOrbit.set(n.id,{parentId, baseAngle:angle, radius, idx:sIdx, total});
@@ -1076,17 +1077,18 @@ function kgSetupCanvas() {
     posMap={}; positioned.forEach(p=>{posMap[p.id]=p;});
     visibleEdges=KG.edges.filter(e=>posMap[e.source] && posMap[e.target]);
     // gentle anti-overlap, keep orbit
-    for(let iter=0; iter<50; iter++){
-      const rep=1800, damp=0.92;
+    for(let iter=0; iter<80; iter++){
+      const rep=2400, damp=0.92;
       for(let i=0;i<positioned.length;i++) for(let j=i+1;j<positioned.length;j++){
         let dx=positioned[j].x-positioned[i].x, dy=positioned[j].y-positioned[i].y;
-        let d=Math.sqrt(dx*dx+dy*dy)||1; if(d>140) continue; const f=rep/(d*d);
+        let d=Math.sqrt(dx*dx+dy*dy)||1;
+        const minD = (positioned[i].type==="materia" && positioned[j].type==="materia") ? 100 : 42;
+        if(d>180) continue;
+        const f = d < minD ? rep/(d*d) + (minD-d)*0.3 : rep/(d*d);
         positioned[i].vx-=(dx/d)*f; positioned[i].vy-=(dy/d)*f;
         positioned[j].vx+=(dx/d)*f; positioned[j].vy+=(dy/d)*f;
       }
       positioned.forEach(n=>{
-        const saved=KG.nodePos.get(n.id);
-        if(saved && n.type==="materia"){ n.vx+=(saved.x-n.x)*0.08; n.vy+=(saved.y-n.y)*0.08; }
         n.vx*=damp; n.vy*=damp; n.x+=n.vx; n.y+=n.vy;
         n.x=Math.max(60,Math.min(W-60,n.x)); n.y=Math.max(60,Math.min(H-60,n.y));
       });
