@@ -1000,6 +1000,14 @@
               <span class="tool-card-desc">Puzzle 10×10</span>
             </button>
 
+            <button onclick="switchView('parciales')" class="tool-card tool-card-featured" style="--tool-color:#ef4444">
+              <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(239,68,68,0.2),rgba(220,38,38,0.15));color:#ef4444">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <span class="tool-card-name">Parciales</span>
+              <span class="tool-card-desc">Resueltos paso a paso</span>
+            </button>
+
             <button onclick="switchView('fiuble')" class="tool-card tool-card-featured" style="--tool-color:#8b5cf6;grid-column:1/-1">
               <div class="tool-card-icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(168,85,247,0.15));color:#8b5cf6;width:64px;height:64px">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/><rect x="16" y="9" width="6" height="6" rx="1"/></svg>
@@ -1019,6 +1027,11 @@
 
       <div id="blockblast-view" class="view-panel hidden">
         <div style="max-width:560px;width:100%;margin:0 auto;padding:0.5rem 1rem" id="blockblast-content">
+        </div>
+      </div>
+
+      <div id="parciales-view" class="view-panel hidden">
+        <div style="max-width:900px;width:100%;margin:0 auto;padding:1rem 1.2rem" id="parciales-content">
         </div>
       </div>
 
@@ -1535,6 +1548,7 @@
   <script src="subject-selector.js"></script>
 
   <script src="tech-tree.js"></script>
+  <script src="parciales.js"></script>
   <script src="code-playground.js"></script>
   <script src="block-blast.js"></script>
   <script type="module" src="professor-ratings.js"></script>
