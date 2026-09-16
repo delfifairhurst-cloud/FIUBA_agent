@@ -1044,9 +1044,9 @@ function kgSetupCanvas() {
         const idx=siblings.indexOf(n);
         const sIdx = idx===-1 ? total-1 : idx;
         const parentAngle = Math.atan2(parent.y - H/2, parent.x - W/2);
-        const arcSpan = Math.min(total * 0.42, Math.PI * 0.62);
+        const arcSpan = Math.min(total * 0.68, Math.PI * 1.05);
         const angle = total===1 ? parentAngle : parentAngle + (sIdx/(total-1)-0.5)*arcSpan;
-        const radius = 138 + Math.min(total*10, 48);
+        const radius = 120 + Math.min(total*9, 44);
         const pos={ x:parent.x+Math.cos(angle)*radius, y:parent.y+Math.sin(angle)*radius };
         KG.nodePos.set(n.id,pos);
         KG.nodeOrbit.set(n.id,{parentId, baseAngle:angle, radius, idx:sIdx, total});
@@ -1153,10 +1153,9 @@ function kgSetupCanvas() {
           if (orb) {
             const parent = posMap[orb.parentId];
             if (parent) {
-              const ang = orb.baseAngle + Math.sin(KG.time*0.19 + orb.idx*1.35)*0.32 + Math.cos(KG.time*0.11 + orb.idx*0.9)*0.14;
-              const rad = orb.radius + Math.sin(KG.time*0.24 + orb.idx*1.7)*7;
-              n.x = parent.x + Math.cos(ang)*rad;
-              n.y = parent.y + Math.sin(ang)*rad;
+              const ang = orb.baseAngle + KG.time * 0.22;
+              n.x = parent.x + Math.cos(ang)*orb.radius;
+              n.y = parent.y + Math.sin(ang)*orb.radius;
             }
           } else {
             // deriva suave si no tiene órbita
@@ -1165,19 +1164,12 @@ function kgSetupCanvas() {
           }
         }
       }
-      // polos opuestos — repulsión magnética continua
+      // gentle safety net: only push if drift brings nodes close
       const allChildren = positioned.filter(n=> KG.nodeOrbit.has(n.id));
       for(let i=0;i<allChildren.length;i++) for(let j=i+1;j<allChildren.length;j++){
         const a=allChildren[i], b=allChildren[j];
         let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
-        if(d < 90){
-          const sameParent = KG.nodeOrbit.get(a.id).parentId === KG.nodeOrbit.get(b.id).parentId;
-          const minDist = sameParent ? 66 : 74;
-          // magnético: 1/d² + lineal si muy cerca
-          const mag = 900/(d*d) + (d < minDist ? (minDist-d)*0.16 : 0);
-          a.x-=(dx/d)*mag*0.6; a.y-=(dy/d)*mag*0.6;
-          b.x+=(dx/d)*mag*0.6; b.y+=(dy/d)*mag*0.6;
-        }
+        if(d < 42){ const f=(42-d)*0.04; a.x-=(dx/d)*f; a.y-=(dy/d)*f; b.x+=(dx/d)*f; b.y+=(dy/d)*f; }
       }
     }
     ctx.clearRect(0,0,W,H);
