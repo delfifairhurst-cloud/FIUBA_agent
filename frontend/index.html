@@ -1,21 +1,21 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FIUBA Agent - Asistente IA para Ingeniería UBA | Quizzes, Flashcards, Chat</title>
+  <title>nevla - Herramientas de ingeniería en un solo lugar | Quizzes, Flashcards, Chat</title>
   <meta name="google-site-verification" content="wQOW0f8WNLRhsPkvI6L0U7PhzsR_SiR3lpiRfgk0veQ">
-  <meta name="description" content="FIUBA Agent es tu asistente académico con IA para Ingeniería UBA. Chat inteligente con apuntes, quizzes interactivos de parciales del Altillo, flashcards para repasar y biblioteca organizada por materias. Gratis para estudiantes de FIUBA.">
-  <meta name="keywords" content="FIUBA Agent, agente fiuba, fiuba ia, UBA ingeniería, asistente fiuba, parciales fiuba, altillo, quizzes fiuba, flashcards fiuba, CBC, estudio con ia">
+  <meta name="description" content="nevla es Tu asistente de ingeniería con IA para Ingeniería UBA. Chat inteligente con apuntes, quizzes interactivos de parciales del Altillo, flashcards para repasar y biblioteca organizada por materias. Gratis para estudiantes de FIUBA.">
+  <meta name="keywords" content="nevla, nevla, nevla ia, UBA ingeniería, asistente nevla, parciales fiuba, altillo, quizzes nevla, flashcards nevla, CBC, estudio con ia">
   <link rel="canonical" href="https://agente-fiuba.web.app/">
-  <meta property="og:title" content="FIUBA Agent - Asistente IA para Ingeniería UBA">
+  <meta property="og:title" content="nevla - Herramientas de ingeniería en un solo lugar">
   <meta property="og:description" content="Chat con IA, quizzes de parciales del Altillo y repaso con flashcards para materias de FIUBA/UBA. Gratis y open source.">
   <meta property="og:url" content="https://agente-fiuba.web.app/">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://agente-fiuba.web.app/icon-512.png">
-  <meta property="og:site_name" content="FIUBA Agent">
+  <meta property="og:site_name" content="nevla">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="FIUBA Agent - Asistente IA para Ingeniería UBA">
+  <meta name="twitter:title" content="nevla - Herramientas de ingeniería en un solo lugar">
   <meta name="twitter:description" content="Chat con IA, quizzes de parciales del Altillo y flashcards para FIUBA. Gratis.">
 
   <!-- Structured Data para Google -->
@@ -23,8 +23,8 @@
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "FIUBA Agent",
-    "alternateName": ["Agente FIUBA", "FIUBA Agent IA"],
+    "name": "nevla",
+    "alternateName": ["nevla", "nevla IA"],
     "url": "https://agente-fiuba.web.app",
     "description": "Asistente académico con inteligencia artificial para estudiantes de Ingeniería UBA (FIUBA). Chat con apuntes, quizzes de parciales del Altillo, flashcards y biblioteca organizada.",
     "applicationCategory": "EducationalApplication",
@@ -36,7 +36,7 @@
     },
     "author": {
       "@type": "Person",
-      "name": "FIUBA Agent"
+      "name": "nevla"
     },
     "keywords": "FIUBA, UBA, ingenieria, agente ia, parciales, altillo, quizzes, flashcards, cbc, estudio"
   }
@@ -50,7 +50,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="FIUBA Agent">
+  <meta name="apple-mobile-web-app-title" content="nevla">
   
   <!-- Fuentes Google: Outfit e Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,8 +71,8 @@
   <div class="splash-screen" id="splash-screen">
     <div class="splash-content">
       <img src="icon-192.png" alt="" class="splash-logo">
-      <h1 class="splash-title">FIUBA Agent</h1>
-      <p class="splash-subtitle">Tu asistente académico</p>
+      <h1 class="splash-title">nevla</h1>
+      <p class="splash-subtitle">Tu asistente de ingeniería</p>
       <div class="splash-loader">
         <div class="splash-bar"></div>
       </div>
@@ -88,10 +88,10 @@
     <aside class="sidebar" id="sidebar">
       <div class="brand">
         <div class="brand-logo">
-          <img src="icon-192.png" alt="FIUBA Agent" style="width:48px;height:48px;border-radius:12px">
+          <img src="icon-192.png" alt="nevla" style="width:48px;height:48px;border-radius:12px">
         </div>
         <div class="brand-text">
-          <h2>FIUBA Agent</h2>
+          <h2>nevla</h2>
           <span class="badge-version">v1.5</span>
         </div>
       </div>
@@ -211,7 +211,7 @@
       <div id="beta-banner" class="beta-banner" style="display:none">
         <div class="beta-banner-inner">
           <span class="beta-badge">BETA</span>
-          <span>Está en versión beta — Si encontrás un bug o tenés una sugerencia, escribime</span>
+          <span>Está en versión beta — Si encontrás un bug o tenés una sugerencia, escribime — Si encontrás un bug o tenés una sugerencia, escribime</span>
           <a href="mailto:fiuba.agent@gmail.com" class="beta-contact">fiuba.agent@gmail.com</a>
         </div>
         <button class="beta-close" onclick="closeBetaBanner()" title="Cerrar">
@@ -486,7 +486,7 @@
 
           <div class="recursos-disclaimer">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <span>Los recursos enlazados pertenecen a sus respectivos autores y comunidades (Comunidad FIUBA, SK FIUBA, Filadd, La Pizarra Online, FIUBA Repos, MLI FIUBA, Espacio Estudiantil, FIUBAVerse, FIUBA Tools, entre otros). FIUBA Agent no se responsabiliza por su contenido ni disponibilidad. Si sos autor de algún material y querés que sea removido, contactanos.</span>
+            <span>Los recursos enlazados pertenecen a sus respectivos autores y comunidades (Comunidad FIUBA, SK FIUBA, Filadd, La Pizarra Online, FIUBA Repos, MLI FIUBA, Espacio Estudiantil, FIUBAVerse, FIUBA Tools, entre otros). nevla no se responsabiliza por su contenido ni disponibilidad. Si sos autor de algún material y querés que sea removido, contactanos.</span>
           </div>
         </div>
       </div>
@@ -621,14 +621,14 @@
       <div id="contacto-view" class="view-panel hidden">
         <div style="max-width:650px;width:100%;margin:0 auto;padding:1.5rem 2rem;text-align:center">
           <h2 style="font-family:var(--font-heading);margin-bottom:0.4rem;font-size:1.15rem;color:var(--text-primary)">Contacto</h2>
-          <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem">¿Dudas, feedback o propuestas para FIUBA Agent? Escribime.</p>
+          <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem">¿Dudas, feedback o propuestas para nevla? Escribime.</p>
           <div style="display:grid;gap:0.7rem;text-align:left">
             <a href="mailto:fiuba.agent@gmail.com" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">Email</span><p>fiuba.agent@gmail.com</p></a>
             <a href="https://www.linkedin.com/in/delfina-fairhurst-guzian-7401a3369" target="_blank" class="suggestion-card" style="text-decoration:none"><span class="sugg-tag">LinkedIn</span><p>Delf — Desarrollo</p></a>
           </div>
           <div style="margin-top:1.5rem;padding:1rem;background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(59,130,246,0.08));border:1px solid rgba(139,92,246,0.2);border-radius:12px;text-align:center">
             <div style="font-size:1.5rem;margin-bottom:0.3rem">☕</div>
-            <h4 style="font-size:0.9rem;color:var(--text-primary);margin-bottom:0.3rem">¿Te sirvió FIUBA Agent?</h4>
+            <h4 style="font-size:0.9rem;color:var(--text-primary);margin-bottom:0.3rem">¿Te sirvió nevla?</h4>
             <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.6rem">Si te ayudó a estudiar, considerá hacerme una donación para mantener el proyecto vivo.</p>
             <div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:0.5rem 1rem;display:inline-flex">
               <span style="font-size:0.75rem;color:var(--text-muted)">Alias Mercado Pago:</span>
@@ -1102,8 +1102,8 @@
           
           <div class="welcome-banner" id="welcome-banner">
             <div class="welcome-icon" style="display:flex;justify-content:center;color:var(--accent-cyan)"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L1 9l11 6 11-6-11-6z"/><path d="M1 17l11 6 11-6"/><path d="M1 12l11 6 11-6"/></svg></div>
-            <h2>¡Bienvenido a FIUBA Agent!</h2>
-            <p>Tu asistente académico para materias de Ingeniería. ¿En qué tema necesitás ayuda hoy?</p>
+            <h2>¡Bienvenido a nevla!</h2>
+            <p>Tu asistente de ingeniería para materias de Ingeniería. ¿En qué tema necesitás ayuda hoy?</p>
             
             <div class="suggestions-grid">
               <button class="suggestion-card" onclick="useSuggestion('¿Podés explicarme qué es el producto escalar y vectorial y para qué se usa?')">
@@ -1153,7 +1153,7 @@
           <div class="typing-dot"></div>
           <div class="typing-dot"></div>
           <div class="typing-dot"></div>
-          <span>FIUBA Agent está procesando la respuesta...</span>
+          <span>nevla está procesando tu mensaje...</span>
         </div>
 
         <!-- Preview imagen chat -->
@@ -1230,7 +1230,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </div>
         <div>
-          <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary)">FIUBA Agent</div>
+          <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary)">nevla</div>
           <div style="font-size:0.65rem;color:var(--text-muted)">Asistente IA</div>
         </div>
       </div>
@@ -1372,9 +1372,9 @@
     <div class="landing-page" id="landing-page">
       <div class="landing-hero">
         <div class="landing-logo-wrap">
-          <img src="icon-192.png" alt="FIUBA Agent" class="landing-logo">
+          <img src="icon-192.png" alt="nevla" class="landing-logo">
         </div>
-        <h1 class="landing-title">FIUBA Agent</h1>
+        <h1 class="landing-title">nevla</h1>
         <p class="landing-subtitle">Tu espacio inteligente para estudiar ingeniería.</p>
 
         <div class="landing-features">
@@ -1432,9 +1432,9 @@
       </button>
       <div class="brand" style="justify-content:center;margin-bottom:1rem">
         <div class="brand-logo">
-          <img src="icon-192.png" alt="FIUBA Agent" style="width:48px;height:48px;border-radius:12px">
+          <img src="icon-192.png" alt="nevla" style="width:48px;height:48px;border-radius:12px">
         </div>
-        <div class="brand-text"><h2>FIUBA Agent</h2></div>
+        <div class="brand-text"><h2>nevla</h2></div>
       </div>
       <h3 style="text-align:center;font-family:var(--font-heading);margin-bottom:0.25rem">Bienvenido</h3>
       <p style="text-align:center;color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem">Ingresá o creá tu cuenta para guardar tu progreso.</p>
@@ -1457,9 +1457,9 @@
       </button>
       <div class="brand" style="justify-content:center;margin-bottom:1rem">
         <div class="brand-logo">
-          <img src="icon-192.png" alt="FIUBA Agent" style="width:48px;height:48px;border-radius:12px">
+          <img src="icon-192.png" alt="nevla" style="width:48px;height:48px;border-radius:12px">
         </div>
-        <div class="brand-text"><h2>FIUBA Agent</h2></div>
+        <div class="brand-text"><h2>nevla</h2></div>
       </div>
       <h3 style="text-align:center;font-family:var(--font-heading);margin-bottom:0.25rem">Crear cuenta</h3>
       <p style="text-align:center;color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem">Registrate para guardar tu progreso y chats.</p>
@@ -1595,7 +1595,7 @@
 
   <!-- Copyright footer -->
   <div class="app-copyright" id="app-copyright">
-    <span>FIUBA Agent © 2026 Delf — Propiedad protegida</span>
+    <span>nevla © 2026 Delf — Propiedad protegida</span>
   </div>
 
   <!-- Mobile Install Banner -->

@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
@@ -153,7 +153,7 @@ async function callGeminiWithRetry(apiKey, payload, { maxRetries = 2, endpoint =
 }
 
 const SYSTEM_PROMPTS = {
-  profesor: `Sos FIUBA Agent en modo PROFESOR. Explicá conceptos de FIUBA/UBA.
+  profesor: `Sos nevla en modo PROFESOR. Explicá conceptos de FIUBA/UBA.
 
 REGLAS DE FORMATO (CRÍTICAS - OBLIGATORIO):
 - Respondé SIEMPRE en texto plano del chat con Markdown básico (negritas con **, listas con -)
@@ -171,7 +171,7 @@ ESTRUCTURA:
 
 IMPORTANTE: Recordá el contexto de la conversación anterior. Respondé en relación a lo que se habló previamente.`,
 
-  tutor: `Sos FIUBA Agent en modo TUTOR SOCRÁTICO.
+  tutor: `Sos nevla en modo TUTOR SOCRÁTICO.
 
 REGLAS DE FORMATO (CRÍTICAS - OBLIGATORIO):
 - Respondé SIEMPRE en texto plano del chat con Markdown básico (negritas con **, listas con -)
@@ -182,7 +182,7 @@ REGLAS DE FORMATO (CRÍTICAS - OBLIGATORIO):
 
 No des la solución directa. Guía con preguntas que escalonan: pista 1 conceptual, pista 2 procedimental, pista 3 verificación. Cada turno: 1 pregunta orientadora + 1 micro-pista si se traba. Celebrá avances, corregí con empatía. Recordá el contexto de la conversación anterior.`,
 
-  examinador: `Sos FIUBA Agent en modo EXAMINADOR. Seguí este PROTOCOLO:
+  examinador: `Sos nevla en modo EXAMINADOR. Seguí este PROTOCOLO:
 
 1. PREPARACIÓN: Analizá los DOCUMENTOS y determiná materia, temas, dificultad. Si falta info, indícalo, NO inventes.
 
@@ -194,7 +194,7 @@ No des la solución directa. Guía con preguntas que escalonan: pista 1 conceptu
    - Sin material: {"type":"error","message":"No hay info suficiente..."}
    Nunca envuelvas el JSON en \`\`\` ni agregues texto fuera del JSON.`,
 
-  resolucion: `Sos FIUBA Agent en modo RESOLUCIÓN PASO A PASO.
+  resolucion: `Sos nevla en modo RESOLUCIÓN PASO A PASO.
 
 REGLAS DE FORMATO (CRÍTICAS - OBLIGATORIO):
 - Respondé SIEMPRE en texto plano del chat con Markdown básico
@@ -206,7 +206,7 @@ Resolvé ejercicios paso a paso: cada paso numerado, con "por qué" en 1 línea,
 };
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Servidor FIUBA Agent funcionando correctamente' });
+  res.json({ status: 'ok', message: 'Servidor nevla funcionando correctamente' });
 });
 
 // --- Admin Bot: base de conocimiento local + fallback a IA ---
@@ -562,7 +562,7 @@ app.post('/api/execute-c', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor FIUBA Agent corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor nevla corriendo en http://localhost:${PORT}`);
   console.log(`Endpoint de Chat: http://localhost:${PORT}/api/chat`);
 
   // Keep-alive: ping every 10 minutes to prevent Render free tier from sleeping

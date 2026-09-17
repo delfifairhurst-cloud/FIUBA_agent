@@ -1,6 +1,6 @@
-{
-  "name": "fiuba-agent-functions",
-  "description": "Backend FIUBA Agent como Firebase Cloud Functions - proxy seguro a Gemini",
+﻿{
+  "name": "nevla-functions",
+  "description": "Backend nevla como Firebase Cloud Functions - proxy seguro a Gemini",
   "engines": { "node": "18" },
   "main": "index.js",
   "dependencies": {

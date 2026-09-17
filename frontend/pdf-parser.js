@@ -1,4 +1,4 @@
-// Módulo PDF Parser para FIUBA Agent
+﻿// Módulo PDF Parser para nevla
 // Permite extraer texto de archivos PDF (apuntes, parciales de Altillo.com, guías)
 
 // Cargar worker de PDF.js dinámicamente si no está presente

@@ -1,4 +1,4 @@
-// pomodoro.js — Timer Pomodoro con sonidos ambientales y UI pro
+﻿// pomodoro.js — Timer Pomodoro con sonidos ambientales y UI pro
 (function () {
   'use strict';
 
@@ -269,7 +269,7 @@
 
         // Notificación
         if (Notification.permission === 'granted') {
-          new Notification('FIUBA Agent - Pomodoro', { body: '¡Tiempo de descansar! Tomate 5 minutitos.', icon: 'icon-192.png' });
+          new Notification('nevla - Pomodoro', { body: '¡Tiempo de descansar! Tomate 5 minutitos.', icon: 'icon-192.png' });
         }
 
         // ¿Toca descanso largo?
@@ -285,7 +285,7 @@
       } else {
         playStartSound();
         if (Notification.permission === 'granted') {
-          new Notification('FIUBA Agent - Pomodoro', { body: '¡Descanso terminado! A estudiar.', icon: 'icon-192.png' });
+          new Notification('nevla - Pomodoro', { body: '¡Descanso terminado! A estudiar.', icon: 'icon-192.png' });
         }
         state.timeLeft = state.studyMin * 60;
         state.totalTime = state.studyMin * 60;

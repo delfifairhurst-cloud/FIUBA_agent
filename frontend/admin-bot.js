@@ -1,4 +1,4 @@
-window.AdminBot = (() => {
+﻿window.AdminBot = (() => {
   let isOpen = false;
   const btnId = 'admin-bot-fab';
   const panelId = 'admin-bot-panel';
@@ -38,7 +38,7 @@ window.AdminBot = (() => {
     </button>
   `;
   
-  const CONTEXT = `Sos el Asistente Administrativo de FIUBA Agent. Respondé SOLO preguntas administrativas sobre:
+  const CONTEXT = `Sos el Asistente Administrativo de nevla. Respondé SOLO preguntas administrativas sobre:
 - Fechas de parciales/finales (UBA/CBC)
 - Inscripciones (SIU Guarani, fechas, requisitos)
 - Horarios de cursada, mesas de examen

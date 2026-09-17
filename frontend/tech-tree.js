@@ -1,4 +1,4 @@
-// knowledge-graph.js — Phase 1: Visual knowledge graph engine
+﻿// knowledge-graph.js — Phase 1: Visual knowledge graph engine
 const KG = {
   nodes: [], edges: [],
   active: null, hover: null, view: "graph",
@@ -315,7 +315,7 @@ function kgCreateMock() {
     { id:"q-irracional", type:"pregunta", title:"¿Por qué los irracionales son necesarios?", materia:"Matemática", content:"**Pregunta:** ¿Por qué no alcanzan los racionales?\n\n**Conexiones:** [[Límite]] · [[Aproximación lineal]] · [[Taylor]]" },
     { id:"i-fourier-musica", type:"idea", title:"Fourier conecta matemática, música y señales", materia:"Música", content:"**Idea:** Si [[Serie de Fourier]] descompone ondas en senos, un acorde de guitarra es literalmente una suma de Fourier que el oído descompone. La misma matemática que usan los ecualizadores.\n\n**Origen:** Practicar guitarra y leer sobre [[Procesamiento de señales]]." },
     { id:"i-taylor-error", type:"idea", title:"Taylor, error y oscilaciones", materia:"Matemática", content:"**Idea:** [[Taylor]] → [[Error]] → [[Oscilaciones]] → [[Física]]. Aproximar con polinomios es como aproximar un movimiento real con la recta tangente. El error es la física que ignoras." },
-    { id:"p-fiuba-agent", type:"proyecto", title:"FIUBA Agent", materia:"Tecnología", content:"**Proyecto:** Plataforma para estudiantes de ingeniería que conecta conocimiento, no solo lo almacena.\n\n**Preguntas que lo guían:**\n- ¿Cómo representar conocimiento para que IA y humano lo usen?\n- ¿Cómo evitar que el conocimiento quede fragmentado?\n\n**Notas clave:** [[Serie de Fourier]] · [[Derivadas]] · [[FIUBA Agent]]" },
+    { id:"p-nevla", type:"proyecto", title:"nevla", materia:"Tecnología", content:"**Proyecto:** Plataforma para estudiantes de ingeniería que conecta conocimiento, no solo lo almacena.\n\n**Preguntas que lo guían:**\n- ¿Cómo representar conocimiento para que IA y humano lo usen?\n- ¿Cómo evitar que el conocimiento quede fragmentado?\n\n**Notas clave:** [[Serie de Fourier]] · [[Derivadas]] · [[nevla]]" },
 
     // ═══ APUNTES ═══
     { id:"a-alg-autoval", type:"apunte", title:"Apuntes: Autovalores", materia:"Algebra Lineal", content:"## Resumen de autovalores\n\nPara encontrar autovalores:\n1. Calcular $\\det(A - \\lambda I) = 0$\n2. Resolver el polinomio caracteristico\n3. Para cada $\\lambda$, resolver $(A - \\lambda I)v = 0$\n\n**Ejemplo:**\n$$A = \\begin{pmatrix} 2 & 1 \\\\ 1 & 2 \\end{pmatrix}$$\n$$\\det(A - \\lambda I) = (2-\\lambda)^2 - 1 = 0$$\n$$\\lambda_1 = 3, \\lambda_2 = 1$$" },
@@ -422,8 +422,8 @@ function kgCreateMock() {
     { s:"i-fourier-musica", t:"c-energia", label:"conecta con" },
     { s:"i-taylor-error", t:"c-deriv", label:"idea sobre" },
     { s:"i-taylor-error", t:"c-energia", label:"conecta con" },
-    { s:"p-fiuba-agent", t:"c-fourier", label:"usa" },
-    { s:"p-fiuba-agent", t:"c-matrices", label:"usa" },
+    { s:"p-nevla", t:"c-fourier", label:"usa" },
+    { s:"p-nevla", t:"c-matrices", label:"usa" },
     { s:"q-infinito", t:"i-taylor-error", label:"relacionado" },
     // Apuntes -> Concepts
     { s:"a-alg-autoval", t:"c-autoval", label:"describe" },

@@ -26,5 +26,5 @@
   <line x1="360" y1="130" x2="395" y2="195" stroke="#f59e0b" stroke-width="10"/>
   <circle cx="398" cy="202" r="10" fill="#f59e0b"/>
   <!-- Text -->
-  <text x="256" y="470" text-anchor="middle" font-family="Arial,sans-serif" font-size="52" font-weight="bold" fill="#f8fafc" letter-spacing="6">FIUBA</text>
+  <text x="256" y="470" text-anchor="middle" font-family="Arial,sans-serif" font-size="52" font-weight="bold" fill="#f8fafc" letter-spacing="6">NEVLA</text>
 </svg>

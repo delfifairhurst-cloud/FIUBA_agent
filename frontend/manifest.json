@@ -1,7 +1,7 @@
 {
-  "name": "FIUBA Agent",
-  "short_name": "FIUBA Agent",
-  "description": "Asistente académico para estudiantes de Ingeniería UBA/FIUBA",
+  "name": "nevla",
+  "short_name": "nevla",
+  "description": "Herramientas de ingeniería en un solo lugar — para estudiantes de UBA/FIUBA",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#090d16",

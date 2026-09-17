@@ -1,4 +1,4 @@
-// State Global de la Aplicación
+﻿// State Global de la Aplicación
 let chats = [];
 let activeChatId = null;
 let pendingChatImage = null; // { dataUrl, mimeType }
@@ -367,8 +367,8 @@ function renderActiveChat() {
     history.innerHTML = `
       <div class="welcome-banner" id="welcome-banner">
         <div class="welcome-icon">🎓</div>
-        <h2>¡Bienvenido a FIUBA Agent!</h2>
-        <p>Tu asistente académico para materias de Ingeniería. ¿En qué tema necesitás ayuda hoy?</p>
+        <h2>¡Bienvenido a nevla!</h2>
+        <p>Tu asistente de ingeniería. ¿En qué tema necesitás ayuda hoy?</p>
         
         <div class="suggestions-grid">
           <button class="suggestion-card" onclick="useSuggestion('¿Podés explicarme qué es el producto escalar y vectorial y para qué se usa?')">
@@ -930,7 +930,7 @@ function showAgentStatus(state, attempt) {
   if (state === 'processing') {
     el.style.background = 'var(--bg-card)';
     el.style.color = 'var(--text-muted)';
-    el.innerHTML = '🧠 <strong>FIUBA Agent</strong> está pensando...';
+    el.innerHTML = '🧠 <strong>nevla</strong> está pensando...';
   } else if (state === 'retrying') {
     el.style.background = 'rgba(251, 191, 36, 0.1)';
     el.style.color = '#d97706';

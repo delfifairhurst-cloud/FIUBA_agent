@@ -1,7 +1,7 @@
-{
-  "name": "fiuba-agent-backend",
+﻿{
+  "name": "nevla-backend",
   "version": "1.0.0",
-  "description": "Backend proxy seguro para FIUBA Agent - Asistente Académico",
+  "description": "Backend proxy seguro para nevla - Asistente Académico",
   "main": "server.js",
   "type": "module",
   "scripts": {

@@ -1,4 +1,4 @@
-// export-chat.js — Exportar conversación a PDF limpio
+﻿// export-chat.js — Exportar conversación a PDF limpio
 (function () {
   'use strict';
 
@@ -38,7 +38,7 @@
 </head>
 <body>
   <div class="header">
-    <h1>FIUBA Agent — ${chat.title || 'Conversación'}</h1>
+    <h1>nevla — ${chat.title || 'Conversación'}</h1>
     <p>${modeLabels[chat.mode] || chat.mode} · ${chat.messages.length} mensajes · ${new Date().toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
   </div>`;
 
@@ -54,14 +54,14 @@
 
       html += `
   <div class="msg ${isUser ? 'user' : 'agent'}">
-    <div class="msg-label">${isUser ? 'Vos' : 'FIUBA Agent'}</div>
+    <div class="msg-label">${isUser ? 'Vos' : 'nevla'}</div>
     <div class="msg-text">${text}</div>
   </div>`;
     });
 
     html += `
   <div class="footer">
-    Generado por FIUBA Agent · agente-fiuba.web.app · ${new Date().toLocaleDateString('es-AR')}
+    Generado por nevla · agente-fiuba.web.app · ${new Date().toLocaleDateString('es-AR')}
   </div>
 </body></html>`;
 
@@ -77,7 +77,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `fiuba-agent-${chat.title || 'chat'}.html`;
+      a.download = `nevla-${chat.title || 'chat'}.html`;
       a.click();
       URL.revokeObjectURL(url);
     }

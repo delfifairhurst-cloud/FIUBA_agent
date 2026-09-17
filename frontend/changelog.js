@@ -1,4 +1,4 @@
-// changelog.js — Novedades y changelog
+﻿// changelog.js — Novedades y changelog
 (function () {
   'use strict';
 
@@ -62,7 +62,7 @@
       date: '10 Agosto 2026',
       tag: 'Primer release',
       changes: [
-        { type: 'new', text: 'FIUBA Agent — Asistente IA para estudiantes de FIUBA' },
+        { type: 'new', text: 'nevla — Asistente IA para estudiantes de FIUBA' },
         { type: 'new', text: 'Chat con IA basado en Gemini' },
         { type: 'new', text: 'Subida de documentos y PDFs' },
       ]
