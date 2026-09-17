@@ -1102,9 +1102,9 @@
         <div id="chat-history" class="chat-history">
           
           <div class="welcome-banner" id="welcome-banner">
-            <div class="welcome-icon" style="display:flex;justify-content:center;color:var(--accent-cyan)"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L1 9l11 6 11-6-11-6z"/><path d="M1 17l11 6 11-6"/><path d="M1 12l11 6 11-6"/></svg></div>
+            <div class="niv-welcome" id="niv-welcome"></div>
             <h2>¡Bienvenido a nevla!</h2>
-            <p>Tu asistente de ingeniería para materias de Ingeniería. ¿En qué tema necesitás ayuda hoy?</p>
+            <p>Soy <strong>Niv</strong>, tu asistente de ingeniería. ¿En qué tema necesitás ayuda hoy?</p>
             
             <div class="suggestions-grid">
               <button class="suggestion-card" onclick="useSuggestion('¿Podés explicarme qué es el producto escalar y vectorial y para qué se usa?')">
@@ -1151,10 +1151,11 @@
 
         <!-- Indicador de Carga/Escritura -->
         <div id="typing-indicator" class="typing-indicator hidden">
+          <div id="niv-typing" style="display:inline-flex;margin-right:0.4rem"></div>
           <div class="typing-dot"></div>
           <div class="typing-dot"></div>
           <div class="typing-dot"></div>
-          <span>nevla está procesando tu mensaje...</span>
+          <span>Niv está pensando...</span>
         </div>
 
         <!-- Preview imagen chat -->
@@ -1167,6 +1168,10 @@
         </div>
         <!-- Formulario de Entrada de Mensaje -->
         <div class="chat-input-wrapper">
+          <div class="niv-input-presence" id="niv-input-area">
+            <span id="niv-input-mascot"></span>
+            <span class="niv-label">Niv está listo para ayudarte</span>
+          </div>
           <form id="chat-form" onsubmit="handleSend(event)">
             <input type="file" id="chat-image-input" accept="image/*" style="display:none" onchange="handleChatImage(event)">
             <button type="button" class="btn-secondary" onclick="document.getElementById('chat-image-input').click()" title="Adjuntar foto del ejercicio" style="padding:0.5rem 0.6rem;border-radius:8px;display:flex;align-items:center;justify-content:center">
@@ -1241,7 +1246,9 @@
     </div>
     <div class="chat-overlay-messages" id="chat-overlay-messages">
       <div style="text-align:center;padding:2rem 1rem;color:var(--text-muted);font-size:0.82rem">
-        <p>Haceme una pregunta desde cualquier parte de la app.</p>
+        <div id="niv-overlay" style="display:flex;justify-content:center;margin-bottom:0.75rem"></div>
+        <p><strong>Niv</strong> está listo para ayudarte.</p>
+        <p style="margin-top:0.3rem;font-size:0.75rem">Haceme una pregunta desde cualquier parte de la app.</p>
       </div>
     </div>
     <form class="chat-overlay-input" onsubmit="handleOverlayChat(event)">
@@ -1622,6 +1629,17 @@
   <!-- Librería PDF.js para lectura de documentos PDF en el navegador -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="pdf-parser.js"></script>
+  <script src="niv.js?v=1"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.NivMascot) {
+        NivMascot.render('niv-welcome', { state: 'idle', size: 64 });
+        NivMascot.render('niv-typing', { state: 'thinking', size: 28 });
+        NivMascot.render('niv-input-mascot', { state: 'idle', size: 22 });
+        NivMascot.render('niv-overlay', { state: 'idle', size: 48 });
+      }
+    });
+  </script>
   <script src="app.js?v=40"></script>
   
 

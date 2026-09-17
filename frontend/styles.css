@@ -4778,3 +4778,145 @@ body {
 /* Divider */
 .divider-v2 { height: 1px; background: var(--border-color); margin: var(--sp-md) 0; }
 
+/* ==========================================================================
+   Niv — Mascot de nevla
+   ========================================================================== */
+
+.niv-host { display: inline-flex; align-items: center; justify-content: center; }
+.niv-container { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.niv-svg { display: block; }
+
+/* ── Thinking dots ── */
+.niv-think-dots {
+  position: absolute;
+  top: -10px;
+  right: -14px;
+  display: flex;
+  gap: 3px;
+}
+.niv-think-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-purple, #8b5cf6);
+  opacity: 0.5;
+  animation: niv-dot-pulse 1.4s ease-in-out infinite;
+}
+.niv-think-dots span:nth-child(2) { animation-delay: 0.2s; }
+.niv-think-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes niv-dot-pulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 0.9; transform: scale(1.1); }
+}
+
+/* ── Search magnifying glass ── */
+.niv-search-icon {
+  position: absolute;
+  top: -2px;
+  right: -10px;
+  opacity: 0.7;
+  animation: niv-search-bob 2s ease-in-out infinite;
+}
+
+@keyframes niv-search-bob {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(3px, -2px) rotate(-8deg); }
+}
+
+/* ── Success sparkle ── */
+.niv-sparkle {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  animation: niv-sparkle-pop 0.6s ease-out 2;
+  opacity: 0;
+}
+
+@keyframes niv-sparkle-pop {
+  0% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.3) rotate(20deg); }
+  100% { opacity: 0; transform: scale(0.8) rotate(45deg); }
+}
+
+/* ── Organizing floating cards ── */
+.niv-cards {
+  position: absolute;
+  inset: -8px;
+  pointer-events: none;
+}
+.niv-card {
+  position: absolute;
+  width: 10px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--accent-purple, #8b5cf6);
+  opacity: 0.35;
+}
+.niv-card.c1 { top: 0; left: 2px; animation: niv-card-float 2.5s ease-in-out infinite; }
+.niv-card.c2 { top: 4px; right: -2px; animation: niv-card-float 2.5s ease-in-out 0.4s infinite; }
+.niv-card.c3 { bottom: 2px; left: 6px; animation: niv-card-float 2.5s ease-in-out 0.8s infinite; }
+
+@keyframes niv-card-float {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 0.6; transform: translateY(-4px); }
+}
+
+/* ── Core animations ── */
+
+@keyframes niv-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes niv-think {
+  0%, 100% { transform: scale(1) translateY(0); }
+  30% { transform: scale(0.95, 1.05) translateY(-2px); }
+  60% { transform: scale(1.03, 0.97) translateY(1px); }
+}
+
+@keyframes niv-look-right {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+
+@keyframes niv-explain {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-3px) rotate(-2deg); }
+  75% { transform: translateX(3px) rotate(2deg); }
+}
+
+@keyframes niv-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-8px) scale(1.05); }
+  60% { transform: translateY(-4px) scale(1.02); }
+}
+
+@keyframes niv-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.75; }
+  50% { transform: scale(1.04); opacity: 0.9; }
+}
+
+/* ── Inline usage (next to text) ── */
+.niv-inline { margin: 0 0.3rem; }
+
+/* ── Welcome banner Niv ── */
+.niv-welcome {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Chat input Niv ── */
+.niv-input-presence {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0;
+}
+.niv-input-presence .niv-label {
+  font-size: 0.7rem;
+  color: var(--text-muted, #64748b);
+  font-style: italic;
+}
+
