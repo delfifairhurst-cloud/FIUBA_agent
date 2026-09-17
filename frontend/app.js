@@ -1580,6 +1580,10 @@ function switchView(view) {
     btn.classList.toggle('active', section === view || (view === 'chat' && section === 'home') || (view === 'inicio' && section === 'home'));
   });
 
+  // Show/hide chat FAB — hide when already on chat
+  const chatFab = document.getElementById('chat-fab');
+  if (chatFab) chatFab.style.display = (view === 'chat' || view === 'inicio' || view === 'home') ? 'none' : 'flex';
+
   // IDs of all view panels
   const views = ['home-dashboard', 'estudiar-view', 'mi-carrera-view', 'fiuba-view', 'materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'blockblast-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'tech-tree-view'];
   const chatEl = document.querySelector('.chat-container');
