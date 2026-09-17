@@ -1575,7 +1575,7 @@ function switchView(view) {
   });
 
   // IDs of all view panels
-  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'blockblast-view', 'parciales-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'tech-tree-view'];
+  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'blockblast-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'tech-tree-view'];
   const chatEl = document.querySelector('.chat-container');
   const appLayout = document.querySelector('.app-layout');
 
@@ -1605,7 +1605,7 @@ function switchView(view) {
     if (ev) ev.classList.remove('hidden');
   } else if (view === 'biblioteca') {
     const bv = document.getElementById('biblioteca-view');
-    if (bv) { bv.classList.remove('hidden'); if (window.loadBibliotecaView) window.loadBibliotecaView(); }
+    if (bv) { bv.classList.remove('hidden'); if (window.renderBiblioteca) window.renderBiblioteca(); }
   } else if (view === 'comunidad') {
     const cv2 = document.getElementById('comunidad-view');
     if (cv2) { cv2.classList.remove('hidden'); if (window.refreshCommunity) window.refreshCommunity(); }
@@ -1651,9 +1651,6 @@ function switchView(view) {
   } else if (view === 'blockblast') {
     const el = document.getElementById('blockblast-view');
     if (el) { el.classList.remove('hidden'); if (window.bbInit) window.bbInit(); }
-  } else if (view === 'parciales') {
-    const el = document.getElementById('parciales-view');
-    if (el) { el.classList.remove('hidden'); if (window.renderParciales) window.renderParciales(); }
   } else if (view === 'ratings') {
     const el = document.getElementById('ratings-view');
     if (el) { el.classList.remove('hidden'); if (window.renderProfessorRatings) window.renderProfessorRatings(); }
@@ -1757,8 +1754,3 @@ function closeMateriaDetail() {
   backToCarreras();
 }
 
-function loadBibliotecaView() {
-  const list = document.getElementById('biblioteca-view-list');
-  if (!list) return;
-  list.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem">Tu biblioteca está vacía. Usá el chat o las evaluaciones para guardar material.</p>';
-}
