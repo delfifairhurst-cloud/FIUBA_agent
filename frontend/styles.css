@@ -4722,31 +4722,3 @@ body {
 /* Divider */
 .divider-v2 { height: 1px; background: var(--border-color); margin: var(--sp-md) 0; }
 
-/* ── Chat FAB ── */
-.chat-fab {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--accent-purple));
-  color: white;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 20px rgba(59,130,246,0.35);
-  z-index: 999;
-  transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
-}
-.chat-fab:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 28px rgba(59,130,246,0.45);
-}
-.chat-fab:active { transform: scale(0.95); }
-@media (max-width: 768px) {
-  .chat-fab { bottom: 80px; right: 16px; width: 48px; height: 48px; }
-}
-
