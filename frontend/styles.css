@@ -1601,7 +1601,8 @@ body {
 
   .app-layout {
     flex-direction: column;
-    height: 100vh;
+    height: calc(100vh - var(--bottom-nav-height));
+    height: calc(100dvh - var(--bottom-nav-height));
   }
 
   .sidebar {
@@ -1691,7 +1692,7 @@ body {
   .chat-input-wrapper {
     flex-shrink: 0;
     padding: 0.5rem 0.75rem;
-    padding-bottom: calc(0.5rem + var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
     background: var(--bg-dark);
   }
   #chat-form {
@@ -4766,7 +4767,7 @@ body {
   -webkit-tap-highlight-color: transparent;
   font-family: var(--font-body);
 }
-.bottom-nav-item .bnav-icon { font-size: 1.25rem; line-height: 1; }
+.bottom-nav-item .bnav-icon { line-height: 1; display: flex; align-items: center; justify-content: center; }
 .bottom-nav-item.active { color: var(--primary); }
 .bottom-nav-item:hover { color: var(--text-secondary); }
 
