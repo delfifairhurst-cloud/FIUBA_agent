@@ -1574,6 +1574,12 @@ function switchView(view) {
     btn.classList.toggle('active', btn.dataset.view === view);
   });
 
+  // Update bottom nav active state
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    const section = btn.dataset.section;
+    btn.classList.toggle('active', section === view || (view === 'inicio' && section === 'home'));
+  });
+
   // IDs of all view panels
   const views = ['home-dashboard', 'estudiar-view', 'mi-carrera-view', 'fiuba-view', 'materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'blockblast-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'tech-tree-view'];
   const chatEl = document.querySelector('.chat-container');

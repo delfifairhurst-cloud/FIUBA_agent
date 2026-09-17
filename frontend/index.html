@@ -1227,6 +1227,32 @@
 
   </div>
 
+  <!-- ═══ v2 Mobile Bottom Nav (additive) ═══ -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="bottom-nav-item active" onclick="switchView('home')" data-section="home">
+        <span class="bnav-icon">🏠</span>
+        <span>Inicio</span>
+      </button>
+      <button class="bottom-nav-item" onclick="switchView('estudiar')" data-section="estudiar">
+        <span class="bnav-icon">📖</span>
+        <span>Estudiar</span>
+      </button>
+      <button class="bottom-nav-item" onclick="switchView('mi-carrera')" data-section="mi-carrera">
+        <span class="bnav-icon">🎓</span>
+        <span>Mi Carrera</span>
+      </button>
+      <button class="bottom-nav-item" onclick="switchView('fiuba')" data-section="fiuba">
+        <span class="bnav-icon">🏛️</span>
+        <span>FIUBA</span>
+      </button>
+      <button class="bottom-nav-item" onclick="switchView('chat')" data-section="chat">
+        <span class="bnav-icon">💬</span>
+        <span>Chat</span>
+      </button>
+    </div>
+  </nav>
+
   <!-- Modal de Configuración de Servidor Backend -->
   <div class="modal-backdrop" id="server-modal" onclick="if(event.target === this) closeServerConfigModal()">
     <div class="modal-dialog">
