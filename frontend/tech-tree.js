@@ -683,7 +683,7 @@ function kgRender() {
   el.innerHTML = `
     <div style="display:flex;height:100%;gap:0">
       <!-- Main graph area -->
-      <div style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden">
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0;${KG.listMode ? 'overflow:auto' : 'overflow:hidden'}">
         <div class="kg-bar" style="justify-content:space-between;padding:0.45rem 0.8rem;border-bottom:1px solid rgba(139,92,246,0.15);flex-shrink:0;background:rgba(10,10,22,0.85);backdrop-filter:blur(12px)">
           <h2 style="font-family:var(--font-heading);font-size:1rem;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:0.4rem">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M7.5 11l7-3.5M7.5 13l7 3.5"/></svg>
