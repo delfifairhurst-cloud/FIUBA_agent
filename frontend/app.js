@@ -1685,6 +1685,9 @@ function switchView(view) {
     const el = document.getElementById('tech-tree-view');
     if (el) { el.classList.remove('hidden'); if (window.kgRender) window.kgRender(); }
   }
+
+  // Niv contextual tip for tools
+  setTimeout(function() { if (window.NivMascot && NivMascot.showNivTip) NivMascot.showNivTip(view); }, 150);
 }
 window.switchView = switchView;
 

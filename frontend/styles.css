@@ -4935,3 +4935,54 @@ body {
   font-style: italic;
 }
 
+/* ── Niv contextual tip card ── */
+.niv-tip-card {
+  margin-bottom: 1rem;
+}
+.niv-tip-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(139,92,246,0.02));
+  border: 1px solid rgba(139,92,246,0.12);
+  border-radius: 12px;
+}
+.niv-tip-avatar {
+  flex-shrink: 0;
+  animation: niv-float 3s ease-in-out infinite;
+}
+.niv-tip-text {
+  flex: 1;
+  min-width: 0;
+}
+.niv-tip-msg {
+  font-size: 0.82rem;
+  color: var(--text-secondary, #94a3b8);
+  line-height: 1.4;
+}
+.niv-tip-chat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.6rem;
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: 8px;
+  color: var(--primary, #8b5cf6);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.niv-tip-chat-btn:hover {
+  background: rgba(139,92,246,0.18);
+  border-color: var(--primary, #8b5cf6);
+  transform: translateY(-1px);
+}
+.niv-tip-chat-btn svg {
+  flex-shrink: 0;
+}
+

@@ -168,5 +168,118 @@
     return `<span class="niv-avatar-wrap" style="display:inline-flex">${createSVG('idle', sz)}</span>`;
   }
 
-  window.NivMascot = { render, setState, inline, avatar, STATES, createSVG };
+  // ═══ Contextual tips per tool/feature ═══
+  const NIV_TIPS = {
+    'evaluaciones': {
+      text: 'Cargá las fechas de tus parciales y Niv te arma un plan de estudio.',
+      question: '¿Cómo organizo mis parciales para estudiar mejor?',
+    },
+    'gpa': {
+      text: 'Cargá tus materias aprobadas y Niv calcula tu promedio ponderado.',
+      question: '¿Cómo calculo mi promedio ponderado en FIUBA?',
+    },
+    'correlativas': {
+      text: 'Niv conoce todas las correlativas de FIUBA. Hacé click en una materia para ver sus requisitos.',
+      question: '¿Cuáles son las correlativas de Analisis Matemático 2?',
+    },
+    'flashcards': {
+      text: 'Generá flashcards con Niv o cargá las tuyas. La repetición espaciada es la clave.',
+      question: '¿Cómo uso las flashcards para estudiar más eficiente?',
+    },
+    'schedule': {
+      text: 'Organizá tu semana y Niv te sugiere cuándo estudiar cada materia.',
+      question: '¿Cómo armo un cronograma de estudio para los parciales?',
+    },
+    'reference': {
+      text: 'Fórmulas de matemática, física y más. Copialas al toque.',
+      question: '¿Cuáles son las fórmulas de derivadas e integrales más importantes?',
+    },
+    'challenge': {
+      text: 'Desafío relámpago: respondé preguntas contra el tiempo y subí de nivel.',
+      question: '¿Cómo funciona el desafío de estudio y cómo puedo mejorar mi puntaje?',
+    },
+    'fiuble': {
+      text: 'FIUBLE: el Wordle matemático. Adiviná la ecación en 6 intentos.',
+      question: '¿Qué es FIUBLE y cómo se juega?',
+    },
+    'playground': {
+      text: 'Escribí código en Python, JavaScript o C directamente en el navegador.',
+      question: '¿Cómo uso el playground de código para practicar?',
+    },
+    'graphcalc': {
+      text: 'Graficá cualquier función f(x). Podés poner varias para comparar.',
+      question: '¿Cómo grafico una función en el calculador gráfico?',
+    },
+    'unitconv': {
+      text: 'Convertí entre unidades de longitud, masa, tiempo y más.',
+      question: '¿Cómo convierto entre sistemas de unidades?',
+    },
+    'materias-ai': {
+      text: 'Preguntale a Niv sobre cualquier materia de FIUBA: programación, profesores, parciales.',
+      question: 'Contame sobre la materia Algoritmos y Programación I',
+    },
+    'periodic': {
+      text: 'Tabla periódica interactiva. Hacé click en un elemento para ver sus datos.',
+      question: '¿Cuáles son los elementos más importantes para química en FIUBA?',
+    },
+    'herramientas': {
+      text: 'Todas las herramientas de nevla en un solo lugar. Elegí la que necesites.',
+      question: '¿Qué herramientas tiene nevla para ayudarme a estudiar?',
+    },
+    'biblioteca': {
+      text: 'Resúmenes y parciales organizados por materia. Elegí una materia para empezar.',
+      question: '¿Qué materiales de estudio tengo disponibles en la biblioteca?',
+    },
+  };
+
+  function showNivTip(viewId) {
+    const tip = NIV_TIPS[viewId];
+    if (!tip) return;
+
+    // Find the view panel
+    const panel = document.getElementById(viewId + '-view') || document.getElementById(viewId);
+    if (!panel) return;
+
+    // Find or create tip container
+    let tipEl = panel.querySelector('.niv-tip-card');
+    if (!tipEl) {
+      tipEl = document.createElement('div');
+      tipEl.className = 'niv-tip-card';
+      // Insert after the first child (usually the wrapper div with max-width)
+      const wrapper = panel.querySelector('div[style*="max-width"]') || panel.firstElementChild;
+      if (wrapper && wrapper.firstChild) {
+        wrapper.insertBefore(tipEl, wrapper.firstChild);
+      } else {
+        panel.prepend(tipEl);
+      }
+    }
+
+    const questionAttr = tip.question ? tip.question.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
+
+    tipEl.innerHTML = `
+      <div class="niv-tip-inner">
+        <div class="niv-tip-avatar">${createSVG('idle', 28)}</div>
+        <div class="niv-tip-text">
+          <span class="niv-tip-msg">${tip.text}</span>
+        </div>
+        ${tip.question ? `<button class="niv-tip-chat-btn" onclick="NivMascot.askFromTip('${questionAttr}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Preguntale a Niv
+        </button>` : ''}
+      </div>`;
+  }
+
+  function askFromTip(question) {
+    // Open chat overlay and pre-fill the question
+    if (window.openChatOverlay) openChatOverlay();
+    setTimeout(function() {
+      const input = document.getElementById('overlay-chat-input');
+      if (input) {
+        input.value = question;
+        input.focus();
+      }
+    }, 400);
+  }
+
+  window.NivMascot = { render, setState, inline, avatar, STATES, createSVG, showNivTip, askFromTip };
 })();
