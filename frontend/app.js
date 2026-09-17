@@ -1577,7 +1577,7 @@ function switchView(view) {
   // Update bottom nav active state
   document.querySelectorAll('.bottom-nav-item').forEach(btn => {
     const section = btn.dataset.section;
-    btn.classList.toggle('active', section === view || (view === 'inicio' && section === 'home'));
+    btn.classList.toggle('active', section === view || (view === 'chat' && section === 'home') || (view === 'inicio' && section === 'home'));
   });
 
   // IDs of all view panels
@@ -1598,11 +1598,16 @@ function switchView(view) {
   }
 
   // Show the selected view
-  if (view === 'inicio') {
+  if (view === 'inicio' || view === 'chat' || view === 'home') {
     if (chatEl) chatEl.style.display = 'flex';
-  } else if (view === 'home' || view === 'estudiar' || view === 'mi-carrera' || view === 'fiuba') {
-    const sectionMap = { home: 'home-dashboard', estudiar: 'estudiar-view', 'mi-carrera': 'mi-carrera-view', fiuba: 'fiuba-view' };
-    const el = document.getElementById(sectionMap[view]);
+  } else if (view === 'estudiar') {
+    const el = document.getElementById('estudiar-view');
+    if (el) el.classList.remove('hidden');
+  } else if (view === 'mi-carrera') {
+    const el = document.getElementById('mi-carrera-view');
+    if (el) el.classList.remove('hidden');
+  } else if (view === 'fiuba') {
+    const el = document.getElementById('fiuba-view');
     if (el) el.classList.remove('hidden');
   } else if (view === 'evaluaciones') {
     const ev = document.getElementById('evaluaciones-view');
