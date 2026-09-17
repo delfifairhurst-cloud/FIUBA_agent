@@ -155,92 +155,24 @@
           </div>
         </div>
 
-        <!-- Evaluaciones - Parciales del Altillo -->
-        <div class="nav-group evaluations-section">
-          <div class="group-title-row">
-            <label class="group-title">Evaluaciones</label>
-            <span class="badge-version" style="font-size:0.6rem;padding:0.15rem 0.35rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--accent-cyan)">beta</span>
-            <span class="badge-active-materials" id="evals-count">0</span>
-          </div>
-          <div class="progress-card" style="gap:0.5rem">
-            <button class="btn-upload" onclick="openCreateEvalModal()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-              Nueva evaluación
-            </button>
-            <button class="btn-upload" onclick="switchView('evaluaciones');setTimeout(()=>{if(window.ExerciseBank){const s=window.ExerciseBank.getSubjects();if(s.length)window.startPractice(s[Math.floor(Math.random()*s.length)])}},400)" style="background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(6,182,212,0.1));border-color:rgba(34,197,94,0.3);color:#22c55e">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              Práctica rápida
-            </button>
-            <div id="evaluations-list" class="recent-attempts"></div>
-          </div>
-        </div>
-
-        <!-- Área de Materiales Académicos -->
-        <div class="nav-group materials-section">
-          <div class="group-title-row">
-            <label class="group-title">Materiales</label>
-            <span class="badge-active-materials" id="materials-count-badge">0 PDFs</span>
-          </div>
-          
-          <div class="materials-card" id="materials-card">
-            <div class="materials-icon">📄</div>
-            <p id="materials-text" style="font-size:0.78rem">Subí parciales, guías o apuntes en PDF para que la IA los tenga en cuenta al responder.</p>
-            <input type="file" id="pdf-file-input" accept=".pdf,.txt" style="display: none;" onchange="handleFileUpload(event)">
-            <button class="btn-upload" onclick="document.getElementById('pdf-file-input').click()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-              </svg>
-              Subir PDF
-            </button>
-          </div>
-
-          <div class="loaded-files-list" id="loaded-files-list">
-            <!-- Renderizado dinámicamente -->
-          </div>
-        </div>
-
-        <!-- Herramientas de estudio -->
-        <div class="nav-group">
-          <label class="group-title">Herramientas</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem">
-            <button class="btn-server-config" onclick="switchView('gpa')" title="Calculadora de promedio">📊 Promedio</button>
-            <button class="btn-server-config" onclick="switchView('correlativas')" title="Mapa de correlativas">🔗 Correlativas</button>
-            <button class="btn-server-config" onclick="switchView('periodic')" title="Tabla periódica interactiva">⚛️ Tabla Periódica</button>
-            <button class="btn-server-config" onclick="switchView('schedule')" title="Cronograma de estudio">📅 Horarios</button>
-            <button class="btn-server-config" onclick="switchView('reference')" title="Derivadas e integrales">📐 Fórmulas</button>
-            <button class="btn-server-config" onclick="switchView('local-intel')" title="Análisis de tus chats">🧠 Inteligencia</button>
-            <button class="btn-server-config" onclick="switchView('challenge')" title="Desafío de estudio relámpago" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(239,68,68,0.1));border-color:rgba(245,158,11,0.3);color:#f59e0b;font-weight:600">⚡ Desafío de Estudio</button>
-            <button class="btn-server-config" onclick="switchView('fiuble')" title="FIUBLE - Wordle matemático diario" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(168,85,247,0.1));border-color:rgba(139,92,246,0.3);color:#8b5cf6;font-weight:600">🧩 FIUBLE diario</button>
-          </div>
-        </div>
-      </nav>
+        </nav>
 
 
       <!-- Footer de la barra lateral -->
       <div class="sidebar-footer">
         <div id="user-email" style="font-size:0.75rem;color:var(--accent-cyan);word-break:break-all;text-align:center;margin-bottom:0.4rem"></div>
-        <button class="btn-server-config" onclick="handleLogout()" title="Cerrar sesión">🚪 Cerrar sesión</button>
-        <div class="status-indicator" style="margin-top:0.6rem">
+        <div class="status-indicator" style="margin-bottom:0.5rem">
           <span class="status-dot" id="status-dot"></span>
           <span id="status-text">Backend listo</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;margin-top:0.5rem">
-          <button class="btn-server-config" onclick="openCramMode()" title="Modo Examen Mañana">📚 Examen</button>
-          <button class="btn-server-config" onclick="openMnemonics()" title="Generador de Mnemónicos">🧠 Mnemo</button>
-          <button class="btn-server-config" onclick="openExamGen()" title="Generador de Parciales">📝 Parcial</button>
-          <button class="btn-server-config" onclick="openStepCalc()" title="Calculadora con Pasos">🔢 Pasos</button>
-        </div>
-        <button class="btn-server-config" onclick="openServerConfigModal()" title="Configurar conexión" style="width:100%;margin-top:0.4rem;font-size:0.75rem;padding:0.5rem;border:1px solid rgba(59,130,246,0.3);background:rgba(59,130,246,0.08);color:var(--accent-cyan);font-weight:600">⚙️ Configuración del Servidor IA</button>
-        <button class="btn-server-config" onclick="openChangelog()" title="Novedades" style="width:100%;margin-top:0.3rem;font-size:0.75rem">📋 Novedades v1.5</button>
+        <button class="btn-server-config" onclick="openServerConfigModal()" title="Configurar conexión" style="width:100%;font-size:0.75rem;padding:0.5rem;border:1px solid rgba(59,130,246,0.3);background:rgba(59,130,246,0.08);color:var(--accent-cyan);font-weight:600">⚙️ Configuración del Servidor IA</button>
+        <button class="btn-server-config" onclick="handleLogout()" title="Cerrar sesión" style="width:100%;margin-top:0.3rem">🚪 Cerrar sesión</button>
         <div class="sidebar-delf-footer">
           <span>by Delf</span>
           <button class="donate-btn-sidebar" onclick="switchView('contacto')" title="Donar">☕ Donar</button>
         </div>
-        <div class="sidebar-credits">
-          <button class="sidebar-credits-btn" onclick="switchView('enlaces')" title="Ver créditos">Créditos y attribution</button>
-        </div>
         <div style="font-size:0.6rem;color:var(--text-muted);text-align:center;margin-top:0.2rem;opacity:0.5">
-          Ctrl+N nuevo chat · Ctrl+P pomodoro · Ctrl+F fórmulas
+          Ctrl+N nuevo chat
         </div>
       </div>
     </aside>
