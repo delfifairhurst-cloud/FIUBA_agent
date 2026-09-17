@@ -994,24 +994,25 @@ body {
 }
 
 .bubble-avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1rem;
   flex-shrink: 0;
+  background: transparent !important;
 }
 
 .user .bubble-avatar {
-  background: var(--bg-chat-user);
+  background: var(--bg-chat-user) !important;
   color: white;
 }
 
 .agent .bubble-avatar {
-  background: linear-gradient(135deg, var(--accent-cyan), var(--primary));
-  color: white;
+  background: transparent !important;
+  overflow: visible;
 }
 
 .chat-image-wrapper {
@@ -4921,11 +4922,15 @@ body {
 .niv-input-presence {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.3rem;
+  background: rgba(139,92,246,0.06);
+  border: 1px solid rgba(139,92,246,0.12);
+  border-radius: 10px;
 }
 .niv-input-presence .niv-label {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--text-muted, #64748b);
   font-style: italic;
 }
