@@ -35,7 +35,7 @@
     overlay.className = 'onboarding-overlay';
     overlay.innerHTML = `
       <div class="onboarding-card">
-        <div class="onboarding-icon">🎓</div>
+        <div class="onboarding-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
         <h2>Bienvenido a niv</h2>
         <p>Tu asistente de ingeniería. Acá te explicamos rápido:</p>
         <div class="onboarding-steps">

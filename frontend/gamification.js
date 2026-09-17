@@ -8,7 +8,7 @@
   const LEVELS = [
     { level: 1, xp: 0, title: 'Novato', icon: '🌱' },
     { level: 2, xp: 25, title: 'Aprendiz', icon: '📘' },
-    { level: 3, xp: 60, title: 'Estudiante', icon: '🎓' },
+    { level: 3, xp: 60, title: 'Estudiante', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>' },
     { level: 4, xp: 120, title: 'Becado', icon: '💰' },
     { level: 5, xp: 200, title: 'Ingeniero Jr.', icon: '🔧' },
     { level: 6, xp: 350, title: 'Ingeniero', icon: '⚙️' },
