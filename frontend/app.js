@@ -1569,15 +1569,17 @@ const FIUBA_PLAN = {
 };
 
 function switchView(view) {
-  // Update top menu buttons
-  document.querySelectorAll('.top-menu-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.view === view);
-  });
-
-  // IDs of all view panels
-  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'blockblast-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'tech-tree-view'];
+  // IDs of all view panels (existing + new sections)
+  const views = ['home-dashboard','estudiar-view','mi-carrera-view','fiuba-view','materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'blockblast-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'tech-tree-view'];
   const chatEl = document.querySelector('.chat-container');
   const appLayout = document.querySelector('.app-layout');
+
+  // Map section views to their primary views for navigation highlighting
+  const sectionMap = {
+    'inicio': 'inicio', 'home': 'inicio',
+    'estudiar': 'estudiar', 'mi-carrera': 'mi-carrera', 'fiuba': 'fiuba', 'herramientas': 'herramientas'
+  };
+  const activeSection = sectionMap[view] || view;
 
   // Hide all panels via hidden class (has !important)
   views.forEach(id => {
@@ -1586,15 +1588,44 @@ function switchView(view) {
   });
   if (chatEl) chatEl.style.display = 'none';
 
+  // Update sidebar nav active state
+  document.querySelectorAll('.nav-section').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.section === activeSection);
+  });
+
+  // Update bottom nav active state
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.section === activeSection);
+  });
+
+  // Update top menu buttons (legacy compat)
+  document.querySelectorAll('.top-menu-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+
   // Toggle view-open class for FAB visibility
   if (appLayout) {
     appLayout.classList.toggle('view-open', view !== 'inicio');
   }
 
-  // Show the selected view
+  // ── Section views ──
   if (view === 'inicio') {
     if (chatEl) chatEl.style.display = 'flex';
-  } else if (view === 'evaluaciones') {
+    // Also show home dashboard if it exists
+    const hd = document.getElementById('home-dashboard');
+    if (hd) hd.classList.add('hidden');
+  } else if (view === 'estudiar') {
+    const el = document.getElementById('estudiar-view');
+    if (el) el.classList.remove('hidden');
+  } else if (view === 'mi-carrera') {
+    const el = document.getElementById('mi-carrera-view');
+    if (el) el.classList.remove('hidden');
+  } else if (view === 'fiuba') {
+    const el = document.getElementById('fiuba-view');
+    if (el) el.classList.remove('hidden');
+  }
+  // ── Existing views (all preserved) ──
+  else if (view === 'evaluaciones') {
     const ev = document.getElementById('evaluaciones-view');
     if (ev) { ev.classList.remove('hidden'); if (window.refreshEvaluations) window.refreshEvaluations(); if (window.refreshExerciseBank) window.refreshExerciseBank(); }
   } else if (view === 'materias') {
@@ -1670,6 +1701,9 @@ function switchView(view) {
     const el = document.getElementById('tech-tree-view');
     if (el) { el.classList.remove('hidden'); if (window.kgRender) window.kgRender(); }
   }
+
+  // Close mobile sidebar after navigation
+  if (window.innerWidth <= 768) closeSidebar();
 }
 window.switchView = switchView;
 
