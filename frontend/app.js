@@ -1575,7 +1575,7 @@ function switchView(view) {
   });
 
   // IDs of all view panels
-  const views = ['materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'blockblast-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'tech-tree-view'];
+  const views = ['home-dashboard', 'estudiar-view', 'mi-carrera-view', 'fiuba-view', 'materias-view', 'enlaces-view', 'biblioteca-view', 'comunidad-view', 'examiner-panel', 'contacto-view', 'evaluaciones-view', 'flashcards-view', 'progreso-view', 'periodic-view', 'correlativas-view', 'gpa-view', 'schedule-view', 'reference-view', 'local-intel-view', 'challenge-view', 'herramientas-view', 'fiuble-view', 'playground-view', 'blockblast-view', 'ratings-view', 'rooms-view', 'graphcalc-view', 'unitconv-view', 'materias-ai-view', 'tech-tree-view'];
   const chatEl = document.querySelector('.chat-container');
   const appLayout = document.querySelector('.app-layout');
 
@@ -1594,6 +1594,10 @@ function switchView(view) {
   // Show the selected view
   if (view === 'inicio') {
     if (chatEl) chatEl.style.display = 'flex';
+  } else if (view === 'home' || view === 'estudiar' || view === 'mi-carrera' || view === 'fiuba') {
+    const sectionMap = { home: 'home-dashboard', estudiar: 'estudiar-view', 'mi-carrera': 'mi-carrera-view', fiuba: 'fiuba-view' };
+    const el = document.getElementById(sectionMap[view]);
+    if (el) el.classList.remove('hidden');
   } else if (view === 'evaluaciones') {
     const ev = document.getElementById('evaluaciones-view');
     if (ev) { ev.classList.remove('hidden'); if (window.refreshEvaluations) window.refreshEvaluations(); if (window.refreshExerciseBank) window.refreshExerciseBank(); }
