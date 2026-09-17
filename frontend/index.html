@@ -1007,6 +1007,127 @@
         </div>
       </div>
 
+      <!-- ═══ v2 Section Pages (additive — existing views untouched) ═══ -->
+
+      <div id="home-dashboard" class="view-panel hidden">
+        <div class="section-page">
+          <div class="section-header">
+            <div class="section-title">Bienvenido, Delf</div>
+            <div class="section-subtitle">¿Qué querés hacer hoy?</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;margin-top:0.5rem">
+            <button class="card-v2 card-v2-interactive" onclick="switchView('chat')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">💬</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Chat IA</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Preguntale al asistente</div>
+            </button>
+            <button class="card-v2 card-v2-interactive" onclick="switchView('biblioteca')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">📚</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Biblioteca</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Resúmenes y parciales</div>
+            </button>
+            <button class="card-v2 card-v2-interactive" onclick="switchView('materias')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">🎓</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Materias</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Tu cursada y correlativas</div>
+            </button>
+            <button class="card-v2 card-v2-interactive" onclick="switchView('tech-tree')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">🧠</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Second Brain</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Grafo de conocimiento</div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="estudiar-view" class="view-panel hidden">
+        <div class="section-page">
+          <div class="section-header">
+            <div class="section-title">Estudiar</div>
+            <div class="section-subtitle">Todo para preparar tus materias</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;margin-top:0.5rem">
+            <button class="card-v2 card-v2-interactive" onclick="switchView('biblioteca')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">📚</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Biblioteca Tiza</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Resúmenes, temas y parciales</div>
+            </button>
+            <button class="card-v2 card-v2-interactive" onclick="switchView('flashcards')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">🃏</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Flashcards</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Tarjetas de memorización</div>
+            </button>
+            <button class="card-v2 card-v2-interactive" onclick="switchView('progreso')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">📈</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Progreso</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Tu rendimiento</div>
+            </button>
+            <button class="card-v2 card-v2-interactive" onclick="switchView('materias-ai')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">🤖</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Materias AI</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Generá material de estudio</div>
+            </button>
+            <button class="card-v2 card-v2-interactive" onclick="switchView('evaluaciones')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">📝</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Evaluaciones</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Parciales y fechas</div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="mi-carrera-view" class="view-panel hidden">
+        <div class="section-page">
+          <div class="section-header">
+            <div class="section-title">Mi Carrera</div>
+            <div class="section-subtitle">Planificá y seguí tu avance académico</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;margin-top:0.5rem">
+            <button class="card-v2 card-v2-interactive" onclick="switchView('materias')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">🎓</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Materias</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Tu plan de estudios</div>
+            </button>
+            <button class="card-v2 card-v2-interactive" onclick="switchView('correlativas')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">🔗</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Correlativas</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Mapa de correlativas</div>
+            </button>
+            <button class="card-v2 card-v2-interactive" onclick="switchView('gpa')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">📊</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">GPA</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Promedio ponderado</div>
+            </button>
+            <button class="card-v2 card-v2-interactive" onclick="switchView('schedule')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">📅</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Horarios</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Tu agenda semanal</div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="fiuba-view" class="view-panel hidden">
+        <div class="section-page">
+          <div class="section-header">
+            <div class="section-title">FIUBA</div>
+            <div class="section-subtitle">Información de la facultad</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;margin-top:0.5rem">
+            <button class="card-v2 card-v2-interactive" onclick="switchView('comunidad')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">👥</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Comunidad</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Salas de estudio</div>
+            </button>
+            <button class="card-v2 card-v2-interactive" onclick="switchView('contacto')">
+              <div style="font-size:1.5rem;margin-bottom:0.5rem">📧</div>
+              <div style="font-weight:600;font-size:var(--text-md);color:var(--text-primary)">Contacto</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:0.25rem">Mandanos un mail</div>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Chat Container (vista Inicio) -->
       <div class="chat-container">
         <div id="chat-history" class="chat-history">
