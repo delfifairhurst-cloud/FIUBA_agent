@@ -1221,6 +1221,36 @@
     </div>
   </nav>
 
+  <!-- ═══ Chat Overlay Panel (slide-in from right) ═══ -->
+  <div class="chat-overlay-backdrop" id="chat-overlay-backdrop" onclick="closeChatOverlay()"></div>
+  <div class="chat-overlay" id="chat-overlay">
+    <div class="chat-overlay-header">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent-purple));display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary)">FIUBA Agent</div>
+          <div style="font-size:0.65rem;color:var(--text-muted)">Asistente IA</div>
+        </div>
+      </div>
+      <button onclick="closeChatOverlay()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0.3rem;border-radius:6px;display:flex" title="Cerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="chat-overlay-messages" id="chat-overlay-messages">
+      <div style="text-align:center;padding:2rem 1rem;color:var(--text-muted);font-size:0.82rem">
+        <p>Haceme una pregunta desde cualquier parte de la app.</p>
+      </div>
+    </div>
+    <form class="chat-overlay-input" onsubmit="handleOverlayChat(event)">
+      <input type="text" id="overlay-chat-input" placeholder="Escribí tu pregunta..." style="flex:1;padding:0.6rem 0.8rem;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:0.82rem;font-family:var(--font-body);outline:none">
+      <button type="submit" style="background:var(--primary);color:white;border:none;border-radius:8px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </form>
+  </div>
+
   <!-- Modal de Configuración de Servidor Backend -->
   <div class="modal-backdrop" id="server-modal" onclick="if(event.target === this) closeServerConfigModal()">
     <div class="modal-dialog">
@@ -1490,6 +1520,11 @@
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
   </button>
   <div class="formulas-modal" id="formulas-modal"></div>
+
+  <!-- Chat FAB — agente IA siempre accesible -->
+  <button class="chat-fab" id="chat-fab" onclick="openChatOverlay()" title="Chat IA">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  </button>
 
   <!-- Changelog modal -->
   <div class="cl-modal" id="changelog-modal"></div>

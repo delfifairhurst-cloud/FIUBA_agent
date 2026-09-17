@@ -1769,3 +1769,70 @@ function closeMateriaDetail() {
   backToCarreras();
 }
 
+// ═══ Chat Overlay Panel ═══
+function openChatOverlay() {
+  const backdrop = document.getElementById('chat-overlay-backdrop');
+  const panel = document.getElementById('chat-overlay');
+  if (backdrop) backdrop.classList.add('open');
+  if (panel) panel.classList.add('open');
+  const input = document.getElementById('overlay-chat-input');
+  if (input) setTimeout(() => input.focus(), 300);
+}
+
+function closeChatOverlay() {
+  const backdrop = document.getElementById('chat-overlay-backdrop');
+  const panel = document.getElementById('chat-overlay');
+  if (backdrop) backdrop.classList.remove('open');
+  if (panel) panel.classList.remove('open');
+}
+
+async function handleOverlayChat(e) {
+  e.preventDefault();
+  const input = document.getElementById('overlay-chat-input');
+  const messages = document.getElementById('chat-overlay-messages');
+  if (!input || !messages) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  // Remove placeholder
+  const placeholder = messages.querySelector('div[style*="text-align:center"]');
+  if (placeholder) placeholder.remove();
+
+  // Add user message
+  const userMsg = document.createElement('div');
+  userMsg.style.cssText = 'align-self:flex-end;max-width:85%;padding:0.5rem 0.75rem;background:var(--bg-chat-user);color:white;border-radius:12px 12px 2px 12px;font-size:0.82rem';
+  userMsg.textContent = text;
+  messages.appendChild(userMsg);
+
+  input.value = '';
+  messages.scrollTop = messages.scrollHeight;
+
+  // Send to AI
+  try {
+    const serverUrl = localStorage.getItem('fiuba_agent_server_url') || '';
+    const res = await fetch(serverUrl + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        mode: localStorage.getItem('fiuba_agent_mode') || 'profesor',
+        history: []
+      })
+    });
+    const data = await res.json();
+    const agentMsg = document.createElement('div');
+    agentMsg.style.cssText = 'align-self:flex-start;max-width:85%;padding:0.5rem 0.75rem;background:var(--bg-chat-agent);color:var(--text-primary);border-radius:12px 12px 12px 2px;font-size:0.82rem;border:1px solid var(--border-color);line-height:1.5';
+    agentMsg.textContent = data.reply || data.error || 'No pude procesar tu mensaje.';
+    messages.appendChild(agentMsg);
+    messages.scrollTop = messages.scrollHeight;
+  } catch (err) {
+    const errMsg = document.createElement('div');
+    errMsg.style.cssText = 'align-self:flex-start;max-width:85%;padding:0.5rem 0.75rem;background:rgba(239,68,68,0.1);color:#ef4444;border-radius:12px;font-size:0.82rem;border:1px solid rgba(239,68,68,0.3)';
+    errMsg.textContent = 'Error de conexión. Verificá que el backend esté activo.';
+    messages.appendChild(errMsg);
+  }
+}
+window.openChatOverlay = openChatOverlay;
+window.closeChatOverlay = closeChatOverlay;
+window.handleOverlayChat = handleOverlayChat;
+
