@@ -1691,7 +1691,7 @@ body {
   .chat-input-wrapper {
     flex-shrink: 0;
     padding: 0.5rem 0.75rem;
-    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(0.5rem + var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
     background: var(--bg-dark);
   }
   #chat-form {
