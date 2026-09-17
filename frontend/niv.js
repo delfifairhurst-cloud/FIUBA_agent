@@ -223,8 +223,8 @@
       question: '¿Cuáles son los elementos más importantes para química en FIUBA?',
     },
     'herramientas': {
-      text: 'Todas las herramientas de nevla en un solo lugar. Elegí la que necesites.',
-      question: '¿Qué herramientas tiene nevla para ayudarme a estudiar?',
+      text: 'Todas las herramientas de niv en un solo lugar. Elegí la que necesites.',
+      question: '¿Qué herramientas tiene niv para ayudarme a estudiar?',
     },
     'biblioteca': {
       text: 'Resúmenes y parciales organizados por materia. Elegí una materia para empezar.',

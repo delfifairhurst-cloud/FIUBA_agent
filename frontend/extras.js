@@ -9,9 +9,9 @@
       alert('No hay nada para compartir.');
       return;
     }
-    const text = `Mira lo que hice con nevla — ${chat.title}\n\n${chat.messages[chat.messages.length - 1]?.text?.slice(0, 200) || ''}...\n\nProbalo gratis: https://agente-fiuba.web.app`;
+    const text = `Mira lo que hice con niv — ${chat.title}\n\n${chat.messages[chat.messages.length - 1]?.text?.slice(0, 200) || ''}...\n\nProbalo gratis: https://agente-fiuba.web.app`;
     if (navigator.share) {
-      navigator.share({ title: 'nevla', text }).catch(() => {});
+      navigator.share({ title: 'niv', text }).catch(() => {});
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(text);
       showToast('Link copiado al portapapeles');
@@ -36,7 +36,7 @@
     overlay.innerHTML = `
       <div class="onboarding-card">
         <div class="onboarding-icon">🎓</div>
-        <h2>Bienvenido a nevla</h2>
+        <h2>Bienvenido a niv</h2>
         <p>Tu asistente de ingeniería. Acá te explicamos rápido:</p>
         <div class="onboarding-steps">
           <div class="onb-step">
