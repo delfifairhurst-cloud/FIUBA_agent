@@ -3914,6 +3914,8 @@ body {
   border-radius: 20px;
   margin-bottom: 1rem;
   animation: splashPulse 1.5s ease-in-out infinite;
+  background: #ffffff;
+  padding: 8px;
   box-shadow: 0 0 40px rgba(59,130,246,0.3), 0 0 80px rgba(139,92,246,0.15);
 }
 @keyframes splashPulse {
