@@ -2,15 +2,19 @@
   'use strict';
 
   // ═══ NivMascot — Presencia visual de IA para Nevla ═══
-  // SVG abstracto animado con 7 estados, puro CSS/SVG.
+  // SVG orgánico animado con 7 estados, puro CSS/SVG.
+  // Forma: blob fluido/glossy inspirado en el prototipo.
+
+  let _uid = 0;
+  function uid() { return 'niv-' + (++_uid); }
 
   const NIV_COLORS = {
-    body: '#c4b5fd',        // lavanda claro
-    bodyLight: '#ddd6fe',   // lavanda más claro
-    bodyTranslucent: 'rgba(196,181,253,0.85)',
-    eye: '#1e1b2e',         // charcoal oscuro
-    white: '#faf5ff',       // blanco cálido lavanda
-    accent: '#8b5cf6',      // purple accent
+    body: '#c4b5fd',
+    bodyDark: '#a78bfa',
+    bodyLight: '#e0d4fe',
+    highlight: '#f5f0ff',
+    eye: '#1e1b2e',
+    accent: '#8b5cf6',
   };
 
   const STATES = {
@@ -51,19 +55,26 @@
     },
   };
 
-  function getEyePath(type, cx, cy) {
+  function getEyes(type, id) {
+    const base = { cx: 20, cy: 23 };
+    const cx2 = 30;
     switch (type) {
       case 'closed':
-        // Línea horizontal - ojos cerrados
-        return `<line x1="${cx - 4}" y1="${cy}" x2="${cx + 4}" y2="${cy}" stroke="${NIV_COLORS.eye}" stroke-width="2.2" stroke-linecap="round"/>`;
+        return `
+          <line x1="${base.cx - 3.5}" y1="${base.cy}" x2="${base.cx + 3.5}" y2="${base.cy}" stroke="${NIV_COLORS.eye}" stroke-width="2" stroke-linecap="round"/>
+          <line x1="${cx2 - 3.5}" y1="${base.cy}" x2="${cx2 + 3.5}" y2="${base.cy}" stroke="${NIV_COLORS.eye}" stroke-width="2" stroke-linecap="round"/>`;
       case 'happy':
-        // Forma de media luna - ojos felices
-        return `<path d="M${cx - 4} ${cy + 1} Q${cx} ${cy - 4} ${cx + 4} ${cy + 1}" stroke="${NIV_COLORS.eye}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+        return `
+          <path d="M${base.cx - 3.5} ${base.cy + 1.5} Q${base.cx} ${base.cy - 3.5} ${base.cx + 3.5} ${base.cy + 1.5}" stroke="${NIV_COLORS.eye}" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M${cx2 - 3.5} ${base.cy + 1.5} Q${cx2} ${base.cy - 3.5} ${cx2 + 3.5} ${base.cy + 1.5}" stroke="${NIV_COLORS.eye}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
       case 'right':
-        // Ojos mirando a la derecha
-        return `<ellipse cx="${cx + 2}" cy="${cy}" rx="3.2" ry="3.8" fill="${NIV_COLORS.eye}"/>`;
+        return `
+          <ellipse cx="${base.cx + 2}" cy="${base.cy}" rx="3" ry="3.8" fill="${NIV_COLORS.eye}"/>
+          <ellipse cx="${cx2 + 2}" cy="${base.cy}" rx="3" ry="3.8" fill="${NIV_COLORS.eye}"/>`;
       default: // open
-        return `<ellipse cx="${cx}" cy="${cy}" rx="3.2" ry="3.8" fill="${NIV_COLORS.eye}"/>`;
+        return `
+          <ellipse cx="${base.cx}" cy="${base.cy}" rx="3" ry="3.8" fill="${NIV_COLORS.eye}"/>
+          <ellipse cx="${cx2}" cy="${base.cy}" rx="3" ry="3.8" fill="${NIV_COLORS.eye}"/>`;
     }
   }
 
@@ -71,26 +82,49 @@
     const s = STATES[state] || STATES.idle;
     const w = size || 48;
     const h = size || 48;
+    const id = uid();
     const eyeType = s.eyes;
 
-    return `<svg class="niv-svg" width="${w}" height="${h}" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    return `<svg class="niv-svg" width="${w}" height="${h}" viewBox="0 0 60 56" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <radialGradient id="niv-body-grad" cx="40%" cy="35%" r="60%">
+        <radialGradient id="bg-${id}" cx="38%" cy="32%" r="65%">
           <stop offset="0%" stop-color="${NIV_COLORS.bodyLight}"/>
-          <stop offset="100%" stop-color="${NIV_COLORS.body}"/>
+          <stop offset="50%" stop-color="${NIV_COLORS.body}"/>
+          <stop offset="100%" stop-color="${NIV_COLORS.bodyDark}"/>
         </radialGradient>
-        <filter id="niv-shadow" x="-20%" y="-10%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="${NIV_COLORS.accent}" flood-opacity="0.15"/>
+        <radialGradient id="hl-${id}" cx="35%" cy="25%" r="40%">
+          <stop offset="0%" stop-color="${NIV_COLORS.highlight}" stop-opacity="0.7"/>
+          <stop offset="100%" stop-color="${NIV_COLORS.highlight}" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="sh-${id}" x="-15%" y="-10%" width="135%" height="135%">
+          <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="${NIV_COLORS.accent}" flood-opacity="0.18"/>
         </filter>
       </defs>
-      <!-- Blob body -->
-      <path d="M24 6 C32 6, 40 12, 42 20 C44 28, 40 38, 34 42 C28 46, 18 46, 12 42 C6 38, 4 28, 6 20 C8 12, 16 6, 24 6Z"
-            fill="url(#niv-body-grad)" filter="url(#niv-shadow)" opacity="0.92"/>
-      <!-- Subtle highlight -->
-      <ellipse cx="18" cy="16" rx="8" ry="5" fill="${NIV_COLORS.white}" opacity="0.25" transform="rotate(-15 18 16)"/>
+
+      <!-- Main blob body — organic, asymmetric shape -->
+      <path d="
+        M28 4
+        C36 4, 44 8, 48 16
+        C52 22, 50 30, 46 36
+        C44 40, 42 44, 36 48
+        C32 50, 24 52, 18 48
+        C12 44, 6 38, 5 30
+        C4 22, 6 14, 12 9
+        C16 6, 22 4, 28 4Z
+      " fill="url(#bg-${id})" filter="url(#sh-${id})"/>
+
+      <!-- Protrusion / tail blob -->
+      <ellipse cx="46" cy="20" rx="9" ry="7" fill="${NIV_COLORS.body}" opacity="0.6" transform="rotate(-12 46 20)"/>
+      <ellipse cx="46" cy="20" rx="7" ry="5" fill="${NIV_COLORS.bodyLight}" opacity="0.3" transform="rotate(-12 46 20)"/>
+
+      <!-- Glossy highlight top-left -->
+      <ellipse cx="22" cy="14" rx="12" ry="7" fill="url(#hl-${id})" transform="rotate(-18 22 14)"/>
+
+      <!-- Small secondary highlight -->
+      <ellipse cx="38" cy="12" rx="4" ry="3" fill="${NIV_COLORS.highlight}" opacity="0.35" transform="rotate(10 38 12)"/>
+
       <!-- Eyes -->
-      ${getEyePath(eyeType, 19, 24)}
-      ${getEyePath(eyeType, 29, 24)}
+      ${getEyes(eyeType, id)}
     </svg>`;
   }
 
@@ -115,10 +149,9 @@
     const host = document.getElementById(targetId);
     if (!host) return;
     const s = STATES[state] || STATES.idle;
-    const size = 48;
     host.innerHTML = `
       <div class="niv-container" style="animation:${s.animation}" data-niv-state="${state}">
-        ${createSVG(state, size)}
+        ${createSVG(state, 48)}
         ${s.extras}
       </div>`;
   }
@@ -129,5 +162,11 @@
     return `<span class="niv-inline" style="display:inline-flex;vertical-align:middle">${createSVG(s, sz)}</span>`;
   }
 
-  window.NivMascot = { render, setState, inline, STATES, createSVG };
+  // Avatar for chat bubbles — returns HTML string for the agent avatar
+  function avatar(size) {
+    const sz = size || 22;
+    return `<span class="niv-avatar-wrap" style="display:inline-flex">${createSVG('idle', sz)}</span>`;
+  }
+
+  window.NivMascot = { render, setState, inline, avatar, STATES, createSVG };
 })();

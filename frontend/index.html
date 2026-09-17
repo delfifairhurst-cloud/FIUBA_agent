@@ -1232,12 +1232,10 @@
   <div class="chat-overlay" id="chat-overlay">
     <div class="chat-overlay-header">
       <div style="display:flex;align-items:center;gap:0.5rem">
-        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent-purple));display:flex;align-items:center;justify-content:center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        </div>
+        <div id="niv-overlay-avatar" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center"></div>
         <div>
           <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary)">nevla</div>
-          <div style="font-size:0.65rem;color:var(--text-muted)">Asistente IA</div>
+          <div style="font-size:0.65rem;color:var(--text-muted)">Niv · Asistente IA</div>
         </div>
       </div>
       <button onclick="closeChatOverlay()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0.3rem;border-radius:6px;display:flex" title="Cerrar">
@@ -1633,10 +1631,11 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       if (window.NivMascot) {
-        NivMascot.render('niv-welcome', { state: 'idle', size: 64 });
-        NivMascot.render('niv-typing', { state: 'thinking', size: 28 });
-        NivMascot.render('niv-input-mascot', { state: 'idle', size: 22 });
-        NivMascot.render('niv-overlay', { state: 'idle', size: 48 });
+        NivMascot.render('niv-welcome', { state: 'idle', size: 80 });
+        NivMascot.render('niv-typing', { state: 'thinking', size: 32 });
+        NivMascot.render('niv-input-mascot', { state: 'idle', size: 26 });
+        NivMascot.render('niv-overlay', { state: 'idle', size: 56 });
+        NivMascot.render('niv-overlay-avatar', { state: 'idle', size: 32 });
       }
     });
   </script>

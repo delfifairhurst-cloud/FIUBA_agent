@@ -74,7 +74,7 @@ Sé conciso. El estudiante tiene poco tiempo.`;
     typingBubble.className = 'chat-bubble agent';
     typingBubble.id = 'cram-typing';
     typingBubble.innerHTML = `
-      <div class="bubble-avatar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg></div>
+      <div class="bubble-avatar">${window.NivMascot ? NivMascot.avatar(18) : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>'}</div>
       <div class="bubble-content" style="display:flex;align-items:center;gap:0.5rem;color:var(--text-muted)">
         <div class="typing-dots"><span></span><span></span><span></span></div>
         Armando tu resumen express...

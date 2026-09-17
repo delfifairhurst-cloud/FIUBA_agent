@@ -4900,6 +4900,16 @@ body {
 /* ── Inline usage (next to text) ── */
 .niv-inline { margin: 0 0.3rem; }
 
+/* ── Chat bubble avatar ── */
+.bubble-avatar .niv-avatar-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.bubble-avatar .niv-avatar-wrap .niv-svg {
+  display: block;
+}
+
 /* ── Welcome banner Niv ── */
 .niv-welcome {
   display: flex;
