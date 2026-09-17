@@ -367,7 +367,7 @@ function renderActiveChat() {
     history.innerHTML = `
       <div class="welcome-banner" id="welcome-banner">
         <div class="welcome-icon">🎓</div>
-        <h2>¡Bienvenido a nevla!</h2>
+        <h2>¡Bienvenido a niv!</h2>
         <p>Tu asistente de ingeniería. ¿En qué tema necesitás ayuda hoy?</p>
         
         <div class="suggestions-grid">
@@ -930,7 +930,7 @@ function showAgentStatus(state, attempt) {
   if (state === 'processing') {
     el.style.background = 'var(--bg-card)';
     el.style.color = 'var(--text-muted)';
-    el.innerHTML = '🧠 <strong>nevla</strong> está pensando...';
+    el.innerHTML = '🧠 <strong>niv</strong> está pensando...';
   } else if (state === 'retrying') {
     el.style.background = 'rgba(251, 191, 36, 0.1)';
     el.style.color = '#d97706';
@@ -1797,23 +1797,41 @@ async function handleOverlayChat(e) {
   const text = input.value.trim();
   if (!text) return;
 
-  // Remove placeholder
   const placeholder = messages.querySelector('div[style*="text-align:center"]');
   if (placeholder) placeholder.remove();
 
-  // Add user message
   const userMsg = document.createElement('div');
   userMsg.style.cssText = 'align-self:flex-end;max-width:85%;padding:0.5rem 0.75rem;background:var(--bg-chat-user);color:white;border-radius:12px 12px 2px 12px;font-size:0.82rem';
   userMsg.textContent = text;
   messages.appendChild(userMsg);
-
   input.value = '';
   messages.scrollTop = messages.scrollHeight;
 
-  // Send to AI
+  const agentMsg = document.createElement('div');
+  agentMsg.style.cssText = 'align-self:flex-start;max-width:85%;padding:0.5rem 0.75rem;background:var(--bg-chat-agent);color:var(--text-primary);border-radius:12px 12px 12px 2px;font-size:0.82rem;border:1px solid var(--border-color);line-height:1.5';
+  agentMsg.textContent = 'niv está pensando...';
+  agentMsg.style.opacity = '0.6';
+  messages.appendChild(agentMsg);
+  messages.scrollTop = messages.scrollHeight;
+
+  async function fetchWithRetry(url, options, retries = 2) {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        const res = await fetch(url, options);
+        if (res.status === 503 || res.status === 504) throw new Error('Service unavailable');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+      } catch (err) {
+        if (i === retries) throw err;
+        agentMsg.textContent = `Despertando backend... (${i + 1}/${retries})`;
+        agentMsg.style.opacity = '0.8';
+        await new Promise(r => setTimeout(r, 3000 * (i + 1)));
+      }
+    }
+  }
+
   try {
-    const serverUrl = localStorage.getItem('fiuba_agent_server_url') || '';
-    const res = await fetch(serverUrl + '/api/chat', {
+    const data = await fetchWithRetry(getBackendUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1821,18 +1839,16 @@ async function handleOverlayChat(e) {
         mode: localStorage.getItem('fiuba_agent_mode') || 'profesor',
         history: []
       })
-    });
-    const data = await res.json();
-    const agentMsg = document.createElement('div');
-    agentMsg.style.cssText = 'align-self:flex-start;max-width:85%;padding:0.5rem 0.75rem;background:var(--bg-chat-agent);color:var(--text-primary);border-radius:12px 12px 12px 2px;font-size:0.82rem;border:1px solid var(--border-color);line-height:1.5';
+    }, 2);
     agentMsg.textContent = data.reply || data.error || 'No pude procesar tu mensaje.';
-    messages.appendChild(agentMsg);
+    agentMsg.style.opacity = '1';
     messages.scrollTop = messages.scrollHeight;
   } catch (err) {
-    const errMsg = document.createElement('div');
-    errMsg.style.cssText = 'align-self:flex-start;max-width:85%;padding:0.5rem 0.75rem;background:rgba(239,68,68,0.1);color:#ef4444;border-radius:12px;font-size:0.82rem;border:1px solid rgba(239,68,68,0.3)';
-    errMsg.textContent = 'Error de conexión. Verificá que el backend esté activo.';
-    messages.appendChild(errMsg);
+    agentMsg.textContent = 'El backend tarda en responder. Probá de nuevo en unos segundos.';
+    agentMsg.style.opacity = '1';
+    agentMsg.style.background = 'rgba(245,158,11,0.08)';
+    agentMsg.style.borderColor = 'rgba(245,158,11,0.2)';
+    agentMsg.style.color = '#f59e0b';
   }
 }
 window.openChatOverlay = openChatOverlay;
