@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
@@ -6,9 +6,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 const ALLOWED_ORIGINS = [
+  'https://nevla.com.ar',
+  'https://www.nevla.com.ar',
+  'https://agente-fiuba.firebaseapp.com',
   'https://agente-fiuba.web.app',
   'https://fiuba-agent.web.app',
   'http://localhost:5173',
@@ -17,6 +21,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 app.use(cors({
+  exposedHeaders: ['Retry-After'],
   origin: (origin, callback) => {
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
