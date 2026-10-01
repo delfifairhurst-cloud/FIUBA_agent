@@ -1,3 +1,4 @@
+import { sendAiError } from './ai-errors.js';
 import { installPerformance, callGeminiWithRetry } from './render-performance.js';
 import express from 'express';
 import cors from 'cors';
@@ -43,7 +44,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 installPerformance(app);
 
-const MODEL_FALLBACK_CHAIN = [process.env.GEMINI_MODEL || 'gemini-2.5-flash'];
+const MODEL_FALLBACK_CHAIN = [process.env.GEMINI_MODEL || 'gemini-3.6-flash'];
 
 const SYSTEM_PROMPTS = {
   profesor: `Sos nevla en modo PROFESOR. Explicá conceptos de FIUBA/UBA.
@@ -252,13 +253,7 @@ app.post('/api/chat', async (req, res) => {
     try {
       result = await callGeminiWithRetry(apiKey, payload, { endpoint: 'chat' });
     } catch (err) {
-      const isQuota = (err.message || '').toLowerCase().includes('quota');
-      return res.status(err.permanent ? 503 : 500).json({
-        error: isQuota
-          ? 'Sin cuota disponible. Esperá a mañana o activá billing en Google AI Studio.'
-          : 'El servicio de IA está temporalmente sobrecargado. Intentá nuevamente en unos segundos.',
-        retryable: !err.permanent && !isQuota
-      });
+      return sendAiError(res, err);
     }
 
     const data = result.data;
@@ -317,7 +312,7 @@ app.post('/api/generate-quiz', async (req, res) => {
     try {
       result = await callGeminiWithRetry(apiKey, payload, { endpoint: 'quiz' });
     } catch (err) {
-      return res.status(503).json({ error: 'El servicio de IA está temporalmente ocupado. Intentá generar el quiz en unos segundos.', retryable: true });
+      return sendAiError(res, err);
     }
 
     let text = result.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -348,7 +343,7 @@ app.post('/api/generate-flashcards', async (req, res) => {
     try {
       result = await callGeminiWithRetry(apiKey, payload, { endpoint: 'flashcards' });
     } catch (err) {
-      return res.status(503).json({ error: 'El servicio de IA está temporalmente ocupado. Intentá generar las flashcards en unos segundos.', retryable: true });
+      return sendAiError(res, err);
     }
 
     let text = result.data.candidates?.[0]?.content?.parts?.[0]?.text || '';

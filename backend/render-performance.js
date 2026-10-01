@@ -8,7 +8,7 @@ const deadlineMs = 45000;
 export function installPerformance(app) {
   let active = 0;
   app.use('/api', (req, res, next) => {
-    res.set('X-Nevla-Runtime', 'bounded-v1');
+    res.set('X-Nevla-Runtime', 'bounded-v2');
     if (req.method !== 'POST' || !aiPaths.has(req.path)) return next();
     if (active >= 6) return res.set('Retry-After', '5').status(503).json({error:'El Tutor está ocupado. Reintentá en unos segundos.', code:'BUSY', retryable:true});
     const controller = new AbortController();
@@ -24,7 +24,7 @@ export function installPerformance(app) {
 
 // One deadline across attempts. Never repeat quota failures or timeouts.
 export async function callGeminiWithRetry(apiKey, payload, { maxRetries = 2 } = {}) {
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
   const signal = AbortSignal.any([requests.getStore()?.signal || new AbortController().signal, AbortSignal.timeout(deadlineMs)]);
   const generationConfig = {...payload.generationConfig};
   const requested = generationConfig.maxOutputTokens;
@@ -42,7 +42,10 @@ export async function callGeminiWithRetry(apiKey, payload, { maxRetries = 2 } = 
     const raw = response.headers.get('Retry-After');
     const wait = raw ? (/^\d+$/.test(raw) ? Number(raw)*1000 : Date.parse(raw)-Date.now()) : 700;
     if (!temporary || attempt >= Math.min(2,maxRetries) || !Number.isFinite(wait) || Date.now()-started+wait >= deadlineMs) {
-      throw {status:response.status, permanent:!temporary, message:response.status===429?'Provider quota or rate limit':'Provider unavailable'};
+      const details = data.error?.details || [];
+      const quotas = details.flatMap(d => d.violations || []).map(v => v.quotaId || '').join(' ');
+      const code = details.some(d => d.reason === 'API_KEY_INVALID') ? 'KEY_INVALID' : /perday|permonth|daily|monthly/i.test(quotas) ? 'PROVIDER_QUOTA' : /perminute/i.test(quotas) ? 'PROVIDER_RATE_LIMIT' : undefined;
+      throw {status:response.status, code, retryAfter:Number.isFinite(wait)?Math.max(0,wait):0, permanent:!temporary, message:response.status===429?'Provider quota or rate limit':'Provider unavailable'};
     }
     await delay(Math.max(0,wait), undefined, {signal});
   }
