@@ -1,3 +1,4 @@
+import { installPerformance, callGeminiWithRetry } from './render-performance.js';
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
@@ -30,7 +31,7 @@ app.use(cors({
     }
   }
 }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '5mb' }));
 
 const limiter = rateLimit({
   windowMs: 60 * 1000,
@@ -40,122 +41,9 @@ const limiter = rateLimit({
   message: { error: 'Demasiadas requests. Esperá un momento.' }
 });
 app.use('/api/', limiter);
+installPerformance(app);
 
-// --- Error classification and retry logic ---
-const TEMPORARY_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
-const TEMPORARY_GEMINI_REASONS = new Set([
-  'UNAVAILABLE', 'OVERLOADED', 'RESOURCE_EXHAUSTED',
-  'INTERNAL', 'ABORTED', 'DEADLINE_EXCEEDED'
-]);
-
-const MODEL_FALLBACK_CHAIN = [
-  process.env.GEMINI_MODEL || 'gemini-3.6-flash',
-  'gemini-3.5-flash',
-];
-
-function isTemporaryError(statusCode, geminiError) {
-  if (TEMPORARY_STATUS_CODES.has(statusCode)) return true;
-  if (geminiError) {
-    const reason = (geminiError.status || '').toUpperCase();
-    const message = (geminiError.message || '').toUpperCase();
-    if (TEMPORARY_GEMINI_REASONS.has(reason)) return true;
-    if (message.includes('UNAVAILABLE') || message.includes('OVERLOADED') ||
-        message.includes('RESOURCE_EXHAUSTED') || message.includes('QUOTA') ||
-        message.includes('TIMEOUT') || message.includes('DEADLINE')) return true;
-  }
-  return false;
-}
-
-function isPermanentError(statusCode, geminiError) {
-  if (statusCode === 400 || statusCode === 401 || statusCode === 403) return true;
-  if (geminiError) {
-    const reason = (geminiError.status || '').toUpperCase();
-    if (reason === 'INVALID_ARGUMENT' || reason === 'UNAUTHENTICATED' ||
-        reason === 'PERMISSION_DENIED' || reason === 'FAILED_PRECONDITION') return true;
-  }
-  return false;
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-function jitter(baseMs) {
-  return baseMs + Math.random() * baseMs * 0.3;
-}
-
-async function callGeminiWithRetry(apiKey, payload, { maxRetries = 2, endpoint = 'chat' } = {}) {
-  const models = MODEL_FALLBACK_CHAIN;
-  let lastError = null;
-
-  for (let modelIdx = 0; modelIdx < models.length; modelIdx++) {
-    const model = models[modelIdx];
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    const isFallback = modelIdx > 0;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      const start = Date.now();
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(30000)
-        });
-        const elapsed = Date.now() - start;
-        const data = await response.json();
-
-        if (response.ok) {
-          const logMsg = `[GEMINI] ${endpoint} OK con ${model}` +
-            (isFallback ? ` (fallback ${modelIdx + 1}/${models.length})` : '') +
-            (attempt > 1 ? ` en intento ${attempt}` : '') +
-            ` (${elapsed}ms)`;
-          console.log(logMsg);
-          return { data, attempts: attempt, model, elapsed, fallback: isFallback };
-        }
-
-        const geminiErr = data.error || {};
-        const status = response.status;
-
-        if (isPermanentError(status, geminiErr)) {
-          console.error(`[GEMINI] ${endpoint} PERMANENTE ${model}: ${status} ${geminiErr.message} (${elapsed}ms)`);
-          throw { permanent: true, status, message: geminiErr.message, model, attempts: attempt };
-        }
-
-        if (attempt < maxRetries && isTemporaryError(status, geminiErr)) {
-          const backoffMs = jitter(1000 * Math.pow(2, attempt - 1));
-          console.log(`[GEMINI] ${endpoint} temporal ${model}: ${status} ${geminiErr.message} — retry ${attempt}/${maxRetries} en ${Math.round(backoffMs)}ms`);
-          lastError = { status, message: geminiErr.message, model };
-          await sleep(backoffMs);
-          continue;
-        }
-
-        lastError = { status, message: geminiErr.message, model };
-        console.error(`[GEMINI] ${endpoint} agota ${model}: ${status} ${geminiErr.message} (${elapsed}ms, intentos: ${attempt})`);
-        break;
-
-      } catch (err) {
-        if (err.permanent) throw err;
-        const elapsed = Date.now() - start;
-        const isTimeout = err.name === 'TimeoutError' || err.code === 'ABORT_ERR';
-        lastError = { status: 0, message: err.message, model };
-
-        if (attempt < maxRetries) {
-          const backoffMs = jitter(isTimeout ? 2000 : 1000 * Math.pow(2, attempt - 1));
-          console.log(`[GEMINI] ${endpoint} ${isTimeout ? 'timeout' : 'conexion'} ${model} — retry ${attempt}/${maxRetries} en ${Math.round(backoffMs)}ms`);
-          await sleep(backoffMs);
-          continue;
-        }
-        console.error(`[GEMINI] ${endpoint} fallo conexion ${model}: ${err.message} (${elapsed}ms)`);
-        break;
-      }
-    }
-
-    if (modelIdx < models.length - 1) {
-      console.log(`[GEMINI] ${endpoint} fallback a ${models[modelIdx + 1]}...`);
-    }
-  }
-
-  throw lastError || { permanent: true, status: 0, message: 'Todos los modelos fallaron', model: models[0], attempts: 0 };
-}
+const MODEL_FALLBACK_CHAIN = [process.env.GEMINI_MODEL || 'gemini-2.5-flash'];
 
 const SYSTEM_PROMPTS = {
   profesor: `Sos nevla en modo PROFESOR. Explicá conceptos de FIUBA/UBA.
@@ -315,6 +203,7 @@ app.post('/api/chat', async (req, res) => {
       return res.status(400).json({ error: 'Falta tu API Key - pegala en ⚙️ Servidor IA (aistudio.google.com/app/apikey)' });
     }
 
+    if (typeof message === 'string' && message.length > 8000) return res.status(400).json({error:'La consulta es demasiado extensa.', code:'INPUT_LIMIT'});
     const systemInstruction = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.profesor;
 
     let promptContent = message;
@@ -328,7 +217,13 @@ app.post('/api/chat', async (req, res) => {
 
     const contents = [];
     if (Array.isArray(history) && history.length > 0) {
-      for (const msg of history) {
+      let remainingHistory = 16000;
+      const boundedHistory = history.slice(-16).reverse().map(msg => {
+        const text = String(msg.parts?.[0]?.text || "").slice(0, Math.min(4000, remainingHistory));
+        remainingHistory -= text.length;
+        return {role: msg.role, parts: [{text}]};
+      }).filter(msg => msg.parts[0].text).reverse();
+      for (const msg of boundedHistory) {
         if (msg.role && msg.parts && msg.parts.length > 0) {
           contents.push({ role: msg.role, parts: msg.parts });
         }
