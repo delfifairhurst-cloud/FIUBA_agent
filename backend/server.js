@@ -1,3 +1,4 @@
+import { completeChat, responseText } from './ai-response.js';
 import { installAuthentication } from './verified-auth.js';
 import { sendAiError } from './ai-errors.js';
 import { installPerformance, callGeminiWithRetry } from './render-performance.js';
@@ -33,18 +34,21 @@ app.use(cors({
     }
   }
 }));
-app.use(express.json({ limit: '5mb' }));
+
 
 const limiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
+  keyGenerator: req => req.nevlaUid,
+  skip: req => req.method === 'GET' && (req.path === '/health' || req.path.startsWith('/request-status/')),
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Demasiadas requests. Esperá un momento.' }
+  message: { error: 'Hiciste varias consultas seguidas. Esperá un minuto.', code: 'RATE_LIMIT', retryable: true }
 });
-app.use('/api/', limiter);
 installAuthentication(app);
+app.use('/api/', limiter);
 installPerformance(app);
+app.use(express.json({ limit: '5mb', inflate: false }));
 
 const MODEL_FALLBACK_CHAIN = [process.env.GEMINI_MODEL || 'gemini-3.6-flash'];
 
@@ -160,7 +164,7 @@ app.post('/api/admin-qa', async (req, res) => {
       return res.json({ answer: 'No pude responder con IA en este momento. Consultá en https://fi.uba.ar' });
     }
 
-    const reply = result.data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se recibió respuesta.';
+    const reply = responseText(result.data) || 'No se recibió respuesta.';
     return res.json({ answer: reply });
   } catch (error) {
     console.error('admin-qa error:', error);
@@ -222,7 +226,9 @@ app.post('/api/chat', async (req, res) => {
     if (Array.isArray(history) && history.length > 0) {
       let remainingHistory = 16000;
       const boundedHistory = history.slice(-16).reverse().map(msg => {
-        const text = String(msg.parts?.[0]?.text || "").slice(0, Math.min(4000, remainingHistory));
+        const source = String(msg.parts?.[0]?.text || "");
+        const take = Math.max(0, Math.min(4000, remainingHistory));
+        const text = msg.role === "model" ? (take ? source.slice(-take) : "") : source.slice(0, take);
         remainingHistory -= text.length;
         return {role: msg.role, parts: [{text}]};
       }).filter(msg => msg.parts[0].text).reverse();
@@ -253,13 +259,12 @@ app.post('/api/chat', async (req, res) => {
 
     let result;
     try {
-      result = await callGeminiWithRetry(apiKey, payload, { endpoint: 'chat' });
+      result = await completeChat(apiKey, payload, callGeminiWithRetry, { structured: mode === 'examinador' });
     } catch (err) {
       return sendAiError(res, err);
     }
 
-    const data = result.data;
-    let reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se recibió respuesta del modelo.';
+    let reply = result.text;
 
     if (mode === 'examinador') {
       let jsonData = null;
@@ -279,7 +284,7 @@ app.post('/api/chat', async (req, res) => {
       return res.json({ reply, isMock: false, isExaminerJson: false });
     }
 
-    res.json({ reply, isMock: false });
+    res.json({ reply, isMock: false, incomplete: result.incomplete });
 
   } catch (error) {
     console.error('Error interno en /api/chat:', error);
@@ -317,7 +322,8 @@ app.post('/api/generate-quiz', async (req, res) => {
       return sendAiError(res, err);
     }
 
-    let text = result.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (result.data.candidates?.[0]?.finishReason !== 'STOP') return sendAiError(res, { code: 'AI_INCOMPLETE' });
+    let text = responseText(result.data);
     text = text.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
     let json;
     try { json = JSON.parse(text); } catch { const m=text.match(/\{[\s\S]*\}/); if(m) json=JSON.parse(m[0]); else throw new Error('No JSON'); }
@@ -348,7 +354,8 @@ app.post('/api/generate-flashcards', async (req, res) => {
       return sendAiError(res, err);
     }
 
-    let text = result.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (result.data.candidates?.[0]?.finishReason !== 'STOP') return sendAiError(res, { code: 'AI_INCOMPLETE' });
+    let text = responseText(result.data);
     text = text.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
     let json; try { json = JSON.parse(text); } catch { const m=text.match(/\{[\s\S]*\}/); if(m) json=JSON.parse(m[0]); else throw new Error('No JSON'); }
     const flashcards = (json.flashcards || []).slice(0, fcCount);

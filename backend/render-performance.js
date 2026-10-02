@@ -1,34 +1,30 @@
+import { createAdmission } from './ai-admission.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const requests = new AsyncLocalStorage();
 const aiPaths = new Set(['/chat', '/admin-qa', '/test-key', '/generate-quiz', '/generate-flashcards']);
-const deadlineMs = 45000;
+const deadlineMs = 90000;
 
 export function installPerformance(app) {
-  let active = 0;
+  const admission = createAdmission();
+  app.get('/api/request-status/:id', admission.status);
   app.use('/api', (req, res, next) => {
-    res.set('X-Nevla-Runtime', 'bounded-v2');
+    res.set('X-Nevla-Runtime', 'queued-v3');
     if (req.method !== 'POST' || !aiPaths.has(req.path)) return next();
-    if (active >= 6) return res.set('Retry-After', '5').status(503).json({error:'El Tutor está ocupado. Reintentá en unos segundos.', code:'BUSY', retryable:true});
-    const controller = new AbortController();
-    active++;
-    const timer = setTimeout(() => controller.abort(), deadlineMs);
-    let released = false;
-    const release = () => { if (released) return; released = true; active--; clearTimeout(timer); controller.abort(); };
-    res.once('close', release);
-    res.once('finish', release);
-    requests.run({ signal: controller.signal }, next);
+    admission.middleware(req, res, () => requests.run({ signal: req.nevlaSignal }, next));
   });
+  return admission;
 }
 
 // One deadline across attempts. Never repeat quota failures or timeouts.
-export async function callGeminiWithRetry(apiKey, payload, { maxRetries = 2 } = {}) {
+export async function callGeminiWithRetry(apiKey, payload, { maxRetries = 2, endpoint } = {}) {
   const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
   const signal = AbortSignal.any([requests.getStore()?.signal || new AbortController().signal, AbortSignal.timeout(deadlineMs)]);
   const generationConfig = {...payload.generationConfig};
   const requested = generationConfig.maxOutputTokens;
-  generationConfig.maxOutputTokens = Number.isInteger(requested) && requested > 0 ? Math.min(requested, 8192) : 8192;
+  const outputLimit = endpoint === 'chat' ? 16384 : 8192;
+  generationConfig.maxOutputTokens = Number.isInteger(requested) && requested > 0 ? Math.min(requested, outputLimit) : outputLimit;
   const started = Date.now();
   for (let attempt = 1; attempt <= Math.min(2, maxRetries); attempt++) {
     signal.throwIfAborted();
