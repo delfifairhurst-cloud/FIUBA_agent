@@ -1,3 +1,4 @@
+import { adminPayload } from './admin-conversation.js';
 import { completeChat, responseText } from './ai-response.js';
 import { installAuthentication } from './verified-auth.js';
 import { sendAiError } from './ai-errors.js';
@@ -106,69 +107,22 @@ Resolvé ejercicios paso a paso: cada paso numerado, con "por qué" en 1 línea,
 };
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Servidor nevla funcionando correctamente' });
+  res.json({ status: 'ok', adminConversation: 'context-v1', message: 'Servidor nevla funcionando correctamente' });
 });
 
-// --- Admin Bot: base de conocimiento local + fallback a IA ---
-const LOCAL_ADMIN_KB = [
-  { patterns: ['inscri', 'regular', 'cursada', 'inscribir'], answer: 'Inscripciones a cursada: Consultá SIU Guaraní (https://guarani.fi.uba.ar). Las inscripciones suelen abrir en diciembre para el 1er cuatrimestre y en mayo para el 2do. Requisito: estar habilitado en Guaraní.' },
-  { patterns: ['final', 'mesa', 'examen', 'rendir', 'aprobar'], answer: 'Mesas de final: Se publican en la página de cada departamento. Generalmente hay mesas en junio/julio y noviembre/diciembre. Consultá: https://fi.uba.ar/sitio/materias-702' },
-  { patterns: ['alumno regular', 'certificado'], answer: 'Certificado de alumno regular: Se genera desde SIU Guaraní. Entrá a tu cuenta > Trámites > Certificado de alumno regular.' },
-  { patterns: ['guarani', 'siu'], answer: 'SIU Guaraní: https://guarani.fi.uba.ar — Es donde te inscribís a materias, consultás notas y generás certificados.' },
-  { patterns: ['campus', 'virtual'], answer: 'Campus Virtual UBA: https://campus.fi.uba.ar — Plataforma de materiales, foros y entrega de trabajos prácticos.' },
-  { patterns: ['biblioteca', 'biblio'], answer: 'Biblioteca FIUBA: https://cyt.fi.uba.ar/biblioteca — Préstamo de libros, salas de estudio y material de referencia.' },
-  { patterns: ['equivalencia', 'convalida'], answer: 'Equivalencias: Se tramitan en la Secretaría Académica de FIUBA. Necesitá el programa de la materia que querés equivaler y el original que ya aprobaste.' },
-  { patterns: ['libreta', 'libreto'], answer: 'Libreta de estudiante: Se retira en la Secretaría de FIUBA con DNI. Algunas facultades la digitalizaron en Guaraní.' },
-  { patterns: ['cbc'], answer: 'CBC (Ciclo Básico Común): https://cbc.uba.ar — Información sobre ingreso, mesas de examen y equivalencias del CBC.' },
-  { patterns: ['departamento', 'secretaria'], answer: 'Secretarías de FIUBA: https://fi.uba.ar — Secretaría Académica, Departamental y de Estudiantes. Horario: lunes a viernes 9-17hs.' },
-  { patterns: ['centro estudiante', 'centro de estudiante'], answer: 'Centros de estudiantes de FIUBA: Consultá en https://fi.uba.ar/sitio/centros-de-estudiantes para contactarte con tu centro.' },
-  { patterns: ['universidad', 'uba'], answer: 'Sitio oficial UBA: https://www.uba.ar — Información general de la universidad, noticias y trámites.' },
-  { patterns: ['horario', 'cursada'], answer: 'Horarios de cursada: Se publican en el Campus Virtual de cada materia y en Guaraní al momento de inscribirte.' },
-  { patterns: ['nota', 'promedio', 'grade'], answer: 'Consulta de notas: Entrá a SIU Guaraní > Mis Materias > Notas. El promedio se calcula automáticamente.' },
-  { patterns: ['beca', 'ayuda'], answer: 'Becas y ayudas económicas: https://www.uba.ar/sitio/becas — UBA ofrece becas de estudio, alimentación y alojamiento.' },
-  { patterns: ['pago', 'arancel', 'cuota'], answer: 'FIUBA es gratuita. No hay aranceles ni cuotas para cursar ni rendir. Solo necesitás estar habilitado en Guaraní.' },
-  { patterns: ['altillo', 'parcial'], answer: 'Parciales del Altillo: https://www.altillo.com — Repositorio de parciales y resúmenes de materias de FIUBA/UBA.' }
-];
-
+// Administrative conversation: full question and bounded history, no keyword shortcuts.
 app.post('/api/admin-qa', async (req, res) => {
+  res.set('X-Nevla-Admin', 'conversation-v1');
   try {
-    const { question, context } = req.body;
-    if (!question || question.trim() === '') {
-      return res.status(400).json({ error: 'Falta la pregunta' });
-    }
-
-    const q = question.toLowerCase();
-
-    for (const entry of LOCAL_ADMIN_KB) {
-      if (entry.patterns.some(p => q.includes(p))) {
-        return res.json({ answer: entry.answer });
-      }
-    }
-
-    const apiKey = (req.body.userApiKey || '').trim() || '';
-    if (!apiKey) {
-      return res.json({ answer: 'No tengo tu API Key configurada. Andá a ⚙️ Servidor IA y pegá tu clave de Google AI Studio (gratuita en aistudio.google.com). Mientras tanto, consultá en https://fi.uba.ar' });
-    }
-
-    const systemInstruction = context || 'Sos un asistente administrativo de FIUBA. Respondé preguntas sobre trámites, inscripciones, fechas de parciales y links oficiales de UBA.';
-    const payload = {
-      system_instruction: { parts: [{ text: systemInstruction }] },
-      contents: [{ role: 'user', parts: [{ text: question }] }],
-      generationConfig: { temperature: 0.3 }
-    };
-
-    let result;
-    try {
-      result = await callGeminiWithRetry(apiKey, payload, { endpoint: 'admin-qa' });
-    } catch (err) {
-      return res.json({ answer: 'No pude responder con IA en este momento. Consultá en https://fi.uba.ar' });
-    }
-
-    const reply = responseText(result.data) || 'No se recibió respuesta.';
-    return res.json({ answer: reply });
+    const { question, history, userApiKey } = req.body || {};
+    const payload = adminPayload(question, history);
+    const apiKey = typeof userApiKey === 'string' ? userApiKey.trim() : '';
+    if (!apiKey) return res.status(400).json({ code: 'KEY_REQUIRED', error: 'Conectá tu clave de IA.', retryable: false });
+    const result = await completeChat(apiKey, payload, callGeminiWithRetry);
+    return res.json({ answer: result.text, incomplete: result.incomplete });
   } catch (error) {
-    console.error('admin-qa error:', error);
-    res.status(500).json({ error: 'Error interno' });
+    if (error.code === 'INVALID_REQUEST') return res.status(400).json({ code: error.code, error: error.message, retryable: false });
+    return sendAiError(res, error);
   }
 });
 
