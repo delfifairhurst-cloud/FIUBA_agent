@@ -1,3 +1,4 @@
+import { chatContents, conversationGuidance } from './chat-vision.js';
 import { adminPayload } from './admin-conversation.js';
 import { completeChat, responseText } from './ai-response.js';
 import { installAuthentication } from './verified-auth.js';
@@ -107,7 +108,7 @@ Resolvé ejercicios paso a paso: cada paso numerado, con "por qué" en 1 línea,
 };
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', adminConversation: 'context-v1', message: 'Servidor nevla funcionando correctamente' });
+  res.json({ status: 'ok', adminConversation: 'context-v1', chatVision: 'vision-v1', message: 'Servidor nevla funcionando correctamente' });
 });
 
 // Administrative conversation: full question and bounded history, no keyword shortcuts.
@@ -155,6 +156,7 @@ app.post('/api/chat', async (req, res) => {
   try {
     const { message, mode = 'profesor', context = '', examState = null, userApiKey, image, history = [] } = req.body;
 
+    if ((message != null && typeof message !== 'string') || (context != null && typeof context !== 'string')) return res.status(400).json({code:'INVALID_REQUEST',error:'Contenido no válido.'});
     if ((!message || message.trim() === '') && !image) {
       return res.status(400).json({ error: 'El mensaje no puede estar vacío.' });
     }
@@ -165,7 +167,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     if (typeof message === 'string' && message.length > 8000) return res.status(400).json({error:'La consulta es demasiado extensa.', code:'INPUT_LIMIT'});
-    const systemInstruction = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.profesor;
+    const systemInstruction = (SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.profesor) + conversationGuidance;
 
     let promptContent = message;
     if (context && context.trim().length > 0) {
@@ -176,31 +178,11 @@ app.post('/api/chat', async (req, res) => {
       promptContent += `\n\n[ESTADO DEL EXAMEN - NO INVENTAR, RESPETAR]\n${JSON.stringify(examState, null, 2)}`;
     }
 
-    const contents = [];
-    if (Array.isArray(history) && history.length > 0) {
-      let remainingHistory = 16000;
-      const boundedHistory = history.slice(-16).reverse().map(msg => {
-        const source = String(msg.parts?.[0]?.text || "");
-        const take = Math.max(0, Math.min(4000, remainingHistory));
-        const text = msg.role === "model" ? (take ? source.slice(-take) : "") : source.slice(0, take);
-        remainingHistory -= text.length;
-        return {role: msg.role, parts: [{text}]};
-      }).filter(msg => msg.parts[0].text).reverse();
-      for (const msg of boundedHistory) {
-        if (msg.role && msg.parts && msg.parts.length > 0) {
-          contents.push({ role: msg.role, parts: msg.parts });
-        }
-      }
-    }
-    const lastRole = contents.length > 0 ? contents[contents.length - 1].role : null;
-    if (lastRole === 'user') {
-      contents[contents.length - 1] = { role: 'user', parts: [{ text: promptContent || "Analizá esta imagen del ejercicio y resolvé paso a paso." }] };
-    } else {
-      contents.push({ role: 'user', parts: [{ text: promptContent || "Analizá esta imagen del ejercicio y resolvé paso a paso." }] });
-    }
-
-    if (image && image.data) {
-      contents[contents.length - 1].parts.push({ inlineData: { mimeType: image.mimeType || 'image/jpeg', data: image.data } });
+    let contents;
+    try { contents = chatContents(history, promptContent, image); }
+    catch (error) {
+      if (['IMAGE_INVALID','IMAGE_LIMIT'].includes(error.code)) return res.status(400).json({code:error.code,error:'Revisá la imagen adjunta.',retryable:false});
+      throw error;
     }
 
     const payload = {
